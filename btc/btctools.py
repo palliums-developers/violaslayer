@@ -17,6 +17,7 @@ import comm.result
 from comm.result import result
 from comm.error import error
 from comm.parseargs import parseargs
+from comm.functions import json_print
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 from btc.btcclient import btcclient
 from enum import Enum
@@ -30,104 +31,77 @@ logger = log.logger.getLogger(name)
 def getbtcclient():
     return btcclient(name, stmanage.get_btc_conn())
 
-def sendtoaddress(address, count):
-    client = getbtcclient()
-    ret = client.sendtoaddress(address, count)
-    assert ret.state == error.SUCCEED, " sendtoaddress failed"
-    print(ret.datas)
-    
-def sendexproofstart(fromaddress, toaddress, amount, vaddress, sequence, vtoken):
-    client = getbtcclient()
-    ret = client.sendexproofstart(fromaddress, toaddress, amount, vaddress, sequence, vtoken)
-    assert ret.state == error.SUCCEED, " sendexproofstart failed"
-    print(ret.datas)
-
-def sendexproofend(fromaddress, toaddress, vaddress, sequence, vamount, version):
-    client = getbtcclient()
-    ret = client.sendexproofend(fromaddress, toaddress, vaddress, sequence, vamount, version)
-    assert ret.state == error.SUCCEED, " sendexproofend failed"
-    print(ret.datas)
-
-def sendexproofmark(fromaddress, toaddress, toamount, vaddress, sequence, version):
-    client = getbtcclient()
-    ret = client.sendexproofmark(fromaddress, toaddress, toamount, vaddress, sequence, version)
-    assert ret.state == error.SUCCEED, "sendexproofmark failed"
-    print(ret.datas)
-
-def generatetoaddress(count, address):
-    client = getbtcclient()
-    ret = client.generatetoaddress(count, address)
-    assert ret.state == error.SUCCEED, " generatetoaddress failed"
-    print(ret.datas)
-    
-def listunspent(minconf = 1, maxconf = 9999999, addresses = None, include_unsafe = True, query_options = None):
-    client = getbtcclient()
-    ret = client.listunspent(minconf, maxconf, addresses, include_unsafe, query_options)
-    assert ret.state == error.SUCCEED, " listunspent failed"
-    for data in ret.datas:
-        print("address:{}, amount:{}".format(data["address"], data["amount"]))
-
-def listexproofforstart(receiver, excluded = None):
-    client = getbtcclient()
-    ret = client.listexproofforstart(receiver, excluded)
-    assert ret.state == error.SUCCEED, " listexproofforstart failed"
-    for data in ret.datas:
-        print(data)
-
-def listexproofforend(receiver, excluded = None):
-    client = getbtcclient()
-    ret = client.listexproofforend(receiver, excluded)
-    assert ret.state == error.SUCCEED, " listexproofforend failed"
-    for data in ret.datas:
-        print(data)
-
-def listexproofformark(receiver, excluded = None):
-    client = getbtcclient()
-    ret = client.listexproofformark(receiver, excluded)
-    assert ret.state == error.SUCCEED, " listexproofformark failed"
-    for data in ret.datas:
-        print(data)
-
-def listexproofforb2v(cursor, limit = 10):
-    client = getbtcclient()
-    ret = client.listexproofforb2v(cursor, limit)
-    assert ret.state == error.SUCCEED, " listexproofforb2v failed"
-    for data in ret.datas:
-        print(data)
-
 def btchelp():
     client = getbtcclient()
     ret = client.help()
     assert ret.state == error.SUCCEED, " btchelp failed"
     print(ret.datas)
 
-def getwalletbalance():
+def getblockcount():
     client = getbtcclient()
-    ret = client.getwalletbalance()
-    assert ret.state == error.SUCCEED, "getwalletbalance failed"
-    print(f"wallet balance:{ret.datas:.8f}")
+    ret = client.getblockcount()
+    assert ret.state == error.SUCCEED, f"getblockcount() failed"
+    print(f"wallet balance:{ret.datas}")
 
-def getwalletaddressbalance(address):
+def getblockhash(index):
     client = getbtcclient()
-    ret = client.getwalletaddressbalance(address)
-    assert ret.state == error.SUCCEED, " getwalletaddressbalance failed"
-    print("wallet balance:{}".format(ret.datas))
+    ret = client.getblockhash(index)
+    assert ret.state == error.SUCCEED, f"getblockhash({index}) failed"
+    print(f"blockhash({index}):{ret.datas}")
+
+def getblockforhash(blockhash):
+    client = getbtcclient()
+    ret = client.getblockforhash(blockhash)
+    assert ret.state == error.SUCCEED, f"getblockforhash({blockhash}) failed"
+    json_print(ret.datas)
+
+def getblockforindex(index):
+    client = getbtcclient()
+    ret = client.getblockforindex(index)
+    assert ret.state == error.SUCCEED, f"getblockforindex({index}) failed"
+    json_print(ret.datas)
+
+def getblocktxidsforindex(index):
+    client = getbtcclient()
+    ret = client.getblocktxidsforindex(index)
+    assert ret.state == error.SUCCEED, f"getblocktxidsforindex({index}) failed"
+    json_print(ret.datas)
+
+def getblocktxidsforhash(blockhash):
+    client = getbtcclient()
+    ret = client.getblocktxidsforhash(blockhash)
+    assert ret.state == error.SUCCEED, f"getblocktxidsforhash({blockhash}) failed"
+    json_print(ret.datas)
+
+def getrawtransaction(txid, verbose = True, blockhash = None):
+    client = getbtcclient()
+    ret = client.getrawtransaction(txid, verbose, blockhash)
+    assert ret.state == error.SUCCEED, f"getrawtransaction({txid}, {verbose}, {blockhash}) failed"
+    json_print(ret.datas)
+
+def gettxoutin(txid):
+    client = getbtcclient()
+    ret = client.gettxoutin(txid)
+    assert ret.state == error.SUCCEED, f"gettxoutin({txid}) failed"
+    json_print(ret.datas)
+
+def gettxoutforn(txid, n):
+    client = getbtcclient()
+    ret = client.gettxoutforn(txid, n)
+    assert ret.state == error.SUCCEED, f"gettxoutforn({txid}, {n}) failed"
+    json_print(ret.datas)
 
 def init_args(pargs):
     pargs.append("help", "show arg list")
-    pargs.append("sendtoaddress", "send to address.format.", True, ["address", "count"])
-    pargs.append("endexproofstart", "create new exchange start proof.", True, ["fromaddress", "toaddress", "amount", "vaddress", "sequence", "vtoken"])
-    pargs.append("sendexproofend", "create new exchange end proof.", True, ["fromaddress", "toaddress", "vaddress", "sequence", "vamount", "version"])
-    pargs.append("endexproofmark", "create new exchange mark proof.", True, ["fromaddress", "toaddress", "toamount", "vaddress", "sequence", "version"])
-    pargs.append("generatetoaddress", "generate new block to address.", True, ["count", "address"])
-    pargs.append("listunspent", "returns array of unspent transaction outputs.", True, ["minconf", "maxconf", "addresses", "include_unsafe", "query_options"])
-    pargs.append("listexproofforstart", "returns array of proof state is start .", True, ["receiver"])
-    pargs.append("listexproofforend", "returns array of proof state is end .", True, ["receiver"])
-    pargs.append("listexproofformark", "returns array of proof state is mark .", True, ["receiver"])
-    pargs.append("listexproofforb2v", "returns array of proof list type = b2v. .", True, ["cursor", "limit"])
-    pargs.append("btchelp", "returns bitcoin-cli help.")
-    pargs.append("getwalletbalance", "returns wallet balance.")
-    pargs.append("getwalletaddressbalance", "returns wallet target address's balance.", True, ["address"])
+    pargs.append("getblockcount", "get block count.")
+    pargs.append("getblockhash", "get block hash.", True, ["index"])
+    pargs.append("getblockforhash", "get block info with blockhash.", True, ["blockhash"])
+    pargs.append("getblockforindex", "get block info with index.", True, ["index"])
+    pargs.append("getblocktxidsforhash", "get block txid list with blockhash.", True, ["blockhash"])
+    pargs.append("getblocktxidsforindex", "get block txid list with index.", True, ["index"])
+    pargs.append("getrawtransaction", "get raw transaction", True, ["txid", "verbose", "blockhash"])
+    pargs.append("gettxoutin", "get transaction vin and vout", True, ["txid"])
+    pargs.append("gettxoutforn", "get transaction vout[n]", True, ["txid", "n"])
 
 def run(argc, argv):
     try:
@@ -155,61 +129,51 @@ def run(argc, argv):
             count, arg_list = pargs.split_arg(arg)
 
             print("opt = {}, arg = {}".format(opt, arg_list))
-        if pargs.is_matched(opt, ["sendtoaddress"]):
-            if len(arg_list) != 2:
-                pargs.exit_error_opt(opt)
-            ret = sendtoaddress(arg_list[0], arg_list[1])
-        elif pargs.is_matched(opt, ["sendexproofstart"]):
-            if len(arg_list) != 6:
-                pargs.exit_error_opt(opt)
-            ret = sendexproofstart(arg_list[0], arg_list[1], float(arg_list[2]), arg_list[3], int(arg_list[4]), arg_list[5])
-        elif pargs.is_matched(opt, ["sendexproofend"]):
-            if len(arg_list) != 6:
-                pargs.exit_error_opt(opt)
-            ret = sendexproofend(arg_list[0], arg_list[1], arg_list[2], int(arg_list[3]), int(arg_list[4]), int(arg_list[5]))
-        elif pargs.is_matched(opt, ["sendexproofmark"]):
-            if len(arg_list) != 6:
-                pargs.exit_error_opt(opt)
-            ret = sendexproofmark(arg_list[0], arg_list[1], arg_list[2], arg_list[3], int(arg_list[4]), int(arg_list[5]))
-        elif pargs.is_matched(opt, ["generatetoaddress"]):
-            if len(arg_list) != 2:
-                pargs.exit_error_opt(opt)
-            ret = generatetoaddress(int(arg_list[0]), arg_list[1])
-        elif pargs.is_matched(opt, ["listunspent"]):
-            if len(arg_list) != 5 and len(arg_list) != 2:
-                pargs.exit_error_opt(opt)
-            if len(arg_list) != 2:
-                ret = listunspent(int(arg_list[0]), int(arg_list[1]), arg_list[2], arg_list[3], arg_list[4])
-            else:
-                ret = listunspent(int(arg_list[0]), int(arg_list[1]))
-        elif pargs.is_matched(opt, ["listexproofforstart"]):
-            if len(arg_list) != 1:
-                pargs.exit_error_opt(opt)
-            ret = listexproofforstart(arg_list[0])
-        elif pargs.is_matched(opt, ["listexproofforend"]):
-            if len(arg_list) != 1:
-                pargs.exit_error_opt(opt)
-            ret = listexproofforend(arg_list[0])
-        elif pargs.is_matched(opt, ["listexproofformark"]):
-            if len(arg_list) != 1:
-                pargs.exit_error_opt(opt)
-            ret = listexproofformark(arg_list[0])
-        elif pargs.is_matched(opt, ["listexproofforb2v"]):
-            if len(arg_list) != 1 and len(arg_list) != 2:
-                pargs.exit_error_opt(opt)
-            if len(arg_list) == 2:
-                limit = int(arg_list[1])
-                ret = listexproofforb2v(int(arg_list[0]), limit)
-            else:
-                ret = listexproofforb2v(int(arg_list[0]))
-        elif pargs.is_matched(opt, ["btchelp"]):
+        if pargs.is_matched(opt, ["btchelp"]):
             ret = btchelp()
-        elif pargs.is_matched(opt, ["getwalletbalance"]):
-            ret = getwalletbalance()
-        elif pargs.is_matched(opt, ["getwalletaddressbalance"]):
+        elif pargs.is_matched(opt, ["getblockcount"]):
+            ret = getblockcount()
+        elif pargs.is_matched(opt, ["getblockhash"]):
             if len(arg_list) != 1:
                 pargs.exit_error_opt(opt)
-            ret = getwalletaddressbalance(arg_list[0])
+            ret = getblockhash(int(arg_list[0]))
+        elif pargs.is_matched(opt, ["getblockforhash"]):
+            if len(arg_list) != 1:
+                pargs.exit_error_opt(opt)
+            ret = getblockforhash(arg_list[0])
+        elif pargs.is_matched(opt, ["getblockforindex"]):
+            if len(arg_list) != 1:
+                pargs.exit_error_opt(opt)
+            ret = getblockforindex(int(arg_list[0]))
+        elif pargs.is_matched(opt, ["getblocktxidsforhash"]):
+            if len(arg_list) != 1:
+                pargs.exit_error_opt(opt)
+            ret = getblocktxidsforhash(arg_list[0])
+        elif pargs.is_matched(opt, ["getblocktxidsforindex"]):
+            if len(arg_list) != 1:
+                pargs.exit_error_opt(opt)
+            ret = getblocktxidsforindex(int(arg_list[0]))
+        elif pargs.is_matched(opt, ["getrawtransaction"]):
+            if len(arg_list) not in (1, 2, 3):
+                pargs.exit_error_opt(opt)
+            txid = None
+            verbose = True
+            blockhash= None
+            if len(arg_list) >= 1:
+                txid = arg_list[0]
+            if len(arg_list) >= 2:
+                verbose = arg_list[1] == "True"
+            if len(arg_list) >= 2:
+                blockhash = arg_list[2]
+            ret = getrawtransaction(txid, verbose, blockhash)
+        elif pargs.is_matched(opt, ["gettxoutin"]):
+            if len(arg_list) != 1:
+                pargs.exit_error_opt(opt)
+            ret = gettxoutin(arg_list[0])
+        elif pargs.is_matched(opt, ["gettxoutforn"]):
+            if len(arg_list) != 2:
+                pargs.exit_error_opt(opt)
+            ret = gettxoutforn(arg_list[0], int(arg_list[1]))
 
     logger.debug("end manage.main")
 

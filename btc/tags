@@ -4,60 +4,35 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
-CANCEL	btcclient.py	/^        CANCEL  = "cancel"$/;"	v	line:44	class:btcclient.proofstate
-COINS	btcclient.py	/^COINS = int(comm.values.COINS * (100000000\/comm.values.COINS))$/;"	v	line:30
-END	btcclient.py	/^        END     = "end"$/;"	v	line:43	class:btcclient.proofstate
-MARK	btcclient.py	/^        MARK    = "mark"$/;"	v	line:45	class:btcclient.proofstate
-START	btcclient.py	/^        START   = "start"$/;"	v	line:42	class:btcclient.proofstate
-__init__	btcclient.py	/^        def __init__(self, datas):$/;"	m	line:34	class:btcclient.transaction	access:public
-__init__	btcclient.py	/^    def __init__(self, name, btc_conn):$/;"	m	line:47	class:btcclient	access:public
-__listexproof	btcclient.py	/^    def __listexproof(self, extype, cursor = 0, limit = 10):$/;"	m	line:92	class:btcclient	file:	access:private
-__listexproofforstate	btcclient.py	/^    def __listexproofforstate(self, state, extype, receiver, excluded):$/;"	m	line:72	class:btcclient	file:	access:private
-__map_tran	btcclient.py	/^    def __map_tran(self, data):$/;"	m	line:132	class:btcclient	file:	access:private
-btcclient	btcclient.py	/^class btcclient(baseobject):$/;"	c	line:31	inherits:baseobject
-btchelp	btctools.py	/^def btchelp():$/;"	f	line:98	access:public
-disconn_node	btcclient.py	/^    def disconn_node(self):$/;"	m	line:69	class:btcclient	access:public
-generatetoaddress	btcclient.py	/^    def generatetoaddress(self, count, address):$/;"	m	line:220	class:btcclient	access:public
-generatetoaddress	btctools.py	/^def generatetoaddress(count, address):$/;"	f	line:57	access:public
-get_latest_transaction_version	btcclient.py	/^    def get_latest_transaction_version(self):$/;"	m	line:165	class:btcclient	access:public
-get_transactions	btcclient.py	/^    def get_transactions(self, cursor, limit, nouse=True):$/;"	m	line:150	class:btcclient	access:public
-get_version	btcclient.py	/^        def get_version(self):$/;"	m	line:36	class:btcclient.transaction	access:public
-getbtcclient	btctools.py	/^def getbtcclient():$/;"	f	line:30	access:public
-getwalletaddressbalance	btcclient.py	/^    def getwalletaddressbalance(self, address):$/;"	m	line:258	class:btcclient	access:public
-getwalletaddressbalance	btctools.py	/^def getwalletaddressbalance(address):$/;"	f	line:110	access:public
-getwalletbalance	btcclient.py	/^    def getwalletbalance(self):$/;"	m	line:247	class:btcclient	access:public
-getwalletbalance	btctools.py	/^def getwalletbalance():$/;"	f	line:104	access:public
-has_b2v_mark	btcclient.py	/^    def has_b2v_mark(self, address, version):$/;"	m	line:303	class:btcclient	access:public
-has_btc_banlance	btcclient.py	/^    def has_btc_banlance(self, address, vamount, gas = comm.values.MIN_EST_GAS):$/;"	m	line:275	class:btcclient	access:public
-has_v2b_mark	btcclient.py	/^    def has_v2b_mark(self, address, version):$/;"	m	line:293	class:btcclient	access:public
-help	btcclient.py	/^    def help(self):$/;"	m	line:238	class:btcclient	access:public
-init_args	btctools.py	/^def init_args(pargs):$/;"	f	line:116	access:public
-isexproofcomplete	btcclient.py	/^    def isexproofcomplete(self, address, sequence):$/;"	m	line:104	class:btcclient	access:public
-listexproofforb2v	btcclient.py	/^    def listexproofforb2v(self, cursor, limit):$/;"	m	line:129	class:btcclient	access:public
-listexproofforb2v	btctools.py	/^def listexproofforb2v(cursor, limit = 10):$/;"	f	line:91	access:public
-listexproofforcancel	btcclient.py	/^    def listexproofforcancel(self, receiver, excluded):$/;"	m	line:123	class:btcclient	access:public
-listexproofforend	btcclient.py	/^    def listexproofforend(self, receiver, excluded):$/;"	m	line:120	class:btcclient	access:public
-listexproofforend	btctools.py	/^def listexproofforend(receiver, excluded = None):$/;"	f	line:77	access:public
-listexproofformark	btcclient.py	/^    def listexproofformark(self, receiver, excluded):$/;"	m	line:126	class:btcclient	access:public
-listexproofformark	btctools.py	/^def listexproofformark(receiver, excluded = None):$/;"	f	line:84	access:public
-listexproofforstart	btcclient.py	/^    def listexproofforstart(self, receiver, excluded):$/;"	m	line:117	class:btcclient	access:public
-listexproofforstart	btctools.py	/^def listexproofforstart(receiver, excluded = None):$/;"	f	line:70	access:public
-listunspent	btcclient.py	/^    def listunspent(self, minconf = 1, maxconf = 9999999, addresses = None, include_unsafe = True, query_options = None):$/;"	m	line:229	class:btcclient	access:public
-listunspent	btctools.py	/^def listunspent(minconf = 1, maxconf = 9999999, addresses = None, include_unsafe = True, query_options = None):$/;"	f	line:63	access:public
-logger	btctools.py	/^logger = log.logger.getLogger(name) $/;"	v	line:28
-main	btcclient.py	/^def main():$/;"	f	line:314	access:public
-name	btcclient.py	/^name="bclient"$/;"	v	line:26
-name	btctools.py	/^name="btctools"$/;"	v	line:25
-proofstate	btcclient.py	/^    class proofstate(Enum):$/;"	c	line:41	class:btcclient	inherits:Enum
-run	btctools.py	/^def run(argc, argv):$/;"	f	line:132	access:public
-sendexproofend	btcclient.py	/^    def sendexproofend(self, fromaddress, toaddress, vaddress, sequence, amount, version):$/;"	m	line:187	class:btcclient	access:public
-sendexproofend	btctools.py	/^def sendexproofend(fromaddress, toaddress, vaddress, sequence, vamount, version):$/;"	f	line:45	access:public
-sendexproofmark	btcclient.py	/^    def sendexproofmark(self, fromaddress, toaddress, toamount, vaddress, sequence, version):$/;"	m	line:210	class:btcclient	access:public
-sendexproofmark	btctools.py	/^def sendexproofmark(fromaddress, toaddress, toamount, vaddress, sequence, version):$/;"	f	line:51	access:public
-sendexproofstart	btcclient.py	/^    def sendexproofstart(self, fromaddress, toaddress, amount, vaddress, sequence, vtoken):$/;"	m	line:174	class:btcclient	access:public
-sendexproofstart	btctools.py	/^def sendexproofstart(fromaddress, toaddress, amount, vaddress, sequence, vtoken):$/;"	f	line:39	access:public
-sendtoaddress	btcclient.py	/^    def sendtoaddress(self, address, amount):$/;"	m	line:200	class:btcclient	access:public
-sendtoaddress	btctools.py	/^def sendtoaddress(address, count):$/;"	f	line:33	access:public
-stop	btcclient.py	/^    def stop(self):$/;"	m	line:89	class:btcclient	access:public
-to_json	btcclient.py	/^        def to_json(self):$/;"	m	line:38	class:btcclient.transaction	access:public
-transaction	btcclient.py	/^    class transaction(object):$/;"	c	line:33	class:btcclient	inherits:object
+COINS	btcclient.py	/^COINS = comm.values.COINS$/;"	v	line:29
+__init__	btcclient.py	/^        def __init__(self, datas):$/;"	m	line:32	class:btcclient.transaction	access:public
+__init__	btcclient.py	/^    def __init__(self, name, btc_conn):$/;"	m	line:39	class:btcclient	access:public
+btcclient	btcclient.py	/^class btcclient(baseobject):$/;"	c	line:30	inherits:baseobject
+btchelp	btctools.py	/^def btchelp():$/;"	f	line:34	access:public
+disconn_node	btcclient.py	/^    def disconn_node(self):$/;"	m	line:61	class:btcclient	access:public
+get_version	btcclient.py	/^        def get_version(self):$/;"	m	line:34	class:btcclient.transaction	access:public
+getblockcount	btcclient.py	/^    def getblockcount(self):$/;"	m	line:68	class:btcclient	access:public
+getblockcount	btctools.py	/^def getblockcount():$/;"	f	line:40	access:public
+getblockforhash	btcclient.py	/^    def getblockforhash(self, blockhash):$/;"	m	line:98	class:btcclient	access:public
+getblockforhash	btctools.py	/^def getblockforhash(blockhash):$/;"	f	line:52	access:public
+getblockforindex	btcclient.py	/^    def getblockforindex(self, index):$/;"	m	line:114	class:btcclient	access:public
+getblockforindex	btctools.py	/^def getblockforindex(index):$/;"	f	line:58	access:public
+getblockhash	btcclient.py	/^    def getblockhash(self, index):$/;"	m	line:82	class:btcclient	access:public
+getblockhash	btctools.py	/^def getblockhash(index):$/;"	f	line:46	access:public
+getblocktxidsforhash	btcclient.py	/^    def getblocktxidsforhash(self, blockhash):$/;"	m	line:127	class:btcclient	access:public
+getblocktxidsforhash	btctools.py	/^def getblocktxidsforhash(blockhash):$/;"	f	line:70	access:public
+getblocktxidsforindex	btcclient.py	/^    def getblocktxidsforindex(self, index):$/;"	m	line:143	class:btcclient	access:public
+getblocktxidsforindex	btctools.py	/^def getblocktxidsforindex(index):$/;"	f	line:64	access:public
+getbtcclient	btctools.py	/^def getbtcclient():$/;"	f	line:31	access:public
+getrawtransaction	btcclient.py	/^    def getrawtransaction(self, txid, verbose = True, blockhash = None):$/;"	m	line:159	class:btcclient	access:public
+getrawtransaction	btctools.py	/^def getrawtransaction(txid, verbose = True, blockhash = None):$/;"	f	line:76	access:public
+help	btcclient.py	/^    def help(self):$/;"	m	line:172	class:btcclient	access:public
+init_args	btctools.py	/^def init_args(pargs):$/;"	f	line:82	access:public
+logger	btctools.py	/^logger = log.logger.getLogger(name) $/;"	v	line:29
+main	btcclient.py	/^def main():$/;"	f	line:181	access:public
+name	btcclient.py	/^name="bclient"$/;"	v	line:25
+name	btctools.py	/^name="btctools"$/;"	v	line:26
+run	btctools.py	/^def run(argc, argv):$/;"	f	line:92	access:public
+stop	btcclient.py	/^    def stop(self):$/;"	m	line:65	class:btcclient	access:public
+to_json	btcclient.py	/^        def to_json(self):$/;"	m	line:36	class:btcclient.transaction	access:public
+transaction	btcclient.py	/^    class transaction(object):$/;"	c	line:31	class:btcclient	inherits:object

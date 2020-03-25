@@ -8,7 +8,7 @@ import operator
 import signal
 import sys, os
 import log
-import json
+import json, decimal
 import log.logger
 import threading
 import subprocess
@@ -52,5 +52,17 @@ class filelock:
         except Exception as e:
             pass
 
+
+class FancyFloat(float):
+    def __repr__(self):
+        return format(Decimal(self), "f")
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+           return float(o)
+         
+        super().default(o)
+
 def json_print(data):
-    print(json.dumps(data, sort_keys=True, indent=4))
+    print(json.dumps(data, sort_keys=True, cls= DecimalEncoder, indent=5))
