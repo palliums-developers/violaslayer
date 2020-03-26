@@ -12,15 +12,10 @@ import traceback
 import datetime
 import sqlalchemy
 import random
-import redis
+import pymongo
+from urllib import parse
 from comm.error import error
 from comm.result import result, parse_except
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.engine.base import Engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import Column, Integer, Text, ForeignKey, DateTime, UniqueConstraint, Index, String
-
 from baseobject import baseobject
 from enum import Enum
 
@@ -32,37 +27,62 @@ class dbvbase(baseobject):
     __key_latest_saved_ver      = "latest_saved_ver"
     __key_min_valid_ver         = "min_valid_ver"
 
-    class dbindex(Enum):
-        RECORD  = 0
-        VFILTER = 1
-        V2B     = 2
-        V2L     = 3
-        LFILTER = 4
-        L2V     = 5
-        BFILTER = 6
-        B2V     = 7
 
-    def __init__(self, name, host, port, db, passwd = None):
+    def __init__(self, name, host, port, db, user = None, password = None, authdb = 'admin', newdb = False):
         baseobject.__init__(self, name)
         self.__host = host
         self.__port = port
         self.__db = db
-        self.__passwd = passwd
+        self.__authdb = authdb
+        self.__password = password
+        self.__user = user
+        self._clientdb = None
         self._client = None
-        ret = self.__connect(host, port, db, passwd)
+        self._collection = None
+        ret = self.__connect(host, port, db, user, password, authdb, newdb)
         if ret.state != error.SUCCEED:
-            raise Exception("connect db failed")
+            raise Exception(f"connect db({db}) failed")
 
     def __del__(self):
-        self._client.save() 
-        self._client.close() 
+        pass
 
-    def __connect(self, host, port, db, password = None):
+    def __connect(self, host, port, db, user = None, password = None, authdb = 'admin', newdb = False):
         try:
-            self._logger.debug(f"connect db(host={host}, port={port}, db={db}({self.db_name_to_value(db)}), passwd={password})")
-            self._client = redis.Redis(host=host, port=port, db=self.db_name_to_value(db), password=password, decode_responses=True)
-            self.set_mod_name(db)
+            self._logger.debug(f"connect db(host={host}, port={port}, db={db}, user = {user}, password={password}, authdb={authdb}, newdb={newdb})")
+            login = ""
+            if user is not None or password is None:
+                login = f"{parse.quote_plus(user)}:{parse.quote_plus(password)}@"
+            uri = f"mongodb://{login}{host}:{port}/{authdb}"
+
+            print(uri)
+            self._clientdb = pymongo.MongoClient(uri)
+            self._client = self.use_db(db, newdb)
+        
             ret = result(error.SUCCEED)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def use_ollection(self, collection, create = False):
+        if create == False and db not in self.list_collection_names().datas:
+            raise Exception(f"not found collection({collection}).")
+        self._collection = self._client[collection]
+
+    def use_db(self, db, create = False):
+        if create == False and db not in self.list_database_names().datas:
+            raise Exception(f"not found db({db}).")
+        return self._clientdb[db]
+
+    def list_collection_names(self):
+        try:
+            ret = result(error.SUCCEED, "", self._client.list_collection_names())
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+        
+    def list_database_names(self):
+        try:
+            ret = result(error.SUCCEED, "", self._clientdb.list_database_names())
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -70,14 +90,6 @@ class dbvbase(baseobject):
     def get_mod_name(self):
         try:
             ret = self.get("mod_name")
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-            
-    def select(self, name):
-        try:
-            self._client.select(self.db_name_to_value(name))
-            ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -89,176 +101,119 @@ class dbvbase(baseobject):
             ret = parse_except(e)
         return ret
 
-    def db_name_to_value(self, name):
-        for di in self.dbindex:
-            if di.name == name.upper():
-                return di.value
-        raise ValueError(f"db name({name} unkown)")
-    
-    def pipeline(self):
+    def find(self, key):
         try:
-            datas = self._client.pipeline(transaction = true)
+            datas = self._collection.find(key)
             ret = result(error.SUCCEED, "", datas)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def pipeline(self):
+    def find_all(self):
         try:
-            self._client.execute()
+            ret = self.find({})
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def find_with_id(self, id):
+        try:
+            ret = self.find_one({"_id": id})
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+    def update(self, key, value, multi = True):
+        try:
+            self._collection.update(key, {"$set":{value}}, multi)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def set(self, key, value):
+    def save(self, id, value):
         try:
-            self._client.set(key, value)
+            datas = dict(value)
+            if datas.get("_id") is None:
+                datas["_id"] = id
+            elif id != datas.get("_id"):
+                return result(error.ARG_INVALID, f"id({id}) and value['_id']({value['_id']}) is not match.")
+            self._collection.save(datas)   
+            ret = result(error.SUCCEED)
+
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+
+    def insert_one(self, value):
+        try:
+            self._collection.insert_one(value)   
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def mset(self, *args, **kwargs):
+    def insert_many(self, value):
         try:
-            self._client.mset(args, kwargs)
+            self._collection.insert_many(value)   
+            ret = result(error.SUCCEED)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+    def is_exists(self, key):
+        try:
+            datas = self.find(key)
+            ret = result(error.SUCCEED, "", len(datas) > 0)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def remove(self, key):
+        try:
+            self._collection.remove(key)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def get(self, key):
+    def remove_with_id(self, id):
         try:
-            datas = self._client.get(key)
-            ret = result(error.SUCCEED, "", datas)
+            ret = self.remove({"_id": id})
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+    def remove_all(self):
+        try:
+            ret = self.remove({})
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def key_is_exists(self, key):
-        try:
-            datas = self._client.exists(key)
-            ret = result(error.SUCCEED, "", datas)
+    def count(self, key):
+        try: 
+            self._collection.count(key)
+            ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
-
-    def delete(self, key):
+    def count_all(self):
+        try: 
+            ret = self.count({})
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+    def drop_collection(self, name):
         try:
-            self._client.delete(key)
+            collection = self._client[name]
+            collection.drop()
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def keys(self):
+    def drop_db(self, name):
         try:
-            datas = self._client.keys()
-            ret = result(error.SUCCEED, "", datas)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def type(self, key):
-        try:
-            datas = self._client.type(key)
-            ret = result(error.SUCCEED, "", typte)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def scan(self, cursor, match = None, count = None):
-        try:
-            pos, datas = self._client.scan(cursor, match, count)
-            print(datas)
-            ret = result(error.SUCCEED, "", (pos, datas))
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def hset(self, name, key, value):
-        try:
-            self._client.hset(name, key, value)
-            ret = result(error.SUCCEED)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def hget(self, name, key):
-        try:
-            datas = self._client.hget(name, key)
-            ret = result(error.SUCCEED, "", datas)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def hgetall(self, name):
-        try:
-            datas = self._client.hgetall(name)
-            ret = result(error.SUCCEED, "", datas)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def hlen(self, name):
-        try:
-            datas = self._client.hlen(name)
-            ret = result(error.SUCCEED, "", datas)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def hkeys(self, name):
-        try:
-            datas = self._client.hkeys(name)
-            ret = result(error.SUCCEED, "", datas)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def hvals(self, name):
-        try:
-            datas = self._client.hvals(name)
-            ret = result(error.SUCCEED, "", datas)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def hexists(self, name, key):
-        try:
-            datas = self._client.hexists(name, key)
-            ret = result(error.SUCCEED, "", datas)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def hdel(self, name, key):
-        try:
-            datas = self._client.hdel(name, key)
-            ret = result(error.SUCCEED, "", datas)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def hscan(self, name, cursor=0, match = None, count = None):
-        try:
-            pos, datas = self._client.hscan(name, cursor, match, count)
-            ret = result(error.SUCCEED, "", (pos, datas))
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def save(self):
-        try:
-            self._client.save()
-            ret = result(error.SUCCEED)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def flush_db(self):
-        try:
-            self._client.flushdb()
+            db = self._clientdb.drop_database(name)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -322,3 +277,64 @@ class dbvbase(baseobject):
             ret = parse_except(e)
         return ret
 
+def test_db():
+    client = dbvbase(name = name, host = "127.0.0.1", port = 37017, db = "test", user = "violas", password = "violas@palliums", newdb = True)
+    print(client.list_database_names().datas)
+    print(client.list_collection_names().datas)
+
+    client.use_ollection("baseinfo", create = True)
+
+    client.remove_all()
+
+    client.save("0001", {"name": "xml", "age":10, "sex":"cp"})
+    client.save("0002", {"name": "json", "age":11, "sex":"cp"})
+    client.save("0003", {"name": "c++", "age":12, "sex":"cp"})
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+
+    print("*" * 30)
+    client.remove_with_id("0001")
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+
+    print("*" * 30)
+    client.remove({"_id":"0003"})
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+
+    print("*" * 30)
+    client.insert_one({"_id":"1002", "name": "json", "age":11, "sex":"cp"})
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+
+    print("*" * 30)
+    client.insert_many([{"_id":"2002", "name": "js", "age":11, "sex":"cp"}, \
+            {"_id": "2001", "name": "lua", "age":"8"}
+            ])
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+
+    client.use_ollection("sub", create = True)
+    client.insert_one({"_id":"1002", "name": "json", "age":11, "sex":"cp"})
+    client.use_ollection("baseinfo", create = True)
+
+    print("*" * 30)
+    client.remove_all()
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+
+    print(client.list_database_names().datas)
+    print(client.list_collection_names().datas)
+
+    print("*" * 30 + "drop collection baseinfo")
+    client.drop_collection("baseinfo")
+    print(client.list_collection_names().datas)
+
+    print("*" * 30 + "drop db test")
+    client.drop_db("test")
+    print(client.list_database_names().datas)
+
+    
+
+if __name__ == "__main__":
+    test_db()
