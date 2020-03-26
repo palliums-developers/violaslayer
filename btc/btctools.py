@@ -41,7 +41,7 @@ def getblockcount():
     client = getbtcclient()
     ret = client.getblockcount()
     assert ret.state == error.SUCCEED, f"getblockcount() failed"
-    print(f"wallet balance:{ret.datas}")
+    print(f"block count:{ret.datas}")
 
 def getblockhash(index):
     client = getbtcclient()
