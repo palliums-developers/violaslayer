@@ -96,9 +96,9 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
-    def getblockforhash(self, blockhash):
+    def getblockwithhash(self, blockhash):
         try:
-            self._logger.debug(f"start getblockforhash({blockhash})")
+            self._logger.debug(f"start getblockwithhash({blockhash})")
             if len(blockhash) != 64:
                 ret = result(error.ARG_INVALID, f"blockhash must be of length 64 (not {len(blockhash)}, for '{blockhash}')")
                 self._logger.error(ret.message)
@@ -112,24 +112,24 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
-    def getblockforindex(self, index):
+    def getblockwithindex(self, index):
         try:
-            self._logger.debug(f"start getblockforindex({index})")
+            self._logger.debug(f"start getblockwithindex({index})")
             
             ret = self.getblockhash(index)
             if ret.state != error.SUCCEED:
                 return ret
 
-            ret = self.getblockforhash(ret.datas)
+            ret = self.getblockwithhash(ret.datas)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def getblocktxidsforhash(self, blockhash):
+    def getblocktxidswithhash(self, blockhash):
         try:
-            self._logger.debug(f"start getblocktxidsforhash({blockhash})")
+            self._logger.debug(f"start getblocktxidswithhash({blockhash})")
             
-            ret = self.getblockforhash(blockhash)
+            ret = self.getblockwithhash(blockhash)
             if ret.state != error.SUCCEED:
                 return ret
 
@@ -141,11 +141,11 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
-    def getblocktxidsforindex(self, index):
+    def getblocktxidswithindex(self, index):
         try:
-            self._logger.debug(f"start getblocktxidsforindex({index})")
+            self._logger.debug(f"start getblocktxidswithindex({index})")
             
-            ret = self.getblockforindex(index)
+            ret = self.getblockwithindex(index)
             if ret.state != error.SUCCEED:
                 return ret
 
@@ -191,13 +191,75 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
-    def gettxoutforn(self, txid, n):
+    def gettxoutinfromdata(self, tran):
+        try:
+            self._logger.debug(f"start gettxoutin({txid})")
+            datas = {
+                    "txid" : tran.get("txid"),
+                    "vin" : [{"txid": vin.get("txid"), "vout" : vin.get("vout"), "sequence": vin.get("sequence")} for vin in tran.get("vin")],
+                    "vout" : tran.get("vout")
+                    }
+
+            ret = result(error.SUCCEED, "", datas)
+            self._logger.info(f"result: vin count: {len(ret.datas.get('vin'))} , vout count: {len(ret.datas.get('vout'))}")
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def gettxin(self, txid):
+        try:
+            self._logger.debug(f"start gettxoutin({txid})")
+            ret = self.getrawtransaction(txid)
+            if ret.state != error.SUCCEED:
+                return ret
+            tran = ret.datas
+            datas = {
+                    "txid" : txid,
+                    "vin" : [{"txid": vin.get("txid"), "vout" : vin.get("vout"), "sequence": vin.get("sequence")} for vin in tran.get("vin")],
+                    }
+
+            ret = result(error.SUCCEED, "", datas)
+            self._logger.info(f"result: vin count: {len(ret.datas.get('vin'))}")
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def gettxinfromdata(self, tran):
+        try:
+            self._logger.debug(f"start gettxoutin({txid})")
+            datas = {
+                    "txid" : tran.get("txid"),
+                    "vin" : [{"txid": vin.get("txid"), "vout" : vin.get("vout"), "sequence": vin.get("sequence")} for vin in tran.get("vin")],
+                    }
+
+            ret = result(error.SUCCEED, "", datas)
+            self._logger.info(f"result: vin count: {len(ret.datas.get('vin'))}")
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def gettxoutwithn(self, txid, n):
         try:
             ret = self.gettxoutin(txid)
             if ret.state != error.SUCCEED:
                 return ret
 
             vouts = ret.datas.get("vout")
+            datas = None
+            for vout in vouts:
+                if vout.get("n") == n:
+                    ret = self.parsevout(vout)
+                    return ret
+
+            #not found txid vout n
+            ret = result(error.ARG_INVALID)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def gettxoutwithnfromdata(self, tran, n):
+        try:
+            vouts = tran.get("vout")
             datas = None
             for vout in vouts:
                 if vout.get("n") == n:

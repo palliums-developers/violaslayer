@@ -60,19 +60,19 @@ def test_btc():
     ok = check_result(ret, ret.datas, "0000000000000023d5e211d6681218cfbd39c97dc3bf21dd1b1d226d4af23688")
     teststate.update(ok)
 
-    ret = client.getblockforhash("0000000000000023d5e211d6681218cfbd39c97dc3bf21dd1b1d226d4af23688")
+    ret = client.getblockwithhash("0000000000000023d5e211d6681218cfbd39c97dc3bf21dd1b1d226d4af23688")
     ok = check_result(ret, ret.datas.get("merkleroot"), '732ba393120e497810db7ee33be2b595af82bc58c4e878e286761fbd363d5b3e')
     teststate.update(ok)
 
-    ret = client.getblockforindex(1612035)
+    ret = client.getblockwithindex(1612035)
     ok = check_result(ret, ret.datas.get("merkleroot"), '732ba393120e497810db7ee33be2b595af82bc58c4e878e286761fbd363d5b3e')
     teststate.update(ok)
 
-    ret = client.getblocktxidsforhash("0000000000000023d5e211d6681218cfbd39c97dc3bf21dd1b1d226d4af23688")
+    ret = client.getblocktxidswithhash("0000000000000023d5e211d6681218cfbd39c97dc3bf21dd1b1d226d4af23688")
     ok = check_result(ret, ret.datas[0], '9d6e259a2c07cb018b4338120ef826e2a5d7e1ae20ae221a699773bb568b4a14')
     teststate.update(ok)
 
-    ret = client.getblocktxidsforindex(1612035)
+    ret = client.getblocktxidswithindex(1612035)
     ok = check_result(ret, ret.datas[0], '9d6e259a2c07cb018b4338120ef826e2a5d7e1ae20ae221a699773bb568b4a14')
     teststate.update(ok)
 

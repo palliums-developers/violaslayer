@@ -75,6 +75,11 @@ class dbvbase(baseobject, pymongo.MongoClient):
         self.__collection_name = collection
         self._collection = self._client[collection]
 
+    def get_collection(self, collection, create = False):
+        if create == False and db not in self.list_collection_names().datas:
+            raise Exception(f"not found collection({collection}).")
+        return self._client[collection]
+
     def use_db(self, db, create = False):
         if create == False and db not in self.list_database_names().datas:
             raise Exception(f"not found db({db}).")

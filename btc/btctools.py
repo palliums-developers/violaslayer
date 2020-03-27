@@ -49,28 +49,28 @@ def getblockhash(index):
     assert ret.state == error.SUCCEED, f"getblockhash({index}) failed"
     print(f"blockhash({index}):{ret.datas}")
 
-def getblockforhash(blockhash):
+def getblockwithhash(blockhash):
     client = getbtcclient()
-    ret = client.getblockforhash(blockhash)
-    assert ret.state == error.SUCCEED, f"getblockforhash({blockhash}) failed"
+    ret = client.getblockwithhash(blockhash)
+    assert ret.state == error.SUCCEED, f"getblockwithhash({blockhash}) failed"
     json_print(ret.datas)
 
-def getblockforindex(index):
+def getblockwithindex(index):
     client = getbtcclient()
-    ret = client.getblockforindex(index)
-    assert ret.state == error.SUCCEED, f"getblockforindex({index}) failed"
+    ret = client.getblockwithindex(index)
+    assert ret.state == error.SUCCEED, f"getblockwithindex({index}) failed"
     json_print(ret.datas)
 
-def getblocktxidsforindex(index):
+def getblocktxidswithindex(index):
     client = getbtcclient()
-    ret = client.getblocktxidsforindex(index)
-    assert ret.state == error.SUCCEED, f"getblocktxidsforindex({index}) failed"
+    ret = client.getblocktxidswithindex(index)
+    assert ret.state == error.SUCCEED, f"getblocktxidswithindex({index}) failed"
     json_print(ret.datas)
 
-def getblocktxidsforhash(blockhash):
+def getblocktxidswithhash(blockhash):
     client = getbtcclient()
-    ret = client.getblocktxidsforhash(blockhash)
-    assert ret.state == error.SUCCEED, f"getblocktxidsforhash({blockhash}) failed"
+    ret = client.getblocktxidswithhash(blockhash)
+    assert ret.state == error.SUCCEED, f"getblocktxidswithhash({blockhash}) failed"
     json_print(ret.datas)
 
 def getrawtransaction(txid, verbose = True, blockhash = None):
@@ -85,23 +85,23 @@ def gettxoutin(txid):
     assert ret.state == error.SUCCEED, f"gettxoutin({txid}) failed"
     json_print(ret.datas)
 
-def gettxoutforn(txid, n):
+def gettxoutwithn(txid, n):
     client = getbtcclient()
-    ret = client.gettxoutforn(txid, n)
-    assert ret.state == error.SUCCEED, f"gettxoutforn({txid}, {n}) failed"
+    ret = client.gettxoutwithn(txid, n)
+    assert ret.state == error.SUCCEED, f"gettxoutwithn({txid}, {n}) failed"
     json_print(ret.datas)
 
 def init_args(pargs):
     pargs.append("help", "show arg list")
     pargs.append("getblockcount", "get block count.")
     pargs.append("getblockhash", "get block hash.", True, ["index"])
-    pargs.append("getblockforhash", "get block info with blockhash.", True, ["blockhash"])
-    pargs.append("getblockforindex", "get block info with index.", True, ["index"])
-    pargs.append("getblocktxidsforhash", "get block txid list with blockhash.", True, ["blockhash"])
-    pargs.append("getblocktxidsforindex", "get block txid list with index.", True, ["index"])
+    pargs.append("getblockwithhash", "get block info with blockhash.", True, ["blockhash"])
+    pargs.append("getblockwithindex", "get block info with index.", True, ["index"])
+    pargs.append("getblocktxidswithhash", "get block txid list with blockhash.", True, ["blockhash"])
+    pargs.append("getblocktxidswithindex", "get block txid list with index.", True, ["index"])
     pargs.append("getrawtransaction", "get raw transaction", True, ["txid", "verbose", "blockhash"])
     pargs.append("gettxoutin", "get transaction vin and vout", True, ["txid"])
-    pargs.append("gettxoutforn", "get transaction vout[n]", True, ["txid", "n"])
+    pargs.append("gettxoutwithn", "get transaction vout[n]", True, ["txid", "n"])
 
 def run(argc, argv):
     try:
@@ -137,22 +137,22 @@ def run(argc, argv):
             if len(arg_list) != 1:
                 pargs.exit_error_opt(opt)
             ret = getblockhash(int(arg_list[0]))
-        elif pargs.is_matched(opt, ["getblockforhash"]):
+        elif pargs.is_matched(opt, ["getblockwithhash"]):
             if len(arg_list) != 1:
                 pargs.exit_error_opt(opt)
-            ret = getblockforhash(arg_list[0])
-        elif pargs.is_matched(opt, ["getblockforindex"]):
+            ret = getblockwithhash(arg_list[0])
+        elif pargs.is_matched(opt, ["getblockwithindex"]):
             if len(arg_list) != 1:
                 pargs.exit_error_opt(opt)
-            ret = getblockforindex(int(arg_list[0]))
-        elif pargs.is_matched(opt, ["getblocktxidsforhash"]):
+            ret = getblockwithindex(int(arg_list[0]))
+        elif pargs.is_matched(opt, ["getblocktxidswithhash"]):
             if len(arg_list) != 1:
                 pargs.exit_error_opt(opt)
-            ret = getblocktxidsforhash(arg_list[0])
-        elif pargs.is_matched(opt, ["getblocktxidsforindex"]):
+            ret = getblocktxidswithhash(arg_list[0])
+        elif pargs.is_matched(opt, ["getblocktxidswithindex"]):
             if len(arg_list) != 1:
                 pargs.exit_error_opt(opt)
-            ret = getblocktxidsforindex(int(arg_list[0]))
+            ret = getblocktxidswithindex(int(arg_list[0]))
         elif pargs.is_matched(opt, ["getrawtransaction"]):
             if len(arg_list) not in (1, 2, 3):
                 pargs.exit_error_opt(opt)
@@ -170,10 +170,10 @@ def run(argc, argv):
             if len(arg_list) != 1:
                 pargs.exit_error_opt(opt)
             ret = gettxoutin(arg_list[0])
-        elif pargs.is_matched(opt, ["gettxoutforn"]):
+        elif pargs.is_matched(opt, ["gettxoutwithn"]):
             if len(arg_list) != 2:
                 pargs.exit_error_opt(opt)
-            ret = gettxoutforn(arg_list[0], int(arg_list[1]))
+            ret = gettxoutwithn(arg_list[0], int(arg_list[1]))
 
     logger.debug("end manage.main")
 
