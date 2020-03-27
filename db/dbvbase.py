@@ -22,7 +22,7 @@ from enum import Enum
 #module name
 name="dbvbase"
 
-class dbvbase(baseobject):
+class dbvbase(baseobject, pymongo.MongoClient):
     __key_latest_filter_ver     = "latest_filter_ver"
     __key_latest_saved_ver      = "latest_saved_ver"
     __key_min_valid_ver         = "min_valid_ver"
@@ -32,11 +32,11 @@ class dbvbase(baseobject):
         baseobject.__init__(self, name)
         self.__host = host
         self.__port = port
-        self.__db = db
+        self.__db_name = db
+        self.__collection_name = None
         self.__authdb = authdb
         self.__password = password
         self.__user = user
-        self._clientdb = None
         self._client = None
         self._collection = None
         ret = self.__connect(host, port, db, user, password, authdb, newdb)
@@ -46,6 +46,14 @@ class dbvbase(baseobject):
     def __del__(self):
         pass
 
+    @property
+    def db_name(self):
+        return self._db
+
+    @property
+    def collection_name(self):
+        return self.__collection_name
+
     def __connect(self, host, port, db, user = None, password = None, authdb = 'admin', newdb = False):
         try:
             self._logger.debug(f"connect db(host={host}, port={port}, db={db}, user = {user}, password={password}, authdb={authdb}, newdb={newdb})")
@@ -54,24 +62,25 @@ class dbvbase(baseobject):
                 login = f"{parse.quote_plus(user)}:{parse.quote_plus(password)}@"
             uri = f"mongodb://{login}{host}:{port}/{authdb}"
 
-            print(uri)
-            self._clientdb = pymongo.MongoClient(uri)
-            self._client = self.use_db(db, newdb)
-        
+            pymongo.MongoClient.__init__(self, uri)
+            self.use_db(db, newdb)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def use_ollection(self, collection, create = False):
+    def use_collection(self, collection, create = False):
         if create == False and db not in self.list_collection_names().datas:
             raise Exception(f"not found collection({collection}).")
+        self.__collection_name = collection
         self._collection = self._client[collection]
 
     def use_db(self, db, create = False):
         if create == False and db not in self.list_database_names().datas:
             raise Exception(f"not found db({db}).")
-        return self._clientdb[db]
+
+        self.__db = db
+        self._client =  self.get_database(db)
 
     def list_collection_names(self):
         try:
@@ -82,7 +91,7 @@ class dbvbase(baseobject):
         
     def list_database_names(self):
         try:
-            ret = result(error.SUCCEED, "", self._clientdb.list_database_names())
+            ret = result(error.SUCCEED, "",  super().list_database_names())
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -213,7 +222,7 @@ class dbvbase(baseobject):
 
     def drop_db(self, name):
         try:
-            db = self._clientdb.drop_database(name)
+            db = self.drop_database(name)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -282,7 +291,7 @@ def test_db():
     print(client.list_database_names().datas)
     print(client.list_collection_names().datas)
 
-    client.use_ollection("baseinfo", create = True)
+    client.use_collection("baseinfo", create = True)
 
     client.remove_all()
 
@@ -314,9 +323,9 @@ def test_db():
     for data in client.find_all().datas:
         print(f"find all:{data}")
 
-    client.use_ollection("sub", create = True)
+    client.use_collection("sub", create = True)
     client.insert_one({"_id":"1002", "name": "json", "age":11, "sex":"cp"})
-    client.use_ollection("baseinfo", create = True)
+    client.use_collection("baseinfo", create = True)
 
     print("*" * 30)
     client.remove_all()
@@ -328,6 +337,10 @@ def test_db():
 
     print("*" * 30 + "drop collection baseinfo")
     client.drop_collection("baseinfo")
+    print(client.list_collection_names().datas)
+
+    print("*" * 30 + "drop collection sub")
+    client.drop_collection("sub")
     print(client.list_collection_names().datas)
 
     print("*" * 30 + "drop db test")
