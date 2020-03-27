@@ -26,7 +26,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
     __key_latest_filter_ver     = "latest_filter_ver"
     __key_latest_saved_ver      = "latest_saved_ver"
     __key_min_valid_ver         = "min_valid_ver"
-
+    __id_state_info             = "state_info"
 
     def __init__(self, name, host, port, db, user = None, password = None, authdb = 'admin', newdb = False):
         baseobject.__init__(self, name)
@@ -48,7 +48,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     @property
     def db_name(self):
-        return self._db
+        return self.__db_name
 
     @property
     def collection_name(self):
@@ -98,14 +98,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def get_mod_name(self):
         try:
-            ret = self.get("mod_name")
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def set_mod_name(self, name):
-        try:
-            ret = self.set("mod_name", name)
+            ret = result(error.SUCCEED, "", self.db_name)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -127,7 +120,8 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def find_with_id(self, id):
         try:
-            ret = self.find_one({"_id": id})
+            datas = self._collection.find_one({"_id": id})
+            ret = result(error.SUCCEED, "", datas)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -135,6 +129,13 @@ class dbvbase(baseobject, pymongo.MongoClient):
         try:
             self._collection.update(key, {"$set":{value}}, multi)
             ret = result(error.SUCCEED)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def update_with_id(self, id, value):
+        try:
+            ret = self.update({"_id":id}, value)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -171,8 +172,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
         return ret
     def is_exists(self, key):
         try:
-            datas = self.find(key)
-            ret = result(error.SUCCEED, "", len(datas) > 0)
+            ret = result(error.SUCCEED, "", self.count(key).datas > 0)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -200,8 +200,8 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def count(self, key):
         try: 
-            self._collection.count(key)
-            ret = result(error.SUCCEED)
+            datas = self._collection.count(key)
+            ret = result(error.SUCCEED, "", datas)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -230,7 +230,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def set_latest_filter_ver(self, ver):
         try:
-            self._client.set(self.__key_latest_filter_ver, ver)
+            self.save(self.__id_state_info, {self.__key_latest_filter_ver:ver})
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -238,17 +238,18 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def get_latest_filter_ver(self):
         try:
-            datas = self._client.get(self.__key_latest_filter_ver)
-            if datas is None:
-                datas = '-1'
-            ret = result(error.SUCCEED, "", int(datas))
+            ret = self.find_with_id(self.__id_state_info)
+            if ret.state != error.SUCCEED:
+                return ret
+            
+            ret = result(error.SUCCEED, "", ret.datas.get(self.__key_latest_filter_ver, -1))
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def set_latest_saved_ver(self, ver):
         try:
-            self._client.set(self.__key_latest_saved_ver, ver)
+            self.save(self.__id_state_info, {self.__key_latest_saved_ver:ver})
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -256,32 +257,33 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def get_latest_saved_ver(self):
         try:
-            datas = self._client.get(self.__key_latest_saved_ver)
-            if datas is None:
-                datas = '-1'
-            ret = result(error.SUCCEED, "", int(datas))
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
+            ret = self.find_with_id(self.__id_state_info)
+            if ret.state != error.SUCCEED:
+                return ret
 
-    def list_version_keys(self, start = 0):
-        keys = self.keys().datas
-        return  sorted([int(key) for key in keys if key.isdigit() and int(key) >= start])
-
-    def get_min_valid_ver(self):
-        try:
-            datas = self._client.get(self.__key_min_valid_ver)
-            if datas is None:
-                datas = '0'
-            ret = result(error.SUCCEED, "", int(datas))
+            ret = result(error.SUCCEED, "", ret.datas.get(self.__key_latest_saved_ver, -1))
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def set_min_valid_ver(self, ver):
         try:
-            self._client.set(self.__key_min_valid_ver, ver)
+            ret = self.save(self.__id_state_info, {self.__key_min_valid_ver: ver})
+            if ret.state != error.SUCCEED:
+                return ret
+
             ret = result(error.SUCCEED)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def get_min_valid_ver(self):
+        try:
+            ret = self.find_with_id(self.__id_state_info)
+            if ret.state != error.SUCCEED:
+                return ret
+
+            ret = result(error.SUCCEED, "", ret.datas.get(self.__key_min_valid_ver, 0))
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -323,8 +325,14 @@ def test_db():
     for data in client.find_all().datas:
         print(f"find all:{data}")
 
+    print("*" * 30 + f" collection sub")
     client.use_collection("sub", create = True)
     client.insert_one({"_id":"1002", "name": "json", "age":11, "sex":"cp"})
+    client.set_latest_filter_ver(3)
+    print("*" * 30 + "get latest filter ver")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
+    print(client.get_latest_filter_ver().datas)
+
     client.use_collection("baseinfo", create = True)
 
     print("*" * 30)
@@ -335,15 +343,34 @@ def test_db():
     print(client.list_database_names().datas)
     print(client.list_collection_names().datas)
 
-    print("*" * 30 + "drop collection baseinfo")
+    print("*" * 30 + f"drop collection baseinfo.")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
     client.drop_collection("baseinfo")
     print(client.list_collection_names().datas)
 
+    print("*" * 30 + "get min valid ver")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
+    client.set_min_valid_ver(1)
+    print(client.get_min_valid_ver().datas)
+
+    print("*" * 30 + "get latest saved ver")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
+    client.set_latest_saved_ver(2)
+    print(client.get_latest_saved_ver().datas)
+
+
+    print("*" * 30 + "get latest filter ver")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
+    client.set_latest_filter_ver(3)
+    print(client.get_latest_filter_ver().datas)
+
     print("*" * 30 + "drop collection sub")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
     client.drop_collection("sub")
     print(client.list_collection_names().datas)
 
     print("*" * 30 + "drop db test")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
     client.drop_db("test")
     print(client.list_database_names().datas)
 
