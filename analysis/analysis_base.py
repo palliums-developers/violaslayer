@@ -15,7 +15,6 @@ import comm.result
 import comm.values
 from comm.result import result, parse_except
 from comm.error import error
-from db.dbv2b import dbv2b
 from btc.btcclient import btcclient
 from enum import Enum
 from db.dbvbase import dbvbase
@@ -57,7 +56,7 @@ class abase(baseobject):
 
     def __del__(self):
         if self._dbclient is not None:
-            self._dbclient.save()
+            pass
 
     def _connect_db(self, name, rconf):
         self._dbclient = None
@@ -111,5 +110,9 @@ class abase(baseobject):
         except Exception as e:
             ret = parse_except(e, transaction)
         return ret
+
+    def create_txout_id(self, txid, n):
+        return f"{txid}_{n}"
+
 
         

@@ -16,6 +16,8 @@ import comm.result
 import comm.values
 from comm.result import result, parse_except
 from comm.error import error
+from comm.functions import json_reset
+from comm.functions import json_print
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 #from .models import BtcRpc
 from baseobject import baseobject
@@ -106,7 +108,7 @@ class btcclient(baseobject):
             
             datas = self.__rpc_connection.getblock(blockhash)
 
-            ret = result(error.SUCCEED, "", datas)
+            ret = result(error.SUCCEED, "", json_reset(datas))
             self._logger.info(f"result: {len(ret.datas)}")
         except Exception as e:
             ret = parse_except(e)
@@ -165,9 +167,8 @@ class btcclient(baseobject):
                 datas = self.__rpc_connection.getrawtransaction(txid, verbose)
             else:
                 datas = self.__rpc_connection.getrawtransaction(txid, verbose, blockhash)
-            print(datas)
-            ret = result(error.SUCCEED, "", datas)
-            self._logger.info(f"result: {len(ret.datas)}")
+            ret = result(error.SUCCEED, "", json_reset(datas))
+            self._logger.info(f"result: {len(json_reset(ret.datas))}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -181,7 +182,7 @@ class btcclient(baseobject):
             tran = ret.datas
             datas = {
                     "txid" : txid,
-                    "vin" : [{"txid": vin.get("txid"), "vout" : vin.get("vout"), "sequence": vin.get("sequence")} for vin in tran.get("vin")],
+                    "vin" : [{"txid": vin.get("txid"), "vout" : vin.get("vout"), "coinbase": vin.get("coinbase"), "sequence": vin.get("sequence")} for vin in tran.get("vin")],
                     "vout" : tran.get("vout")
                     }
 
@@ -193,10 +194,10 @@ class btcclient(baseobject):
 
     def gettxoutinfromdata(self, tran):
         try:
-            self._logger.debug(f"start gettxoutin({txid})")
+            self._logger.debug(f"start gettxoutinfromdata({tran.get('txid')})")
             datas = {
                     "txid" : tran.get("txid"),
-                    "vin" : [{"txid": vin.get("txid"), "vout" : vin.get("vout"), "sequence": vin.get("sequence")} for vin in tran.get("vin")],
+                    "vin" : [{"txid": vin.get("txid"), "vout" : vin.get("vout"),"coinbase":vin.get("coinbase"), "sequence": vin.get("sequence")} for vin in tran.get("vin")],
                     "vout" : tran.get("vout")
                     }
 
@@ -215,7 +216,7 @@ class btcclient(baseobject):
             tran = ret.datas
             datas = {
                     "txid" : txid,
-                    "vin" : [{"txid": vin.get("txid"), "vout" : vin.get("vout"), "sequence": vin.get("sequence")} for vin in tran.get("vin")],
+                    "vin" : [{"txid": vin.get("txid"), "vout" : vin.get("vout"),"coinbase":vin.get("coinbase"), "sequence": vin.get("sequence")} for vin in tran.get("vin")],
                     }
 
             ret = result(error.SUCCEED, "", datas)
@@ -229,7 +230,7 @@ class btcclient(baseobject):
             self._logger.debug(f"start gettxoutin({txid})")
             datas = {
                     "txid" : tran.get("txid"),
-                    "vin" : [{"txid": vin.get("txid"), "vout" : vin.get("vout"), "sequence": vin.get("sequence")} for vin in tran.get("vin")],
+                    "vin" : [{"txid": vin.get("txid"), "vout" : vin.get("vout"), "coinbase":vin.get("coinbase") ,"sequence": vin.get("sequence")} for vin in tran.get("vin")],
                     }
 
             ret = result(error.SUCCEED, "", datas)
@@ -282,8 +283,8 @@ class btcclient(baseobject):
                 datas["type"] = scripti_pub_key.get("type")
                 datas["asm"] = scripti_pub_key.get("asm")
                 datas["hex"] = scripti_pub_key.get("hex")
-                if datas["type"] == "scripthash":
-                    datas["addresses"] = scripti_pub_key.get("addresses")
+                #if datas["type"] != "scripthash":
+                datas["addresses"] = scripti_pub_key.get("addresses")
 
             ret = result(error.SUCCEED, "", datas)
         except Exception as e:

@@ -24,9 +24,15 @@ name="dbvbase"
 
 class dbvbase(baseobject, pymongo.MongoClient):
     __key_latest_filter_ver     = "latest_filter_ver"
+    __key_latest_filter_state   = "latest_filter_state"
     __key_latest_saved_ver      = "latest_saved_ver"
     __key_min_valid_ver         = "min_valid_ver"
+    __key_latest_saved_txid     = "latest_saved_txid"
     __id_state_info             = "state_info"
+
+    class filterstate(Enum):
+        START       = 1,
+        COMPLETE    = 2
 
     def __init__(self, name, host, port, db, user = None, password = None, authdb = 'admin', newdb = False):
         baseobject.__init__(self, name)
@@ -70,7 +76,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
         return ret
 
     def use_collection(self, collection, create = False):
-        if create == False and db not in self.list_collection_names().datas:
+        if create == False and collection not in self.list_collection_names().datas:
             raise Exception(f"not found collection({collection}).")
         self.__collection_name = collection
         self._collection = self._client[collection]
@@ -126,13 +132,15 @@ class dbvbase(baseobject, pymongo.MongoClient):
     def find_with_id(self, id):
         try:
             datas = self._collection.find_one({"_id": id})
+            if datas is None:
+                datas = {}
             ret = result(error.SUCCEED, "", datas)
         except Exception as e:
             ret = parse_except(e)
         return ret
-    def update(self, key, value, multi = True):
+    def update(self, key, value, multi = True, upsert = True):
         try:
-            self._collection.update(key, {"$set":{value}}, multi)
+            self._collection.update(key, {"$set":value}, multi = multi, upsert = upsert)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -233,9 +241,28 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = parse_except(e)
         return ret
 
+    def set_latest_filter_state(self, state):
+        try:
+            self.update_with_id(self.__id_state_info, {self.__key_latest_filter_state:state.name})
+            ret = result(error.SUCCEED)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def get_latest_filter_state(self):
+        try:
+            ret = self.find_with_id(self.__id_state_info)
+            if ret.state != error.SUCCEED:
+                return ret
+            
+            ret = result(error.SUCCEED, "", ret.datas.get(self.__key_latest_filter_state, self.filterstate.COMPLETE.name))
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
     def set_latest_filter_ver(self, ver):
         try:
-            self.save(self.__id_state_info, {self.__key_latest_filter_ver:ver})
+            self.update_with_id(self.__id_state_info, {self.__key_latest_filter_ver:ver, self.__key_latest_filter_state:self.filterstate.START.name})
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -254,7 +281,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def set_latest_saved_ver(self, ver):
         try:
-            self.save(self.__id_state_info, {self.__key_latest_saved_ver:ver})
+            self.update_with_id(self.__id_state_info, {self.__key_latest_saved_ver:ver})
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -267,6 +294,25 @@ class dbvbase(baseobject, pymongo.MongoClient):
                 return ret
 
             ret = result(error.SUCCEED, "", ret.datas.get(self.__key_latest_saved_ver, -1))
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def set_latest_saved_txid(self, txid):
+        try:
+            self.update_with_id(self.__id_state_info, {self.__key_latest_saved_txid:txid})
+            ret = result(error.SUCCEED)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def get_latest_saved_txid(self):
+        try:
+            ret = self.find_with_id(self.__id_state_info)
+            if ret.state != error.SUCCEED:
+                return ret
+            
+            ret = result(error.SUCCEED, "", ret.datas.get(self.__key_latest_saved_txid))
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -289,6 +335,13 @@ class dbvbase(baseobject, pymongo.MongoClient):
                 return ret
 
             ret = result(error.SUCCEED, "", ret.datas.get(self.__key_min_valid_ver, 0))
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def get_state_info(self):
+        try:
+            ret = self.find_with_id(self.__id_state_info)
         except Exception as e:
             ret = parse_except(e)
         return ret

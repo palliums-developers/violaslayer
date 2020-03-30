@@ -66,3 +66,6 @@ class DecimalEncoder(json.JSONEncoder):
 
 def json_print(data):
     print(json.dumps(data, sort_keys=True, cls= DecimalEncoder, indent=5))
+
+def json_reset(data):
+    return json.loads((json.dumps(data, sort_keys=True, cls= DecimalEncoder, indent=5)))
