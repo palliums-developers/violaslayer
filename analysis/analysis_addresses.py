@@ -36,7 +36,7 @@ class addresses(abase):
         abase.stop(self)
         self.work_stop()
 
-    def save_address_txout(self, txid, txout, blockhash):
+    def save_address_txout_(self, txid, txout, blockhash):
         try:
             for vout in txout:
                 data = {}
@@ -49,6 +49,26 @@ class addresses(abase):
                     for address in addresses:
                         coll = self._dbclient.get_collection(address, create = True)
                         coll.save({"_id":self.create_txout_id(txid, voutfmt.get("n")), "value":voutfmt.get("value", 0.0), "n":voutfmt.get("n"), "txid":txid, "blockhash":blockhash})
+
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def save_address_txout(self, txid, txout, blockhash):
+        try:
+            coll = self._dbclient.get_collection("addresses", create = True)
+            for vout in txout:
+                data = {}
+                ret = self._vclient.parsevout(vout)
+                if ret.state != error.SUCCEED:
+                    return ret
+                voutfmt = ret.datas
+                addresses = voutfmt.get("addresses")
+                if addresses is not None and len(addresses) > 0:
+                    for address in addresses:
+                        print(address)
+                        coll.update({"_id":address}, \
+                                {"$push":{"txout": {"value":voutfmt.get("value", 0.0), "n":voutfmt.get("n"), "txid":txid, "blockhash":blockhash}}}, upsert = True)
 
         except Exception as e:
             ret = parse_except(e)

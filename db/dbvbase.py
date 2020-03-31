@@ -262,7 +262,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def set_latest_filter_ver(self, ver):
         try:
-            self.update_with_id(self.__id_state_info, {self.__key_latest_filter_ver:ver, self.__key_latest_filter_state:self.filterstate.START.name})
+            self.update_with_id(self.__id_state_info, {self.__key_latest_filter_ver:ver, self.__key_latest_filter_state:self.filterstate.START.name, self.__key_latest_saved_txid:""})
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)

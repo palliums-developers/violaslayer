@@ -109,7 +109,7 @@ class btcclient(baseobject):
             datas = self.__rpc_connection.getblock(blockhash)
 
             ret = result(error.SUCCEED, "", json_reset(datas))
-            self._logger.info(f"result: {len(ret.datas)}")
+            self._logger.info(f"result: {len(ret.datas.get('tx'))}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -168,7 +168,6 @@ class btcclient(baseobject):
             else:
                 datas = self.__rpc_connection.getrawtransaction(txid, verbose, blockhash)
             ret = result(error.SUCCEED, "", json_reset(datas))
-            self._logger.info(f"result: {len(json_reset(ret.datas))}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -278,13 +277,13 @@ class btcclient(baseobject):
             datas = {}
             datas["value"] = vout.get("value", 0.0)
             datas["n"] = vout.get("n")
-            scripti_pub_key = vout.get("scriptPubKey")
-            if scripti_pub_key is not None:
-                datas["type"] = scripti_pub_key.get("type")
-                datas["asm"] = scripti_pub_key.get("asm")
-                datas["hex"] = scripti_pub_key.get("hex")
+            script_pub_key = vout.get("scriptPubKey")
+            if script_pub_key is not None:
+                datas["type"] = script_pub_key.get("type")
+                datas["asm"] = script_pub_key.get("asm")
+                datas["hex"] = script_pub_key.get("hex")
                 #if datas["type"] != "scripthash":
-                datas["addresses"] = scripti_pub_key.get("addresses")
+                datas["addresses"] = script_pub_key.get("addresses")
 
             ret = result(error.SUCCEED, "", datas)
         except Exception as e:
