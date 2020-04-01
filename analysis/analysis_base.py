@@ -42,7 +42,8 @@ class abase(baseobject):
         TRANSACTION = 2,
         TXOUT       = 3,
         WALLET      = 4,
-        EXPROOF     = 5
+        EXPROOF     = 5,
+        OPTRANSACTION = 6,
 
     def __init__(self, name, dbconf, vnodes):
         baseobject.__init__(self, name)
@@ -78,7 +79,7 @@ class abase(baseobject):
         return self._min_valid_version
 
     def get_start_version(self, version):
-        return max(self.get_min_valid_version(), version)
+        return int(max(self.get_min_valid_version(), version))
 
     def stop(self):
         if self._vclient is not None:

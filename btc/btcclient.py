@@ -167,6 +167,12 @@ class btcclient(baseobject):
                 datas = self.__rpc_connection.getrawtransaction(txid, verbose)
             else:
                 datas = self.__rpc_connection.getrawtransaction(txid, verbose, blockhash)
+            for i, value in enumerate(datas["vout"]):
+                script_pub_key = datas["vout"][i]["scriptPubKey"]
+                if script_pub_key.get("type", "") == "nonstandard":
+                    script_pub_key["asm"] = ""
+                    script_pub_key["hex"] = ""
+
             ret = result(error.SUCCEED, "", json_reset(datas))
         except Exception as e:
             ret = parse_except(e)

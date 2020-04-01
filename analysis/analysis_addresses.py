@@ -65,8 +65,8 @@ class addresses(abase):
                 voutfmt = ret.datas
                 addresses = voutfmt.get("addresses")
                 if addresses is not None and len(addresses) > 0:
+                    self._logger.debug(f"txout addresses:{addresses}")
                     for address in addresses:
-                        print(address)
                         coll.update({"_id":address}, \
                                 {"$push":{"txout": {"value":voutfmt.get("value", 0.0), "n":voutfmt.get("n"), "txid":txid, "blockhash":blockhash}}}, upsert = True)
 

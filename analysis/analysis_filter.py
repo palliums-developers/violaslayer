@@ -91,6 +91,7 @@ class afilter(abase):
         except Exception as e:
             ret = parse_except(e)
         return ret
+
     def update_txout_state(self, txin, blockhash):
         try:
             coll = self._dbclient.get_collection(self.collection.TXOUT.name.lower(), create = True)
@@ -127,6 +128,27 @@ class afilter(abase):
             ret = parse_except(e)
         return ret
 
+    def has_opreturn(self, txout):
+        try:
+            find = False
+            for i, value in enumerate(txout):
+                script_pub_key = txout[i]["scriptPubKey"]
+                if script_pub_key.get("type", "") == "nulltype":
+                    find = True
+                    break
+            ret = result(error.SUCCEED, "", find)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def save_opreturn_txid(self, index, txid):
+        try:
+            coll = self._dbclient.get_collection(self.collection.OPTRANSACTION.name.lower(), create = True)
+            coll.insert_one({"_id":index, "txid":txid})
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
     def start(self):
         i = 0
         #init
@@ -139,7 +161,6 @@ class afilter(abase):
                 
             chain_latest_ver = ret.datas - 1
 
-
             ret = self._dbclient.get_latest_filter_state()
             assert ret.state == error.SUCCEED, f"get latest filter state failed.txid = {txid}"
             latest_filter_state = self._dbclient.filterstate[ret.datas]
@@ -149,10 +170,18 @@ class afilter(abase):
                 return ret
             start_version = self.get_start_version(ret.datas + 1)
 
+            #opreturn transaction index -> txid
+            ret = self._dbclient.get_latest_filter_ver()
+            if ret.state != error.SUCCEED:
+                return ret
+            latest_opreturn_index = ret.datas + 1
+
+            start_version = self.get_start_version(ret.datas + 1)
             latest_saved_txid = None
+
+            #pre not complete block txix, continue process it
             if latest_filter_state == self._dbclient.filterstate.START:
                 start_version = start_version - 1
-
                 ret = self._dbclient.get_latest_saved_txid()
                 assert ret.state == error.SUCCEED, f"get latest saved txid failed.txid = {txid}"
                 latest_saved_txid = ret.datas
@@ -173,7 +202,8 @@ class afilter(abase):
             self._logger.debug(f"latest filter state = {latest_filter_state.name}, latest saved txid = {latest_saved_txid}")
             while version < chain_latest_ver:
                 if self.work() == False:
-                    break
+                    log._logger.debug(f"recver stop command, next height: {version}")
+                    return result(error.WORK_STOP)
 
                 self._logger.debug(f"get block with height = {version}")
                 ret = self._vclient.getblockwithindex(version)
@@ -219,31 +249,43 @@ class afilter(abase):
                     #some txid is saved, next txid..
                     with self._dbclient.start_session(causal_consistency=True) as session:
                         with session.start_transaction():
-                             ret = self._vclient.getrawtransaction(txid = txid)
-                             assert ret.state == error.SUCCEED, f"get raw transaction failed.txid = {txid}"
-                             tran = ret.datas
+                            if self.work() == False:
+                               self._logger.debug(f"recver stop command, next txid: {txid}")
+                               return result(error.WORK_STOP)
 
-                             ret = self.save_transaction(txid, tran, blockhash)
-                             assert ret.state == error.SUCCEED, f"save transaction failed.txid = {txid}"
+                            ret = self._vclient.getrawtransaction(txid = txid)
+                            assert ret.state == error.SUCCEED, f"get raw transaction failed.txid = {txid}"
+                            tran = ret.datas
 
-                             ret = self._vclient.gettxoutinfromdata(tran)
-                             assert ret.state == error.SUCCEED, f"get transaction vout and vin failed.{txid}"
-                             txoutin = ret.datas
+                            ret = self.save_transaction(txid, tran, blockhash)
+                            assert ret.state == error.SUCCEED, f"save transaction failed.txid = {txid}"
 
-                             ret = self.save_txout(txid, ret.datas.get("vout"), blockhash)
-                             assert ret.state == error.SUCCEED, f"save txout failed.txid = {txid}"
+                            ret = self._vclient.gettxoutinfromdata(tran)
+                            assert ret.state == error.SUCCEED, f"get transaction vout and vin failed.{txid}"
+                            txoutin = ret.datas
 
-                             ret = self.update_txout_state(txoutin.get("vin"), blockhash)
-                             assert ret.state == error.SUCCEED, f"update txout failed.txid = {txid}"
+                            ret = self.save_txout(txid, ret.datas.get("vout"), blockhash)
+                            assert ret.state == error.SUCCEED, f"save txout failed.txid = {txid}"
 
-                             ret = self.save_address_txout(txid, txoutin.get("vout"), blockhash)
-                             assert ret.state == error.SUCCEED, f"save address map txout failed.txid = {txid}"
+                            ret = self.update_txout_state(txoutin.get("vin"), blockhash)
+                            assert ret.state == error.SUCCEED, f"update txout failed.txid = {txid}"
 
-                             #set latest saved txid
-                             ret = self._dbclient.set_latest_saved_txid(txid)
-                             #proof
+                            ret = self.save_address_txout(txid, txoutin.get("vout"), blockhash)
+                            assert ret.state == error.SUCCEED, f"save address map txout failed.txid = {txid}"
+                            
+                            if(self.has_opreturn(txoutin.get("vout"))).datas:
+                                ret = self.save_opreturn_txid(latest_opreturn_index, txid)
+                                assert ret.state == error.SUCCEED, f"save address map txout failed.txid = {txid}"
+                                latest_opreturn_index = latest_opreturn_index + 1
 
+                            #set latest saved txid
+                            ret = self._dbclient.set_latest_saved_txid(txid)
+                            #proof
+                            self._logger.debug(f"transaction parse is succeed. height:{version} txid:{txid}")
+
+                latest_filter_state = self._dbclient.filterstate.COMPLETE
                 ret = self._dbclient.set_latest_filter_state(self._dbclient.filterstate.COMPLETE)
+                #reset state for COMPLETE -- must be
                 if ret.state != error.SUCCEED:
                     return ret
                 #save to redis db

@@ -14,9 +14,9 @@ btc_conn = {'rpcuser':'btc',
 #db info type(vfilter vfilter lfilter v2b  l2b v2l)
 db_list=[
         #remote
-        {'host':'127.0.0.1', 'port':37017, 'db':'base','user':'violas', 'password':'violas@palliums', 'step':300},
-        {'host':'127.0.0.1', 'port':37017, 'db':'proof','user':'violas', 'password':'violas@palliums', 'step':300},
-        {'host':'127.0.0.1', 'port':37017, 'db':'addresses','user':'violas', 'password':'violas@palliums', 'step':300},
+        {'host':'127.0.0.1', 'port':37017, 'db':'base','user':'violas', 'password':'violas@palliums'},
+        {'host':'127.0.0.1', 'port':37017, 'db':'proof','user':'violas', 'password':'violas@palliums'},
+        {'host':'127.0.0.1', 'port':37017, 'db':'addresses','user':'violas', 'password':'violas@palliums'},
         ]
 
 looping_sleep={
