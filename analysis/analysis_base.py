@@ -34,16 +34,16 @@ class abase(baseobject):
     ##  exproof       -btc violas map   key = index (0~n)
 
     class txoutstate(Enum):
-        NOUSE       = 1,
+        NOUSE       = 1
         USED        = 2
 
     class collection(Enum):
-        BLOCKINFO   = 1,
-        TRANSACTION = 2,
-        TXOUT       = 3,
-        WALLET      = 4,
-        EXPROOF     = 5,
-        OPTRANSACTION = 6,
+        BLOCKINFO   = 1
+        TRANSACTION = 2
+        TXOUT       = 3
+        WALLET      = 4
+        EXPROOF     = 5
+        OPTRANSACTION = 6
 
     def __init__(self, name, dbconf, vnodes):
         baseobject.__init__(self, name)

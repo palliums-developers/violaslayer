@@ -32,7 +32,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
     __key_latest_opreturn_index = "latest_opreturn_index"
 
     class filterstate(Enum):
-        START       = 1,
+        START       = 1
         COMPLETE    = 2
 
     def __init__(self, name, host, port, db, user = None, password = None, authdb = 'admin', newdb = False):
