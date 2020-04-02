@@ -11,6 +11,9 @@ sudo apt-get install mongodb
 pymongo:[https://api.mongodb.com/python/current/installation.html]
 python3 -m easy_install pymongo
 
+##numpy
+python3 -m pip install numpy
+
 ## python3.6.9 or up
 
 # install
