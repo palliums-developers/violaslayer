@@ -25,6 +25,7 @@ from comm.functions import json_print
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 #from .models import BtcRpc
 from baseobject import baseobject
+import btc.parse_exchange as parse_exchange
 from enum import Enum
 
 #module name
@@ -178,15 +179,20 @@ class payload(baseobject):
         EX_MARK     = 0x3010
         UNKNOWN     = 0xFFFF
 
-    def __init__(self, name, payload):
+    def __init__(self, name):
         baseobject.__init__(self, name)
-        self.payload_hex= payload
         self.bigendian_flag = self.is_bigendian()
+        self._reset(None)
+
+    def _reset(self, payload):
+        self.payload_hex= payload
         self.tx_version = 0
         self.tx_type = self.txtype.UNKNOWN
-
-        #parse
-        self.parse()
+        self.op_code = self.optcodetype.OP_INVALIDOPCODE
+        self.__op_data = None
+        self.__op_size = 0
+        self.__op_mark = None
+        self.__proof_data = None
 
     def is_bigendian(self):
         #0x0001
@@ -194,6 +200,14 @@ class payload(baseobject):
         if val[0] == 1:
             return False
         return True
+
+    @property 
+    def op_code(self):
+        return self.__op_code
+
+    @op_code.setter
+    def op_code(self, code):
+        self.__op_code = code
 
     @property
     def tx_version(self):
@@ -219,59 +233,144 @@ class payload(baseobject):
     def payload_hex(self, payload):
         self.__payload = payload
 
+    @property
+    def op_data(self):
+        return self.__op_data
+
+    @op_data.setter
+    def op_data(self, data):
+        self.__op_data = data
+
+    @property
+    def op_size(self):
+        return self.__op_size 
+
+    @op_size.setter
+    def op_size(self, size):
+        self.__op_size = size
+
+    @property
+    def op_mark(self):
+        return self.__op_mark
+
+    @op_mark.setter
+    def op_mark(self, mark):
+        self.__op_mark = mark
+
+    @property
+    def proof_data(self):
+        return self.__proof_data 
+
+    @proof_data.setter
+    def proof_data(self, data):
+        self.__proof_data  = data
+    
+
     def is_allow_txtype(self, txtype):
         #EnumUtils.isValidEnum(self.txtype.class, txtype)
         return txtype in self.txtype._value2member_map_
 
-    def parse(self):
-        bdata = bytes.fromhex(self.payload_hex)
-        if bdata[0] != self.optcodetype.OP_RETURN.value:
-            self._logger.debug(f"{bdata[0]} not OP_RETURN({self.optcodetype.OP_RETURN.value}) ")
-            return False
-        size = struct.unpack_from('B', bdata, 2)[0]
-        data_offer = 3 #0~n
-        if size < self.optcodetype.OP_PUSHDATA1.value:
-            pass
-        if size == self.optcodetype.OP_PUSHDATA1.value:
-            size = struct.unpack_from('>B', bdata, 2)[0]
-            data_offer = data_offer + 1
-        elif size == self.optcodetype.OP_PUSHDATA2.value:
-            size = struct.unpack_from('>H', bdata, 2)[0]
+    
+    def parse_data(self):
+        try:
+            if self.tx_type == self.txtype.EX_START:
+                ret = parse_exchange.parse_ex_start(self.op_data)
+            elif self.txtype == self.txtype.EX_END:
+                ret = parse_exchange.parse_ex_end(self.op_data)
+            elif self.txtype == self.txtype.EX_CANCEL:
+                ret = parse_exchange.parse_ex_cancel(self.op_data)
+            elif self.txtype == self.txtype.BTC_MARK:
+                pass
+            else:
+                ret = result(error.TRAN_INFO_INVALID)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def parse(self, payload):
+        try:
+            self._reset(payload)
+            bdata = bytes.fromhex(self.payload_hex)
+            if bdata[0] != self.optcodetype.OP_RETURN.value:
+                self._logger.debug(f"{bdata[0]} not OP_RETURN({self.optcodetype.OP_RETURN.value}) ")
+                return False
+            size = struct.unpack_from('B', bdata, 2)[0]
+            data_offer = 3 #0~n
+            if size < self.optcodetype.OP_PUSHDATA1.value:
+                pass
+            if size == self.optcodetype.OP_PUSHDATA1.value:
+                size = struct.unpack_from('>B', bdata, 2)[0]
+                data_offer = data_offer + 1
+            elif size == self.optcodetype.OP_PUSHDATA2.value:
+                size = struct.unpack_from('>H', bdata, 2)[0]
+                data_offer = data_offer + 2
+            elif size == self.optcodetype.OP_PUSHDATA4.value:
+                size = struct.unpack_from('>I', bdata, 2)[0]
+                data_offer = data_offer + 4
+            
+            #OP_RETURN size(datas)
+            self.op_size = size
+
+            #opcode
+            opcode_value = struct.unpack_from('B', bdata, 0)[0]
+            self.op_code = self.optcodetype(opcode_value)
+
+            #violas mark
+            mark = struct.unpack_from('cccccc', bdata, data_offer)
+            self.op_mark = "".join([v.decode() for v in mark])
+            data_offer = data_offer + 6
+
+            self.tx_version = struct.unpack_from('>H', bdata, data_offer)[0]
             data_offer = data_offer + 2
-        elif size == self.optcodetype.OP_PUSHDATA4.value:
-            size = struct.unpack_from('>I', bdata, 2)[0]
-            data_offer = data_offer + 4
-        
-        #opcode
-        opcode_value = struct.unpack_from('B', bdata, 0)[0]
-        opcode = self.optcodetype(opcode_value)
 
-        #violas mark
-        mark = struct.unpack_from('cccccc', bdata, data_offer)
-        data_offer = data_offer + 6
+            tx_type = struct.unpack_from('>H', bdata, data_offer)[0]
+            self.tx_type = self.txtype(tx_type)
+            data_offer = data_offer + 2
 
-        self.tx_version = struct.unpack_from('>H', bdata, data_offer)[0]
-        data_offer = data_offer + 2
-        self.tx_type= struct.unpack_from('>H', bdata, data_offer)[0]
-        data_offer = data_offer + 2
+            self.op_data = bdata[data_offer:]
 
-        self._logger.debug(f"parse result: opcode = {opcode.name}, datasize = {size} mark = {mark} version = 0x{self.tx_version:02x}  type = 0x{self.tx_type:02x}")
+            ret = self.parse_data()    
+            if ret.state != error.SUCCEED:
+                return ret
 
-        print(struct.unpack_from('BBBcccccc', bdata, 0))
-
-
+            self.proof_data = ret.datas
+            datas = {
+                    "opcode" : self.op_code,
+                    "datasize": self.op_size,
+                    "mark" : self.op_mark,
+                    "version": self.tx_version,
+                    "type": self.tx_type,
+                    "proof": self.proof_data
+                    }
+            ret = result(error.SUCCEED, datas = datas) 
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
 
     #b2v
     #open_return + violas 
-opstr = "6a4c5276696f6c617300003000f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000000001ed048cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2"
-
+#opstr = "6a4c5276696f6c617300003000f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000000001ed048cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2"
+    
+opstr = "6a4c5276696f6c617300003000f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2"
+    ###txid: f30a9f9497b97aa5f95a46f1bd6fceeb26241686526068c309dee8d8fafc0a97
+    ###to_address:f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c6 
+    ###sequence: 20200110006
+    ###token:cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2
+   
+def check(src, dest):
+    return src == dest
 
 def test_np():
     #dt = np.dtype(np.int32)
     global opstr
-    pdata = payload(name, opstr)
-    print(f"os is bigendian: {pdata.is_bigendian()}")
+
+    pdata = payload(name)
+
+    pdata.parse(opstr)
+    json_print(pdata.proof_data)
+    
  
+    
 
 
 if __name__ == "__main__":
