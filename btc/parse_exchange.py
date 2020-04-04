@@ -32,7 +32,7 @@ def parse_ex_start(data):
         #receiver address  32 Hex
         data_offer = data_offer + 32
 
-        sequence = struct.unpack_from(">Q", data, data_offer)[0]
+        [sequence]= struct.unpack_from(">Q", data, data_offer)
         data_offer = data_offer + 8
 
         datas = {
@@ -41,7 +41,6 @@ def parse_ex_start(data):
                 "token" : data[data_offer:].hex()
                 }
 
-        print(datas)
         ret = result(error.SUCCEED, datas = datas)
     except Exception as e:
         ret = parse_except(e)
@@ -49,24 +48,70 @@ def parse_ex_start(data):
 
 def parse_ex_end(data):
     try:
-        pass
-        ret = result(error.SUCCEED)
+        if len(data) != 66:
+            return result(error.ARG_INVALID)
+        data_offer = 0
+
+        #receiver address  32 Hex
+        data_offer = data_offer + 32
+
+        [sequence, amount, version] = struct.unpack_from(">QQQ", data, data_offer)
+
+        datas = {
+                "to_address": data[:32].hex(),
+                "sequence" : sequence,
+                "amount" : amount,
+                "version" : version
+                }
+
+        ret = result(error.SUCCEED, datas = datas)
     except Exception as e:
         ret = parse_except(e)
     return ret
 
 def parse_ex_cancel(data):
     try:
-        pass
-        ret = result(error.SUCCEED)
+        if len(data) != 40:
+            return result(error.ARG_INVALID)
+        data_offer = 0
+
+        #receiver address  32 Hex
+        data_offer = data_offer + 32
+
+        [sequence] = struct.unpack_from(">Q", data, data_offer)
+        data_offer = data_offer + 8
+
+        datas = {
+                "to_address": data[:32].hex(),
+                "sequence" : sequence,
+                }
+
+        ret = result(error.SUCCEED, datas = datas)
     except Exception as e:
         ret = parse_except(e)
     return ret
 
 def parse_btc_mark(data):
     try:
-        pass
-        ret = result(error.SUCCEED)
+        if len(data) < 40:
+            return result(error.ARG_INVALID)
+        data_offer = 0
+
+        #receiver address  32 Hex
+        data_offer = data_offer + 32
+
+        [sequence, amount]= struct.unpack_from(">QQ", data, data_offer)
+        data_offer = data_offer + 16 
+
+        datas = {
+                "to_address": data[:32].hex(),
+                "sequence" : sequence,
+                "amount": amount,
+                "name": "".join(v for v in data[data_offer:])
+                }
+
+        print(datas)
+        ret = result(error.SUCCEED, datas = datas)
     except Exception as e:
         ret = parse_except(e)
     return ret
