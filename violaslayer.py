@@ -13,12 +13,9 @@ import log.logger
 import threading
 import stmanage
 from time import sleep, ctime
-import db
-import db.dbtrans
-import db.dbproof
 import comm.functions as fn
 from comm.result import parse_except
-from analysis import analysis_base, analysis_filter, analysis_proof
+from analysis import analysis_filter 
 import subprocess
 from enum import Enum
 
@@ -64,8 +61,9 @@ class works:
                 try:
                     dtype = "bfilter"
                     obj = analysis_filter.afilter(name="bfilter",  \
-                            dbconf=stmanage.get_db(dtype), nodes=stmanage.get_btc_conn())
-                    obj.set_step(stmanage.get_db(dtype).get("step", 1000))
+                            dbconf=stmanage.get_db("base"), \
+                            nodes=stmanage.get_btc_conn(), \
+                            adbconf=stmanage.get_db("addresses"))
                     self.set_work_obj(obj)
                     obj.start()
                 except Exception as e:
