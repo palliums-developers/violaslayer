@@ -69,7 +69,8 @@ class dbvbase(baseobject, pymongo.MongoClient):
                 login = f"{parse.quote_plus(user)}:{parse.quote_plus(password)}@"
             uri = f"mongodb://{login}{host}:{port}/{authdb}"
 
-            pymongo.MongoClient.__init__(self, uri)
+            #pymongo.MongoClient.__init__(self, uri, retryWrites=False)
+            pymongo.MongoClient.__init__(self, host=host, port=port, username=user, password=password, retryWrites=False)
             self.use_db(db, newdb)
             ret = result(error.SUCCEED)
         except Exception as e:
@@ -82,6 +83,10 @@ class dbvbase(baseobject, pymongo.MongoClient):
         self.__collection_name = collection
         self._collection = self._client[collection]
 
+    @property
+    def collection(self):
+        return self._collection
+
     def get_collection(self, collection, create = False):
         if create == False and db not in self.list_collection_names().datas:
             raise Exception(f"not found collection({collection}).")
@@ -93,6 +98,10 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
         self.__db = db
         self._client =  self.get_database(db)
+
+    @property 
+    def database(self):
+        return self._client
 
     def list_collection_names(self):
         try:
@@ -139,29 +148,58 @@ class dbvbase(baseobject, pymongo.MongoClient):
         except Exception as e:
             ret = parse_except(e)
         return ret
-    def update(self, key, value, multi = True, upsert = True):
+    def update(self, key, value, upsert = True, session=None):
         try:
-            self._collection.update(key, {"$set":value}, multi = multi, upsert = upsert)
+            self._collection.update_many(key, {"$set":value}, upsert = upsert, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def update_with_id(self, id, value):
+    def update_with_id(self, id, value, session=None):
         try:
-            ret = self.update({"_id":id}, value)
+            ret = self.update({"_id":id}, value, session=session)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def save(self, id, value):
+    def increase(self, key, value, upsert = True, session=None):
+        try:
+            self._collection.update_many(key, {"$inc":value}, upsert = upsert, session=session)
+            ret = result(error.SUCCEED)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def increase_with_id(self, id, value, session=None):
+        try:
+            ret = self.increase({"_id":id}, value, session=session)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def push(self, key, value, upsert = True, session=None):
+        try:
+            self._collection.update_many(key, {"$push":value}, upsert = upsert, session=session)
+            ret = result(error.SUCCEED)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def push_with_id(self, id, value, session=None):
+        try:
+            ret = self.increase({"_id":id}, value, session=session)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+    def save(self, id, value, session=None):
         try:
             datas = dict(value)
             if datas.get("_id") is None:
                 datas["_id"] = id
             elif id != datas.get("_id"):
                 return result(error.ARG_INVALID, f"id({id}) and value['_id']({value['_id']}) is not match.")
-            self._collection.save(datas)   
+            self._collection.replace_one({"_id":id}, value, session=session)   
             ret = result(error.SUCCEED)
 
         except Exception as e:
@@ -169,17 +207,17 @@ class dbvbase(baseobject, pymongo.MongoClient):
         return ret
 
 
-    def insert_one(self, value):
+    def insert_one(self, value, session=None):
         try:
-            self._collection.insert_one(value)   
+            self._collection.insert_one(value, session=session)   
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def insert_many(self, value):
+    def insert_many(self, value, session = None):
         try:
-            self._collection.insert_many(value)   
+            self._collection.insert_many(value, session=session)   
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -191,23 +229,31 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = parse_except(e)
         return ret
 
-    def remove(self, key):
+    def delete_one(self, key, session=None):
         try:
-            self._collection.remove(key)
+            self._collection.delete_one(key, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def remove_with_id(self, id):
+    def delete_many(self, key, session=None):
         try:
-            ret = self.remove({"_id": id})
+            self._collection.delete_many(key, session=session)
+            ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
-    def remove_all(self):
+
+    def delete_with_id(self, id, session=None):
         try:
-            ret = self.remove({})
+            ret = self.delete_one({"_id": id}, session=session)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+    def delete_all(self, session=None):
+        try:
+            ret = self.delete_many({}, session=session)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -242,9 +288,9 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = parse_except(e)
         return ret
 
-    def set_latest_filter_state(self, state):
+    def set_latest_filter_state(self, state, session=None):
         try:
-            self.update_with_id(self.__key_id_state_info, {self.__key_latest_filter_state:state.name})
+            self.update_with_id(self.__key_id_state_info, {self.__key_latest_filter_state:state.name}, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -261,9 +307,9 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = parse_except(e)
         return ret
 
-    def set_latest_filter_ver(self, ver):
+    def set_latest_filter_ver(self, ver, session=None):
         try:
-            self.update_with_id(self.__key_id_state_info, {self.__key_latest_filter_ver:ver, self.__key_latest_filter_state:self.filterstate.START.name, self.__key_latest_saved_txid:""})
+            self.update_with_id(self.__key_id_state_info, {self.__key_latest_filter_ver:ver, self.__key_latest_filter_state:self.filterstate.START.name, self.__key_latest_saved_txid:""}, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -280,9 +326,9 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = parse_except(e)
         return ret
 
-    def set_latest_saved_ver(self, ver):
+    def set_latest_saved_ver(self, ver, session=None):
         try:
-            self.update_with_id(self.__key_id_state_info, {self.__key_latest_saved_ver:ver})
+            self.update_with_id(self.__key_id_state_info, {self.__key_latest_saved_ver:ver}, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -299,9 +345,9 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = parse_except(e)
         return ret
 
-    def set_latest_saved_txid(self, txid):
+    def set_latest_saved_txid(self, txid, session=None):
         try:
-            self.update_with_id(self.__key_id_state_info, {self.__key_latest_saved_txid:txid})
+            self.update_with_id(self.__key_id_state_info, {self.__key_latest_saved_txid:txid}, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -318,9 +364,9 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = parse_except(e)
         return ret
 
-    def set_min_valid_ver(self, ver):
+    def set_min_valid_ver(self, ver, session=None):
         try:
-            ret = self.save(self.__key_id_state_info, {self.__key_min_valid_ver: ver})
+            ret = self.save(self.__key_id_state_info, {self.__key_min_valid_ver: ver}, session=session)
             if ret.state != error.SUCCEED:
                 return ret
 
@@ -340,9 +386,9 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = parse_except(e)
         return ret
 
-    def set_latest_opreturn_index(self, index):
+    def set_latest_opreturn_index(self, index, session=None):
         try:
-            ret = self.save(self.__key_id_state_info, {self.__key_latest_opreturn_index: index})
+            ret = self.save(self.__key_id_state_info, {self.__key_latest_opreturn_index: index}, session=session)
             if ret.state != error.SUCCEED:
                 return ret
 
@@ -375,8 +421,11 @@ def test_db():
 
     client.use_collection("baseinfo", create = True)
 
-    client.remove_all()
+    client.delete_all()
 
+    #client.collection.create_index([("_id", pymongo.ASCENDING)], name="idx_bi_id")
+    #client.collection.create_index([("name", pymongo.ASCENDING)], name="idx_bi_name")
+    #client.collection.create_index([("age", pymongo.ASCENDING)], name="idx_bi_age")
     client.save("0001", {"name": "xml", "age":10, "sex":"cp"})
     client.save("0002", {"name": "json", "age":11, "sex":"cp"})
     client.save("0003", {"name": "c++", "age":12, "sex":"cp"})
@@ -384,12 +433,12 @@ def test_db():
         print(f"find all:{data}")
 
     print("*" * 30)
-    client.remove_with_id("0001")
+    client.delete_with_id("0001")
     for data in client.find_all().datas:
         print(f"find all:{data}")
 
     print("*" * 30)
-    client.remove({"_id":"0003"})
+    client.delete_one({"_id":"0003"})
     for data in client.find_all().datas:
         print(f"find all:{data}")
 
@@ -415,8 +464,12 @@ def test_db():
 
     client.use_collection("baseinfo", create = True)
 
+    print("*"*30 + "index index_information")
+    print(client.collection.index_information())
+
+
     print("*" * 30)
-    client.remove_all()
+    client.delete_all()
     for data in client.find_all().datas:
         print(f"find all:{data}")
 
@@ -444,6 +497,7 @@ def test_db():
     client.set_latest_filter_ver(3)
     print(client.get_latest_filter_ver().datas)
 
+    
     print("*" * 30 + "drop collection sub")
     print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
     client.drop_collection("sub")

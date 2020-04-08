@@ -20,7 +20,6 @@ from comm.result import result, parse_except
 from comm.error import error
 from enum import Enum
 from analysis.analysis_base import abase
-from analysis.analysis_addresses import addresses
 #module name
 name="bfilter"
 
@@ -28,11 +27,9 @@ COINS = comm.values.COINS
 #load logging
     
 class afilter(abase):
-    def __init__(self, name = "bfilter", dbconf = None, nodes = None, adbconf = None, pdbconf = None):
+    def __init__(self, name = "bfilter", dbconf = None, nodes = None, pdbconf = None):
         abase.__init__(self, name, dbconf, nodes) #no-use defalut db
         self._addresses = None
-        if adbconf is not None:
-            self._addresses = addresses(name, adbconf, nodes)
 
     def __del__(self):
         abase.__del__(self)
@@ -51,16 +48,16 @@ class afilter(abase):
             ret = parse_except(e)
         return ret
 
-    def save_transaction(self, txid, tran, blockhash):
+    def save_transaction(self, txid, tran, blockhash, session=None):
         try:
             coll = self._dbclient.get_collection(self.collection.TRANSACTION.name.lower(), create = True)
-            coll.insert_one({"_id":txid, "tran":tran, "blockhash": blockhash})
+            coll.insert_one({"_id":txid, "tran":tran, "blockhash": blockhash}, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def save_txout(self, txid, txout, blockhash):
+    def save_txout(self, txid, txout, blockhash, session=None):
         try:
             coll = self._dbclient.get_collection(self.collection.TXOUT.name.lower(), create = True)
 
@@ -72,27 +69,37 @@ class afilter(abase):
                 #if id is exists, use pre state.  this case is  transaction in the same block ?????
                 data["state"] = self.txoutstate.NOUSE.name
                 data["vout"] = vout
+                data["txid"] = txid
                 data["blockhash"] = blockhash
 
                 ret = coll.find_one({"_id":data["_id"]})
                 if ret is not None and len(ret) > 0:
                     state = ret.get("state")
                     data["state"] = state
-                    coll.save(data)
+                    coll.update_one({"_id":data["_id"]}, {"$set":data}, session=session)
                     self._logger.info(f"update txout:{data}")
                     continue
                 datas.append(data)
 
             #may be use save ??????
             if len(datas) > 0:
-                coll.insert_many(datas)
+                coll.insert_many(datas, session=session)
 
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def update_txout_state(self, txin, blockhash):
+    def create_txout_index(self):
+        try:
+            coll = self._dbclient.get_collection(self.collection.TXOUT.name.lower(), create = True)
+            coll.createindex([("_id", pymongo.ASCENDING)], background=True, name="idx_txout_id")
+            ret = result(error.SUCCEED)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def update_txout_state(self, txin, blockhash, session=None):
         try:
             coll = self._dbclient.get_collection(self.collection.TXOUT.name.lower(), create = True)
             for vin in txin:
@@ -101,29 +108,19 @@ class afilter(abase):
                     continue
 
                 id = self.create_txout_id(vin.get("txid"), vin.get("vout"))
-                coll.update({"_id":id}, {"state":self.txoutstate.USED.name, "blockhash":blockhash}, upsert = True)
+                coll.update_one({"_id":id}, {"$set":{"state":self.txoutstate.USED.name, "blockhash":blockhash}}, upsert = True, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def reset_txout_state(self, txin, blockhash):
+    def reset_txout_state(self, txin, blockhash, session=None):
         try:
             coll = self._dbclient.get_collection(self.collection.TXOUT.name.lower(), create = True)
             for vin in txin:
                 id = self.create_txout_id(vin.get("txid"), vin.get("vout"))
-                coll.save(id, {"state":self.txoutstate.NOUSE.name})
+                coll.update_one({"_id":id}, {"$set":{"state":self.txoutstate.NOUSE.name}}, upsert= True, session=session)
             pass
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def save_address_txout(self, txid, txout, blockhash):
-        try:
-            if self._addresses is not None:
-                ret = self._addresses.save_address_txout(txid, txout, blockhash)
-            else:
-                ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -141,10 +138,25 @@ class afilter(abase):
             ret = parse_except(e)
         return ret
 
-    def save_opreturn_txid(self, index, txid):
+    def save_opreturn_txid(self, index, txid, session=None):
         try:
             coll = self._dbclient.get_collection(self.collection.OPTRANSACTION.name.lower(), create = True)
-            coll.insert_one({"_id":index, "txid":txid})
+            coll.insert_one({"_id":index, "txid":txid}, session=session)
+            ret = result(error.SUCCEED)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def init_collections(self):
+        try:
+            colls =  self._dbclient.list_collection_names().datas
+            for collname in self.collection:
+                if collname.name.lower() in colls:
+                    continue
+                self._logger.debug(f"create collection:{collname.name.lower()}")
+                coll = self._dbclient.get_collection(collname.name.lower(), create = True)
+                coll.update_many({"_id":"collname"}, {"$set":{"name":collname.name.lower()}}, upsert=True)
+            ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -155,6 +167,7 @@ class afilter(abase):
         try:
             self._logger.debug("start filter work")
             self._dbclient.use_collection("datainfo", True)
+            self.init_collections()
             ret = self._vclient.getblockcount();
             if ret.state != error.SUCCEED:
                 return ret
@@ -202,7 +215,7 @@ class afilter(abase):
             self._logger.debug(f"latest filter state = {latest_filter_state.name}, latest saved txid = {latest_saved_txid}")
             while version < chain_latest_ver:
                 if self.work() == False:
-                    log._logger.debug(f"recver stop command, next height: {version}")
+                    self._logger.debug(f"recver stop command, next height: {version}")
                     return result(error.WORK_STOP)
 
                 self._logger.debug(f"get block with height = {version}")
@@ -245,10 +258,10 @@ class afilter(abase):
 
                     #remove datas with txid == latest_saved_ver  ????
 
-                for txid in txids:
                     #some txid is saved, next txid..
-                    with self._dbclient.start_session(causal_consistency=True) as session:
-                        with session.start_transaction():
+                with self._dbclient.start_session(causal_consistency=True) as session:
+                    with session.start_transaction():
+                        for txid in txids:
                             if self.work() == False:
                                self._logger.debug(f"recver stop command, next txid: {txid}")
                                return result(error.WORK_STOP)
@@ -257,29 +270,27 @@ class afilter(abase):
                             assert ret.state == error.SUCCEED, f"get raw transaction failed.txid = {txid}"
                             tran = ret.datas
 
-                            ret = self.save_transaction(txid, tran, blockhash)
+                            ret = self.save_transaction(txid, tran, blockhash, session=session)
                             assert ret.state == error.SUCCEED, f"save transaction failed.txid = {txid}"
 
                             ret = self._vclient.gettxoutinfromdata(tran)
                             assert ret.state == error.SUCCEED, f"get transaction vout and vin failed.{txid}"
                             txoutin = ret.datas
 
-                            ret = self.save_txout(txid, ret.datas.get("vout"), blockhash)
+                            ret = self.save_txout(txid, ret.datas.get("vout"), blockhash, session=session)
                             assert ret.state == error.SUCCEED, f"save txout failed.txid = {txid}"
 
-                            ret = self.update_txout_state(txoutin.get("vin"), blockhash)
+                            ret = self.update_txout_state(txoutin.get("vin"), blockhash, session=session)
                             assert ret.state == error.SUCCEED, f"update txout failed.txid = {txid}"
-
-                            ret = self.save_address_txout(txid, txoutin.get("vout"), blockhash)
-                            assert ret.state == error.SUCCEED, f"save address map txout failed.txid = {txid}"
                             
                             if(self.has_opreturn(txoutin.get("vout"))).datas:
-                                ret = self.save_opreturn_txid(latest_opreturn_index, txid)
+                                ret = self.save_opreturn_txid(latest_opreturn_index, txid, session=session)
                                 assert ret.state == error.SUCCEED, f"save address map txout failed.txid = {txid}"
                                 latest_opreturn_index = latest_opreturn_index + 1
 
                             #set latest saved txid
-                            ret = self._dbclient.set_latest_saved_txid(txid)
+                            ret = self._dbclient.set_latest_saved_txid(txid,session=session)
+                            assert ret.state == error.SUCCEED, f"update latest saved txid failed.txid = {txid}"
                             #proof
                             self._logger.debug(f"transaction parse is succeed. height:{version} txid:{txid}")
 

@@ -62,8 +62,7 @@ class works:
                     dtype = "bfilter"
                     obj = analysis_filter.afilter(name="bfilter",  \
                             dbconf=stmanage.get_db("base"), \
-                            nodes=stmanage.get_btc_conn(), \
-                            adbconf=stmanage.get_db("addresses"))
+                            nodes=stmanage.get_btc_conn())
                     self.set_work_obj(obj)
                     obj.start()
                 except Exception as e:
