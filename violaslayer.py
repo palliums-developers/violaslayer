@@ -67,6 +67,7 @@ class works:
                     obj.start()
                 except Exception as e:
                     parse_except(e)
+                break
                 sleep(nsec)
         except Exception as e:
             parse_except(e)

@@ -150,6 +150,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
         return ret
     def update(self, key, value, upsert = True, session=None):
         try:
+            print(f"vaue: {value}")
             self._collection.update_many(key, {"$set":value}, upsert = upsert, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:

@@ -259,13 +259,13 @@ class afilter(abase):
                     #remove datas with txid == latest_saved_ver  ????
 
                     #some txid is saved, next txid..
-                with self._dbclient.start_session(causal_consistency=True) as session:
-                    with session.start_transaction():
-                        for txid in txids:
-                            if self.work() == False:
-                               self._logger.debug(f"recver stop command, next txid: {txid}")
-                               return result(error.WORK_STOP)
+                for txid in txids:
+                    if self.work() == False:
+                       self._logger.debug(f"recver stop command, next txid: {txid}")
+                       return result(error.WORK_STOP)
 
+                    with self._dbclient.start_session(causal_consistency=True) as session:
+                       with session.start_transaction():
                             ret = self._vclient.getrawtransaction(txid = txid)
                             assert ret.state == error.SUCCEED, f"get raw transaction failed.txid = {txid}"
                             tran = ret.datas
