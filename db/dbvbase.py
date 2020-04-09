@@ -501,7 +501,6 @@ def test_read_db():
     print("*" * 30 + "get latest filter ver")
     print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
     print(client.get_latest_filter_ver().datas)
-    print("*" * 30 + "drop collection sub")
     print(f"client address: {client.address}")
     print(f"collection red_preference: {client.collection.read_preference}")
 
