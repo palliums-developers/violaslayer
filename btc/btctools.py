@@ -77,6 +77,7 @@ def getrawtransaction(txid, verbose = True, blockhash = None):
     client = getbtcclient()
     ret = client.getrawtransaction(txid, verbose, blockhash)
     assert ret.state == error.SUCCEED, f"getrawtransaction({txid}, {verbose}, {blockhash}) failed"
+    print(f"size: {ret.datas.get('vinsize') + ret.datas.get('voutsize')}")
     json_print(ret.datas)
 
 def gettxoutin(txid):

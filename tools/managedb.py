@@ -33,7 +33,7 @@ logger = log.logger.getLogger(name)
 
 class managedb(dbvbase):
     def __init__(self, name, rconf):
-        dbvbase.__init__(self, name, rconf.get("host", "127.0.0.1"), rconf.get("port", 37017), rconf.get("db"), rconf.get("user", None), rconf.get("password", None), rconf.get("authdb", "admin"))
+        dbvbase.__init__(self, name, rconf.get("host", "127.0.0.1:37017"), rconf.get("db"), rconf.get("user", None), rconf.get("password", None), rconf.get("authdb", "admin"), rsname=rconf.get("rsname","rsviolas"))
 
 def get_basedb():
     return managedb(name, stmanage.get_db("base"))

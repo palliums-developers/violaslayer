@@ -167,6 +167,8 @@ class btcclient(baseobject):
                 datas = self.__rpc_connection.getrawtransaction(txid, verbose)
             else:
                 datas = self.__rpc_connection.getrawtransaction(txid, verbose, blockhash)
+            datas["vinsize"] = len(datas.get("vin"))
+            datas["voutsize"] = len(datas.get("vout"))
             for i, value in enumerate(datas["vout"]):
                 script_pub_key = datas["vout"][i]["scriptPubKey"]
                 if script_pub_key.get("type", "") == "nonstandard":

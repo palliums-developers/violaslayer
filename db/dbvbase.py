@@ -75,7 +75,6 @@ class dbvbase(baseobject, pymongo.MongoClient):
         try:
             self._logger.debug(f"connect db(hosts={hosts}, db={db}, user = {user}, password={password}, authdb={authdb}, newdb={newdb})")
             uri = self.__get_connect_db_uri(hosts = hosts, user = user, password = password, authdb = authdb, rsname = rsname)
-            print(uri)
             pymongo.MongoClient.__init__(self, uri, retryWrites=False, appname="violaslayer", readPreference="secondaryPreferred")
             self.use_db(db, newdb)
             ret = result(error.SUCCEED)
@@ -155,7 +154,6 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def update(self, key, value, upsert = True, session=None):
         try:
-            print(f"vaue: {value}")
             self._collection.update_many(key, {"$set":value}, upsert = upsert, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:

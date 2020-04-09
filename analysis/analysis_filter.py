@@ -27,9 +27,8 @@ COINS = comm.values.COINS
 #load logging
     
 class afilter(abase):
-    def __init__(self, name = "bfilter", dbconf = None, nodes = None, pdbconf = None):
+    def __init__(self, name = "bfilter", dbconf = None, nodes = None):
         abase.__init__(self, name, dbconf, nodes) #no-use defalut db
-        self._addresses = None
 
     def __del__(self):
         abase.__del__(self)
@@ -264,11 +263,21 @@ class afilter(abase):
                        self._logger.debug(f"recver stop command, next txid: {txid}")
                        return result(error.WORK_STOP)
 
-                    with self._dbclient.start_session(causal_consistency=True) as session:
-                       with session.start_transaction():
-                            ret = self._vclient.getrawtransaction(txid = txid)
-                            assert ret.state == error.SUCCEED, f"get raw transaction failed.txid = {txid}"
-                            tran = ret.datas
+                    ret = self._vclient.getrawtransaction(txid = txid)
+                    assert ret.state == error.SUCCEED, f"get raw transaction failed.txid = {txid}"
+                    tran = ret.datas
+                    tran["hex"] = ""
+
+                    tran_size = (tran.get("vinsize", 0) + tran.get("voutsize", 0)) * 4000
+                    use_session = True
+                    session = None
+                    if tran_size >= 16793625: #transaction size must be < 16M
+                        use_session = False
+
+                    with self._dbclient.start_session(causal_consistency=True) as sessiondb:
+                       with sessiondb.start_transaction():
+                            if use_session:
+                                session = sessiondb
 
                             ret = self.save_transaction(txid, tran, blockhash, session=session)
                             assert ret.state == error.SUCCEED, f"save transaction failed.txid = {txid}"
@@ -312,7 +321,7 @@ class afilter(abase):
 
 
 def works():
-    filter = afilter(name, stmanage.get_db("base"),  stmanage.get_btc_conn(), stmanage.get_db("addresses"))
+    filter = afilter(name, stmanage.get_db("base"),  stmanage.get_btc_conn())
     def signal_stop(signal, frame):        
         filter.stop()
     try:
