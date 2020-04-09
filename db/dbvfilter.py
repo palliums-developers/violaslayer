@@ -27,8 +27,8 @@ from enum import Enum
 name="dbvfilter"
 
 class dbvfilter(dbvbase):
-    def __init__(self, name, host, port, db, passwd = None):
-        dbvbase.__init__(self, name, host, port, db, passwd)
+    def __init__(self, name, host,  db, passwd = None):
+        dbvbase.__init__(self, name, port, db, passwd)
 
     def __del__(self):
         dbvbase.__del__(self)

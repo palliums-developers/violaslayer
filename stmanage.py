@@ -17,7 +17,7 @@ def get_looping_sleep(mtype):
 def get_db(mtype):
     try:
         dbs = [dict for dict in setting.db_list if dict.get("db") == mtype and mtype is not None]
-        if dbs is not None and len(dbs) > 0:
+        if len(dbs) > 0:
             return dbs[0]
     except Exception as e:
         parse_except(e)
@@ -39,7 +39,7 @@ def get_traceback_limit():
 
 def get_conf():
     infos = {}
-    mtypes = ["v2b", "v2l", "l2v", "b2v", "vfilter", "lfilter"]
+    mtypes = ["bfilter"]
     for mtype in mtypes:
         info = {}
         info["db"] = get_db(mtype)

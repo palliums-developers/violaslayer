@@ -62,7 +62,7 @@ class abase(baseobject):
     def _connect_db(self, name, rconf):
         self._dbclient = None
         if rconf is not None:
-            self._dbclient = dbvbase(name, rconf.get("host", "127.0.0.1"), rconf.get("port", 37017), rconf.get("db"), rconf.get("user", None), rconf.get("password", None), rconf.get("authdb", "admin"), rconf.get("newdb", True))
+            self._dbclient = dbvbase(name, rconf.get("host", "127.0.0.1:37017"), rconf.get("db"), rconf.get("user", None), rconf.get("password", None), rconf.get("authdb", "admin"), newdb = rconf.get("newdb", True), rsname=rconf.get("rsname", None))
         return self._dbclient
 
     def _connect_btc(self, name, node):

@@ -3,6 +3,7 @@
 btc exchange vtoken db
 '''
 import operator
+from functools import reduce
 import sys,os
 sys.path.append(os.getcwd())
 sys.path.append("..")
@@ -35,18 +36,18 @@ class dbvbase(baseobject, pymongo.MongoClient):
         START       = 1
         COMPLETE    = 2
 
-    def __init__(self, name, host, port, db, user = None, password = None, authdb = 'admin', newdb = False):
+    def __init__(self, name, hosts, db, user = None, password = None, authdb = 'admin', rsname = None, newdb = False):
         baseobject.__init__(self, name)
-        self.__host = host
-        self.__port = port
+        self.__hosts = hosts
         self.__db_name = db
         self.__collection_name = None
         self.__authdb = authdb
+        self.__rsname = rsname
         self.__password = password
         self.__user = user
         self._client = None
         self._collection = None
-        ret = self.__connect(host, port, db, user, password, authdb, newdb)
+        ret = self.__connect(hosts, db, user, password, authdb, rsname, newdb)
         if ret.state != error.SUCCEED:
             raise Exception(f"connect db({db}) failed")
 
@@ -61,16 +62,29 @@ class dbvbase(baseobject, pymongo.MongoClient):
     def collection_name(self):
         return self.__collection_name
 
-    def __connect(self, host, port, db, user = None, password = None, authdb = 'admin', newdb = False):
-        try:
-            self._logger.debug(f"connect db(host={host}, port={port}, db={db}, user = {user}, password={password}, authdb={authdb}, newdb={newdb})")
-            login = ""
-            if user is not None or password is None:
-                login = f"{parse.quote_plus(user)}:{parse.quote_plus(password)}@"
-            uri = f"mongodb://{login}{host}:{port}/{authdb}"
+    def __get_connect_db_uri(self, hosts, user, password, authdb, rsname):
 
-            #pymongo.MongoClient.__init__(self, uri, retryWrites=False)
-            pymongo.MongoClient.__init__(self, host=host, port=port, username=user, password=password, retryWrites=False)
+        login = ""
+        host = ",".join(hosts)
+        if user is not None or password is None:
+            login = f"{parse.quote_plus(user)}:{parse.quote_plus(password)}@"
+        uri = f"mongodb://{login}{host}"
+
+        if authdb is not None:
+            uri += f"/{authdb}"
+        if rsname is not None:
+            uri += f"?replicaSet={rsname}"
+        return uri
+
+    def __connect(self, hosts, db, user = None, password = None, authdb = 'admin', rsname = None, newdb = False):
+        try:
+            self._logger.debug(f"connect db(hosts={hosts}, db={db}, user = {user}, password={password}, authdb={authdb}, newdb={newdb})")
+
+            uri = self.__get_connect_db_uri(hosts = hosts, user = user, password = password, authdb = authdb, rsname = rsname)
+            
+            print(uri)
+            pymongo.MongoClient.__init__(self, uri, retryWrites=False, appname="violaslayer", readPreference="secondaryPreferred")
+
             self.use_db(db, newdb)
             ret = result(error.SUCCEED)
         except Exception as e:
@@ -416,7 +430,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
         return ret
 
 def test_db():
-    client = dbvbase(name = name, host = "127.0.0.1", port = 37017, db = "test", user = "violas", password = "violas@palliums", newdb = True)
+    client = dbvbase(name = name, hosts = ["127.0.0.1:37017", "127.0.0.1:37018"], db = "test", user = "violas", password = "violas@palliums", rsname="rsviolas", newdb = True)
     print(client.list_database_names().datas)
     print(client.list_collection_names().datas)
 
