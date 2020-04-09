@@ -19,10 +19,9 @@ from comm.error import error
 from comm.result import result, parse_except
 from baseobject import baseobject
 from enum import Enum
-
+from pymongo import ReadPreference
 #module name
 name="dbvbase"
-
 class dbvbase(baseobject, pymongo.MongoClient):
     __key_latest_filter_ver     = "latest_filter_ver"
     __key_latest_filter_state   = "latest_filter_state"
@@ -31,11 +30,9 @@ class dbvbase(baseobject, pymongo.MongoClient):
     __key_latest_saved_txid     = "latest_saved_txid"
     __key_id_state_info         = "state_info"
     __key_latest_opreturn_index = "latest_opreturn_index"
-
     class filterstate(Enum):
         START       = 1
         COMPLETE    = 2
-
     def __init__(self, name, hosts, db, user = None, password = None, authdb = 'admin', rsname = None, newdb = False):
         baseobject.__init__(self, name)
         self.__hosts = hosts
@@ -63,13 +60,11 @@ class dbvbase(baseobject, pymongo.MongoClient):
         return self.__collection_name
 
     def __get_connect_db_uri(self, hosts, user, password, authdb, rsname):
-
         login = ""
         host = ",".join(hosts)
         if user is not None or password is None:
             login = f"{parse.quote_plus(user)}:{parse.quote_plus(password)}@"
         uri = f"mongodb://{login}{host}"
-
         if authdb is not None:
             uri += f"/{authdb}"
         if rsname is not None:
@@ -79,12 +74,9 @@ class dbvbase(baseobject, pymongo.MongoClient):
     def __connect(self, hosts, db, user = None, password = None, authdb = 'admin', rsname = None, newdb = False):
         try:
             self._logger.debug(f"connect db(hosts={hosts}, db={db}, user = {user}, password={password}, authdb={authdb}, newdb={newdb})")
-
             uri = self.__get_connect_db_uri(hosts = hosts, user = user, password = password, authdb = authdb, rsname = rsname)
-            
             print(uri)
             pymongo.MongoClient.__init__(self, uri, retryWrites=False, appname="violaslayer", readPreference="secondaryPreferred")
-
             self.use_db(db, newdb)
             ret = result(error.SUCCEED)
         except Exception as e:
@@ -105,13 +97,11 @@ class dbvbase(baseobject, pymongo.MongoClient):
         if create == False and db not in self.list_collection_names().datas:
             raise Exception(f"not found collection({collection}).")
         return self._client[collection]
-
     def use_db(self, db, create = False):
         if create == False and db not in self.list_database_names().datas:
             raise Exception(f"not found db({db}).")
-
         self.__db = db
-        self._client =  self.get_database(db)
+        self._client =  self.get_database(db, read_preference=ReadPreference.SECONDARY_PREFERRED)
 
     @property 
     def database(self):
@@ -123,7 +113,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
         except Exception as e:
             ret = parse_except(e)
         return ret
-        
+
     def list_database_names(self):
         try:
             ret = result(error.SUCCEED, "",  super().list_database_names())
@@ -162,6 +152,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
         except Exception as e:
             ret = parse_except(e)
         return ret
+
     def update(self, key, value, upsert = True, session=None):
         try:
             print(f"vaue: {value}")
@@ -207,6 +198,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
         except Exception as e:
             ret = parse_except(e)
         return ret
+
     def save(self, id, value, session=None):
         try:
             datas = dict(value)
@@ -216,11 +208,9 @@ class dbvbase(baseobject, pymongo.MongoClient):
                 return result(error.ARG_INVALID, f"id({id}) and value['_id']({value['_id']}) is not match.")
             self._collection.replace_one({"_id":id}, value, session=session)   
             ret = result(error.SUCCEED)
-
         except Exception as e:
             ret = parse_except(e)
         return ret
-
 
     def insert_one(self, value, session=None):
         try:
@@ -237,6 +227,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
         except Exception as e:
             ret = parse_except(e)
         return ret
+
     def is_exists(self, key):
         try:
             ret = result(error.SUCCEED, "", self.count(key).datas > 0)
@@ -266,6 +257,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
         except Exception as e:
             ret = parse_except(e)
         return ret
+
     def delete_all(self, session=None):
         try:
             ret = self.delete_many({}, session=session)
@@ -280,12 +272,14 @@ class dbvbase(baseobject, pymongo.MongoClient):
         except Exception as e:
             ret = parse_except(e)
         return ret
+
     def count_all(self):
         try: 
             ret = self.count({})
         except Exception as e:
             ret = parse_except(e)
         return ret
+
     def drop_collection(self, name):
         try:
             collection = self._client[name]
@@ -316,7 +310,6 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = self.find_with_id(self.__key_id_state_info)
             if ret.state != error.SUCCEED:
                 return ret
-            
             ret = result(error.SUCCEED, "", ret.datas.get(self.__key_latest_filter_state, self.filterstate.COMPLETE.name))
         except Exception as e:
             ret = parse_except(e)
@@ -335,7 +328,6 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = self.find_with_id(self.__key_id_state_info)
             if ret.state != error.SUCCEED:
                 return ret
-            
             ret = result(error.SUCCEED, "", ret.datas.get(self.__key_latest_filter_ver, -1))
         except Exception as e:
             ret = parse_except(e)
@@ -354,7 +346,6 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = self.find_with_id(self.__key_id_state_info)
             if ret.state != error.SUCCEED:
                 return ret
-
             ret = result(error.SUCCEED, "", ret.datas.get(self.__key_latest_saved_ver, -1))
         except Exception as e:
             ret = parse_except(e)
@@ -373,7 +364,6 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = self.find_with_id(self.__key_id_state_info)
             if ret.state != error.SUCCEED:
                 return ret
-            
             ret = result(error.SUCCEED, "", ret.datas.get(self.__key_latest_saved_txid))
         except Exception as e:
             ret = parse_except(e)
@@ -384,7 +374,6 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = self.save(self.__key_id_state_info, {self.__key_min_valid_ver: ver}, session=session)
             if ret.state != error.SUCCEED:
                 return ret
-
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -395,7 +384,6 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = self.find_with_id(self.__key_id_state_info)
             if ret.state != error.SUCCEED:
                 return ret
-
             ret = result(error.SUCCEED, "", ret.datas.get(self.__key_min_valid_ver, 0))
         except Exception as e:
             ret = parse_except(e)
@@ -406,7 +394,6 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = self.save(self.__key_id_state_info, {self.__key_latest_opreturn_index: index}, session=session)
             if ret.state != error.SUCCEED:
                 return ret
-
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -417,11 +404,11 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = self.find_with_id(self.__key_id_state_info)
             if ret.state != error.SUCCEED:
                 return ret
-
             ret = result(error.SUCCEED, "", ret.datas.get(self.__key_latest_opreturn_index, -1))
         except Exception as e:
             ret = parse_except(e)
         return ret
+
     def get_state_info(self):
         try:
             ret = self.find_with_id(self.__key_id_state_info)
@@ -429,15 +416,13 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = parse_except(e)
         return ret
 
-def test_db():
-    client = dbvbase(name = name, hosts = ["127.0.0.1:37017", "127.0.0.1:37018"], db = "test", user = "violas", password = "violas@palliums", rsname="rsviolas", newdb = True)
+def test_write_db():
+    hosts = ["127.0.0.1:37018", "127.0.0.1:37018"]
+    hosts = ["52.231.74.79:37017", "18.136.139.151:37017", "18.136.139.151:37018"]
+    client = dbvbase(name = name, hosts = hosts, db = "test", user = "violas", password = "violas@palliums", rsname="rsviolas", newdb = True)
     print(client.list_database_names().datas)
     print(client.list_collection_names().datas)
-
     client.use_collection("baseinfo", create = True)
-
-    client.delete_all()
-
     #client.collection.create_index([("_id", pymongo.ASCENDING)], name="idx_bi_id")
     #client.collection.create_index([("name", pymongo.ASCENDING)], name="idx_bi_name")
     #client.collection.create_index([("age", pymongo.ASCENDING)], name="idx_bi_age")
@@ -446,29 +431,14 @@ def test_db():
     client.save("0003", {"name": "c++", "age":12, "sex":"cp"})
     for data in client.find_all().datas:
         print(f"find all:{data}")
-
-    print("*" * 30)
-    client.delete_with_id("0001")
-    for data in client.find_all().datas:
-        print(f"find all:{data}")
-
-    print("*" * 30)
-    client.delete_one({"_id":"0003"})
-    for data in client.find_all().datas:
-        print(f"find all:{data}")
-
     print("*" * 30)
     client.insert_one({"_id":"1002", "name": "json", "age":11, "sex":"cp"})
     for data in client.find_all().datas:
         print(f"find all:{data}")
-
     print("*" * 30)
     client.insert_many([{"_id":"2002", "name": "js", "age":11, "sex":"cp"}, \
             {"_id": "2001", "name": "lua", "age":"8"}
             ])
-    for data in client.find_all().datas:
-        print(f"find all:{data}")
-
     print("*" * 30 + f" collection sub")
     client.use_collection("sub", create = True)
     client.insert_one({"_id":"1002", "name": "json", "age":11, "sex":"cp"})
@@ -476,54 +446,151 @@ def test_db():
     print("*" * 30 + "get latest filter ver")
     print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
     print(client.get_latest_filter_ver().datas)
-
     client.use_collection("baseinfo", create = True)
-
     print("*"*30 + "index index_information")
     print(client.collection.index_information())
-
-
-    print("*" * 30)
-    client.delete_all()
-    for data in client.find_all().datas:
-        print(f"find all:{data}")
-
     print(client.list_database_names().datas)
     print(client.list_collection_names().datas)
-
-    print("*" * 30 + f"drop collection baseinfo.")
-    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
-    client.drop_collection("baseinfo")
-    print(client.list_collection_names().datas)
-
-    print("*" * 30 + "get min valid ver")
-    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
     client.set_min_valid_ver(1)
     print(client.get_min_valid_ver().datas)
-
     print("*" * 30 + "get latest saved ver")
     print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
     client.set_latest_saved_ver(2)
     print(client.get_latest_saved_ver().datas)
-
-
     print("*" * 30 + "get latest filter ver")
     print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
     client.set_latest_filter_ver(3)
     print(client.get_latest_filter_ver().datas)
 
-    
+    client.use_collection("sub", create = True)
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+
+    client.use_collection("baseinfo", create = True)
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+
+    print("*" * 30)
+    print(f"client address: {client.address}")
+    print(f"collection red_preference: {client.collection.read_preference}")
+
+def test_read_db():
+    hosts = ["127.0.0.1:37018", "127.0.0.1:37018"]
+    hosts = ["52.231.74.79:37017", "18.136.139.151:37017", "18.136.139.151:37018"]
+    client = dbvbase(name = name, hosts = hosts, db = "test", user = "violas", password = "violas@palliums", rsname="rsviolas", newdb = True)
+    client.use_collection("baseinfo", create = True)
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+    print(f"client address: {client.address}")
+    print("*" * 30)
+    client.use_collection("sub", create = True)
+    print("*" * 30 + "get latest filter ver")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
+    print(client.get_latest_filter_ver().datas)
+    client.use_collection("baseinfo", create = True)
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+    print("*" * 30 + "get min valid ver")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
+    print(client.get_min_valid_ver().datas)
+    print("*" * 30 + "get latest saved ver")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
+    print(client.get_latest_saved_ver().datas)
+    print("*" * 30 + "get latest filter ver")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
+    print(client.get_latest_filter_ver().datas)
+    print("*" * 30 + "drop collection sub")
+    print(f"client address: {client.address}")
+    print(f"collection red_preference: {client.collection.read_preference}")
+
+def test_db():
+    hosts = ["127.0.0.1:37018", "127.0.0.1:37018"]
+    hosts = ["52.231.74.79:37017", "18.136.139.151:37017", "18.136.139.151:37018"]
+    client = dbvbase(name = name, hosts = hosts, db = "test", user = "violas", password = "violas@palliums", rsname="rsviolas", newdb = True)
+    print(client.list_database_names().datas)
+    print(client.list_collection_names().datas)
+    client.use_collection("baseinfo", create = True)
+    client.delete_all()
+    #client.collection.create_index([("_id", pymongo.ASCENDING)], name="idx_bi_id")
+    #client.collection.create_index([("name", pymongo.ASCENDING)], name="idx_bi_name")
+    #client.collection.create_index([("age", pymongo.ASCENDING)], name="idx_bi_age")
+    client.save("0001", {"name": "xml", "age":10, "sex":"cp"})
+    client.save("0002", {"name": "json", "age":11, "sex":"cp"})
+    client.save("0003", {"name": "c++", "age":12, "sex":"cp"})
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+    print("*" * 30)
+    client.delete_with_id("0001")
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+    print("*" * 30)
+    client.delete_one({"_id":"0003"})
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+    print("*" * 30)
+    client.insert_one({"_id":"1002", "name": "json", "age":11, "sex":"cp"})
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+    print("*" * 30)
+    client.insert_many([{"_id":"2002", "name": "js", "age":11, "sex":"cp"}, \
+            {"_id": "2001", "name": "lua", "age":"8"}
+            ])
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+    print("*" * 30 + f" collection sub")
+    client.use_collection("sub", create = True)
+    client.insert_one({"_id":"1002", "name": "json", "age":11, "sex":"cp"})
+    client.set_latest_filter_ver(3)
+    print("*" * 30 + "get latest filter ver")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
+    print(client.get_latest_filter_ver().datas)
+    client.use_collection("baseinfo", create = True)
+    print("*"*30 + "index index_information")
+    print(client.collection.index_information())
+    print("*" * 30)
+    client.delete_all()
+    for data in client.find_all().datas:
+        print(f"find all:{data}")
+    print(client.list_database_names().datas)
+    print(client.list_collection_names().datas)
+    print("*" * 30 + f"drop collection baseinfo.")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
+    client.drop_collection("baseinfo")
+    print(client.list_collection_names().datas)
+    print("*" * 30 + "get min valid ver")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
+    client.set_min_valid_ver(1)
+    print(client.get_min_valid_ver().datas)
+    print("*" * 30 + "get latest saved ver")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
+    client.set_latest_saved_ver(2)
+    print(client.get_latest_saved_ver().datas)
+    print("*" * 30 + "get latest filter ver")
+    print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
+    client.set_latest_filter_ver(3)
+    print(client.get_latest_filter_ver().datas)
     print("*" * 30 + "drop collection sub")
     print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
     client.drop_collection("sub")
     print(client.list_collection_names().datas)
-
     print("*" * 30 + "drop db test")
     print(f"--> db name: {client.db_name}    collection name : {client.collection_name}")
     client.drop_db("test")
     print(client.list_database_names().datas)
-
-    
-
+    print(f"client address: {client.address}")
+    print(f"collection red_preference: {client.collection.read_preference}")
 if __name__ == "__main__":
-    test_db()
+    type = "a"
+    print(sys.argv)
+    if len(sys.argv) == 2:
+        type = sys.argv[1]
+
+    if type in ("r", "read"):
+        test_read_db()
+    elif type in ("w", "write"):
+        test_write_db()
+    elif type in("a", "all"):
+        test_db()
+    
