@@ -66,7 +66,6 @@ class afilter(abase):
             datas = []
             for vout in txout:
                 data = {}
-
                 data["_id"] = self.create_txout_id(txid, vout.get("n"))
                 #if id is exists, use pre state.  this case is  transaction in the same block ?????
                 data["state"] = self.txoutstate.NOUSE.name
@@ -74,6 +73,7 @@ class afilter(abase):
                 data["txid"] = txid
                 data["blockhash"] = blockhash
 
+                print(data["_id"])
                 ret = coll.find_one({"_id":data["_id"]})
                 if ret is not None and len(ret) > 0:
                     state = ret.get("state")
@@ -82,9 +82,6 @@ class afilter(abase):
                     self._logger.info(f"update txout:{data}")
                     continue
                 datas.append(data)
-
-            #may be use save ??????
-            for data in datas:
                 coll.insert_one(data, session=session)
 
             ret = result(error.SUCCEED)
@@ -274,10 +271,10 @@ class afilter(abase):
                     tran = ret.datas
                     tran["hex"] = ""
 
-                    tran_size = (tran.get("vinsize", 0) + tran.get("voutsize", 0)) * 4000
+                    tran_size = (tran.get("vinsize", 0) + tran.get("voutsize", 0))
                     use_session = True
                     session = None
-                    if tran_size >= 16793625: #transaction size must be < 16M
+                    if tran_size >= 500: #transaction size must be < 16M
                         use_session = False
 
                     with self._dbclient.start_session(causal_consistency=True) as sessiondb:
