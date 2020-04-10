@@ -39,6 +39,7 @@ class afilter(abase):
 
     def save_blockinfo(self, blockinfo):
         try:
+            self._logger.debug("save_blockinfo({blockinfo.get('hash')})")
             coll = self._dbclient.get_collection(self.collection.BLOCKINFO.name.lower(), create = True)
             coll.insert_many([{"_id": blockinfo.get("hash"), "blockinfo":blockinfo}, {"_id":blockinfo.get("height"), "blockhash":blockinfo.get("hash")}])
             ret = result(error.SUCCEED)
@@ -49,6 +50,7 @@ class afilter(abase):
 
     def save_transaction(self, txid, tran, blockhash, session=None):
         try:
+            self._logger.debug("save_transaction(txid={txid}, session={session})")
             coll = self._dbclient.get_collection(self.collection.TRANSACTION.name.lower(), create = True)
             coll.insert_one({"_id":txid, "tran":tran, "blockhash": blockhash}, session=session)
             ret = result(error.SUCCEED)
@@ -58,6 +60,7 @@ class afilter(abase):
 
     def save_txout(self, txid, txout, blockhash, session=None):
         try:
+            self._logger.debug("save_txout(txid={txid}, blockhash={blockhash} session={session})")
             coll = self._dbclient.get_collection(self.collection.TXOUT.name.lower(), create = True)
 
             datas = []
@@ -81,8 +84,8 @@ class afilter(abase):
                 datas.append(data)
 
             #may be use save ??????
-            if len(datas) > 0:
-                coll.insert_many(datas, session=session)
+            for data in datas:
+                coll.insert_one(data, session=session)
 
             ret = result(error.SUCCEED)
         except Exception as e:
@@ -100,6 +103,7 @@ class afilter(abase):
 
     def update_txout_state(self, txin, blockhash, session=None):
         try:
+            self._logger.debug("update_txout_state(blockhash={blockhash} session={session})")
             coll = self._dbclient.get_collection(self.collection.TXOUT.name.lower(), create = True)
             for vin in txin:
                 coinbase = vin.get("coinbase")
@@ -115,6 +119,7 @@ class afilter(abase):
 
     def reset_txout_state(self, txin, blockhash, session=None):
         try:
+            self._logger.debug("reset_txout_state(blockhash={blockhash} session={session})")
             coll = self._dbclient.get_collection(self.collection.TXOUT.name.lower(), create = True)
             for vin in txin:
                 id = self.create_txout_id(vin.get("txid"), vin.get("vout"))
@@ -139,6 +144,7 @@ class afilter(abase):
 
     def save_opreturn_txid(self, index, txid, session=None):
         try:
+            self._logger.debug("save_opreturn_txid(index={index}, txid={txid} session={session})")
             coll = self._dbclient.get_collection(self.collection.OPTRANSACTION.name.lower(), create = True)
             coll.insert_one({"_id":index, "txid":txid}, session=session)
             ret = result(error.SUCCEED)
@@ -154,7 +160,7 @@ class afilter(abase):
                     continue
                 self._logger.debug(f"create collection:{collname.name.lower()}")
                 coll = self._dbclient.get_collection(collname.name.lower(), create = True)
-                coll.update_many({"_id":"collname"}, {"$set":{"name":collname.name.lower()}}, upsert=True)
+                coll.update_one({"_id":"collname"}, {"$set":{"name":collname.name.lower()}}, upsert=True)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
