@@ -3,7 +3,7 @@ import operator
 import sys, os
 import json
 sys.path.append("..")
-sys.path.append(os.getcwd())
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 import hashlib
 import traceback
 import datetime
@@ -17,8 +17,9 @@ from comm.result import result, parse_except
 from comm.error import error
 from btc.btcclient import btcclient
 from enum import Enum
-from db.dbvbase import dbvbase
+from db.dbvfilter import dbvfilter
 from baseobject import baseobject
+from btc.payload import payload
 
 #module name
 name="abase"
@@ -94,8 +95,8 @@ class abase(baseobject):
     def get_step(self):
         return self._step
 
-    def create_tran_id(self, txid):
-        return f"{txid}"
+    def create_tran_id(self, address, sequence):
+        return f"{txid}_{sequence}"
 
     def json_to_dict(self, data):
         try:
@@ -105,8 +106,22 @@ class abase(baseobject):
             ret = result(error.FAILED, "data is not json format.")
         return ret
 
-    def parse_tran(self, transaction):
+    def parse_tran(self, tran):
         try:
+            datas = {\
+                    "create_block": tran.get("blockhash"), 
+                    "update_block": tran.get("blockhash"),
+                    "state":,
+                    "address":None,
+                    "vtoken":None,
+                    "num_btc":None,
+                    "issuer":None, 
+                    "receiver":None, 
+                    "sequence":None,
+                    "type":None,
+                    "index":0
+                    }
+
             ret = result(error.SUCCEED, datas = datas)
         except Exception as e:
             ret = parse_except(e, transaction)
@@ -115,5 +130,11 @@ class abase(baseobject):
     def create_txout_id(self, txid, n):
         return f"{txid}_{n}"
 
+    def is_allow_inputtype(self, scrpittype):
+        #nonstandard  pubkey pubkeyhash scripthash multisig nulldata witness_v0_keyhash witness_v0_scripthash witness_unknown
+        return scrpittype in ["scripthash", "witness_v0_keyhash", "witness_v0_scripthash", "pubkeyhash"]
 
+    def is_allow_outputtype(self, scrpittype):
+        #nonstandard  pubkey pubkeyhash scripthash multisig nulldata witness_v0_keyhash witness_v0_scripthash witness_unknown
+        return scrpittype in ["scripthash", "witness_v0_keyhash", "witness_v0_scripthash", "pubkeyhash"]
         

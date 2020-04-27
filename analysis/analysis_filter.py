@@ -20,6 +20,8 @@ from comm.result import result, parse_except
 from comm.error import error
 from enum import Enum
 from analysis.analysis_base import abase
+from btc.payload import payload
+from db.dbvfilter import dbvfilter
 #module name
 name="bfilter"
 
@@ -27,11 +29,31 @@ COINS = comm.values.COINS
 #load logging
     
 class afilter(abase):
-    def __init__(self, name = "bfilter", dbconf = None, nodes = None):
-        abase.__init__(self, name, dbconf, nodes) #no-use defalut db
+    def __init__(self, name = "bfilter", dbconf = None, nodes = None, **argkeys):
+        abase.__init__(self, name, None, nodes) #no-use defalut db
+        if dbconf is not None:
+            self._dbclient
+        self.__maptolocal = argkeys.get("maptolocal", False)
+        self.__storeoptran = argkeys.get("storeoptran", True)
+        self._connect_db(name, dbconf)
 
+    def _connect_db(self, name, rconf):
+        self._dbclient = None
+        if rconf is not None:
+            self._dbclient = dbvfilter(name, rconf.get("host", "127.0.0.1:37017"), rconf.get("db"), 
+                    rconf.get("user", None), rconf.get("password", None), rconf.get("authdb", "admin"), 
+                    newdb = rconf.get("newdb", True), rsname=rconf.get("rsname", None))
+        return self._dbclient
     def __del__(self):
         abase.__del__(self)
+
+    @property
+    def map_to_local(self):
+        return self.__maptolocal
+
+    @property
+    def store_op_tran(self):
+        return self.__storeoptran
 
     def stop(self):
         abase.stop(self)
@@ -139,6 +161,19 @@ class afilter(abase):
             ret = parse_except(e)
         return ret
 
+    def get_opreturn(self, txout):
+        try:
+            opstr = None
+            for i, value in enumerate(txout):
+                script_pub_key = txout[i]["scriptPubKey"]
+                if script_pub_key.get("type", "") == "nulltype":
+                    opstr = script_pub_key.get("hex")
+                    break
+            ret = result(error.SUCCEED, "", opstr)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
     def save_opreturn_txid(self, index, txid, session=None):
         try:
             self._logger.debug("save_opreturn_txid(index={index}, txid={txid} session={session})")
@@ -169,6 +204,7 @@ class afilter(abase):
         try:
             self._logger.debug("start filter work")
             self._dbclient.use_collection("datainfo", True)
+            payload_parse = payload(name)
             self.init_collections()
             ret = self._vclient.getblockcount();
             if ret.state != error.SUCCEED:
@@ -263,8 +299,7 @@ class afilter(abase):
                     #some txid is saved, next txid..
                 for txid in txids:
                     if self.work() == False:
-                       self._logger.debug(f"recver stop command, next txid: {txid}")
-                       return result(error.WORK_STOP)
+                        self._logger.debug(f"will stop work, next height: {version + 1}")
 
                     ret = self._vclient.getrawtransaction(txid = txid)
                     assert ret.state == error.SUCCEED, f"get raw transaction failed.txid = {txid}"
@@ -282,23 +317,32 @@ class afilter(abase):
                             if use_session:
                                 session = sessiondb
 
-                            ret = self.save_transaction(txid, tran, blockhash, session=session)
-                            assert ret.state == error.SUCCEED, f"save transaction failed.txid = {txid}"
+                            if self.map_to_local:
+                                ret = self.save_transaction(txid, tran, blockhash, session=session)
+                                assert ret.state == error.SUCCEED, f"save transaction failed.txid = {txid}"
 
                             ret = self._vclient.gettxoutinfromdata(tran)
                             assert ret.state == error.SUCCEED, f"get transaction vout and vin failed.{txid}"
+
                             txoutin = ret.datas
 
-                            ret = self.save_txout(txid, ret.datas.get("vout"), blockhash, session=session)
-                            assert ret.state == error.SUCCEED, f"save txout failed.txid = {txid}"
+                            if self.map_to_local:
+                                ret = self.save_txout(txid, ret.datas.get("vout"), blockhash, session=session)
+                                assert ret.state == error.SUCCEED, f"save txout failed.txid = {txid}"
 
-                            ret = self.update_txout_state(txoutin.get("vin"), blockhash, session=session)
-                            assert ret.state == error.SUCCEED, f"update txout failed.txid = {txid}"
+                                ret = self.update_txout_state(txoutin.get("vin"), blockhash, session=session)
+                                assert ret.state == error.SUCCEED, f"update txout failed.txid = {txid}"
                             
-                            if(self.has_opreturn(txoutin.get("vout"))).datas:
-                                ret = self.save_opreturn_txid(latest_opreturn_index, txid, session=session)
-                                assert ret.state == error.SUCCEED, f"save address map txout failed.txid = {txid}"
-                                latest_opreturn_index = latest_opreturn_index + 1
+                            if self.store_op_tran:
+                                ret = self.get_opreturn(txoutin.get("vout"))
+                                if ret.state != error.SUCCEED:
+                                    continue
+                                if ret.datas is not None:
+                                    ret = payload_parse.is_valid_violas(ret.datas)
+                                    if ret.state == error.SUCCEED and ret.datas:
+                                        ret = self.save_opreturn_txid(latest_opreturn_index, txid, session=session)
+                                        assert ret.state == error.SUCCEED, f"save address map txout failed.txid = {txid}"
+                                        latest_opreturn_index = latest_opreturn_index + 1
 
                             #set latest saved txid
                             ret = self._dbclient.set_latest_saved_txid(txid,session=session)

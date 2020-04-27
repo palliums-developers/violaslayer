@@ -19,34 +19,34 @@ import comm.values
 from comm.result import result, parse_except
 from comm.error import error
 from db.dbv2b import dbv2b
-from vlsopt.violasclient import violasclient, violaswallet, violasserver
 from enum import Enum
 from db.dbvfilter import dbvfilter
 from db.dbvproof import dbvproof
 from analysis.analysis_base import abase
+from btc.payload import payload
+from btc.btcclient import btcclient
 
 #module name
 name="aproof"
 
 COINS = comm.values.COINS
 class aproof(abase):
-    class proofstate(Enum):
-        START = 1
-        END = 2
-        CANCEL = 3
-        UNKOWN = 255
 
-    def __init__(self, name = "vproof", ttype = "violas", dtype = "v2b", dbconf = None, fdbconf = None, rdbconf = None, nodes = None, chain = "violas"):
+    def __init__(self, name = "vproof", dbconf = None, fdbconf = None, nodes = None, chain = "btc"):
         self._fdbclient = None
         #db use dbvproof, dbvfilter, not use violas/libra nodes
-        super().__init__(name, ttype, dtype, None, nodes, chain)
+        super().__init__(name, None, nodes, chain)
         self._dbclient = None
         self._fdbclient = None
         self._module = None
         if dbconf is not None:
-            self._dbclient = dbvproof(name, dbconf.get("host", "127.0.0.1"), dbconf.get("port"), dbconf.get("db"), dbconf.get("password"))
+            self._dbclient = dbvproof(name, rconf.get("host"), rconf.get("db"), 
+                    rconf.get("user"), rconf.get("password"), rconf.get("authdb", "admin"), 
+                    newdb = rconf.get("newdb", True), rsname=rconf.get("rsname", None))
         if fdbconf is not None:
-            self._fdbclient = dbvfilter(name, fdbconf.get("host", "127.0.0.1"), fdbconf.get("port"), fdbconf.get("db"), fdbconf.get("password"))
+            self._fdbclient = dbvfilter(name, rconf.get("host"), rconf.get("db"), 
+                    rconf.get("user"), rconf.get("password"), rconf.get("authdb", "admin"), 
+                    newdb = rconf.get("newdb", True), rsname=rconf.get("rsname"))
 
     def __del__(self):
         super().__del__()
@@ -56,52 +56,25 @@ class aproof(abase):
     def stop(self):
         super().stop()
 
-    def set_module(self, module):
-        self._module = module
-
-    def get_module(self):
-        return self._module
-
-    def is_valid_moudle(self, module):
-        state = self._module == module and module is not None
-        print(f"result: {state} {self._module} == {module}")
-        return state
-
-    def proofstate_name_to_value(self, name):
-        if name is None or len(name) == 0:
-            return self.proofstate.UNKOWN
-
-        for estate in self.proofstate:
-            if estate.name == name.upper():
-                return estate
-
-        return self.proofstate.UNKOWN
-
-    def proofstate_value_to_name(self, value):
-        for estate in self.proofstate:
-            if estate == value:
-                return estate.name.lower()
-        return "unkown"
-
-    def is_valid_datatype(self, dtype):
-        return dtype in self.get_data_types()
-
     def check_tran_is_valid(self, tran_info):
-        return tran_info.get("flag", None) in self.get_tran_types() and \
-               self.proofstate_name_to_value(tran_info.get("state", None)) != self.proofstate.UNKOWN and \
-               self.is_valid_datatype(tran_info.get("type")) and \
-               self.is_valid_moudle(tran_info.get("token"))
+        pass
 
     def is_valid_proofstate_change(self, new_state, old_state):
-        if new_state == self.proofstate.UNKOWN:
+        if new_state == payload.txtype.UNKOWN:
             return False
 
-        if new_state == self.proofstate.START:
+        if new_state == payload.txtype.EX_START:
             return True
 
-        if new_state in (self.proofstate.END, self.proofstate.CANCEL) and old_state != self.proofstate.START:
+        if new_state in (payload.txtype.EX_END, payload.txtype.CANCEL) and old_state != payload.txtype.EX_START:
             return False
         return True
+
+    def proofstate_name_to_value(self, name):
+        return payload.state_name_to_value(name)
+
+    def proofstate_value_to_name(self, value):
+        return payload.state_value_to_name(value)
 
     def update_proof_info(self, tran_info):
         try:
@@ -111,7 +84,7 @@ class aproof(abase):
             tran_id = None
             new_proof = False
             new_proofstate = self.proofstate_name_to_value(tran_info.get("state", ""))
-            if new_proofstate == self.proofstate.START:
+            if new_proofstate == payload.txtype.EX_START:
                 new_proof = True
 
             self._logger.debug(f"new proof: {new_proof}")
@@ -125,16 +98,11 @@ class aproof(abase):
                     return result(error.TRAN_INFO_INVALID, f"key{version} is exists, db datas is old, flushdb ?. violas tran info : {tran_info}")
 
                 #create tran id
-                if tran_info["flag"] == self.trantype.BTC.name.lower():
-                    tran_id = tran_info["txid"]
-                else:
-                    tran_id = self.create_tran_id(tran_info["flag"], tran_info["type"], tran_info['sender'], \
-                            tran_info['receiver'], tran_info['token'], tran_info['version'])
+                tran_id = self.create_tran_id(tran_info["vaddress"], tran_info["sequence"])
 
-                tran_info["flag"] = tran_info["flag"].name
-                tran_info["type"] = tran_info["type"].name
                 tran_info["tran_id"] = tran_id
-                ret = self._dbclient.set_proof(version, json.dumps(tran_info))
+                tran_info["state"] = self.proofstate_value_to_name(tran_info("state"))
+                ret = self._dbclient.set_proof(tran_id, tran_info)
                 if ret.state != error.SUCCEED:
                     return ret
                 self._logger.info(f"saved new proof succeed. version = {tran_info.get('version')} tran_id = {tran_id} state={tran_info['state']}")
@@ -146,43 +114,35 @@ class aproof(abase):
 
                 #get tran info from db(tran_id -> version -> tran info)
 
-                ret = self._dbclient.get_proof_by_hash(tran_id)
+                ret = self._dbclient.find_with_id(tran_id)
                 if ret.state != error.SUCCEED:
                     #btc transaction is end , diff libra and violas
-                    if tran_info["flag"] == self.trantype.BTC:
-                        tran_info["flag"] = tran_info["flag"].name
-                        tran_info["type"] = tran_info["type"].name
-                        ret = self._dbclient.set_proof(version, json.dumps(tran_info))
-                        if ret.state != error.SUCCEED:
-                            return ret
-                        return result(error.SUCCEED, "", {"new_proof":new_proof, "tran_id":tran_id})
-
-                    self._logger.debug(f"get_proof_by_hash({tran_id}) failed.")
+                    self._logger.debug(f"find transaction ({tran_id}) failed.")
                     return ret
 
                 if ret.datas is None or len(ret.datas) == 0:
                     return result(error.TRAN_INFO_INVALID, 
-                            f"tran_id {tran_id} not found value or key is not found.tran version : {tran_info.get('version')}")
+                            f"tran_id {tran_id} not found value or key is not found.tran txid : {tran_info.get('txid')}")
 
-                db_tran_info = json.loads(ret.datas)
+                db_tran_info = ret.datas
 
-                db_tran_id = db_tran_info.get("tran_id", None)
+                db_tran_id = db_tran_info.get("tran_id")
                 if db_tran_id is None or len(db_tran_id) == 0 or db_tran_id != tran_id:
-                    return result(error.TRAN_INFO_INVALID, f"new tran data info is invalid, tran version : {tran_info.get('version')}")
+                    return result(error.TRAN_INFO_INVALID, f"new tran data info is invalid, tran id : {db_tran_id}")
 
                 old_proofstate = self.proofstate_name_to_value(db_tran_info.get("state", ""))
                 if not self.is_valid_proofstate_change(new_proofstate, old_proofstate):
                     return result(error.TRAN_INFO_INVALID, f"change state to {new_proofstate.name} is invalid. \
-                            old state is {old_proofstate.name}. tran version: {tran_info.get('version')}")
+                            old state is {old_proofstate.name}. tran id: {tran_id}")
 
                 #only recevier can change state (start -> end/cancel)
                 if db_tran_info.get("receiver", "start state receiver") != tran_info.get("sender", "to end address"):
                     return result(error.TRAN_INFO_INVALID, f"change state error. sender[state = end] != recever[state = start] \
-                            sender: {tran_info.get('receiver')}  receiver : {db_tran_info.get('sender')} version = {tran_info.get('version')}") 
+                            sender: {tran_info.get('receiver')}  receiver : {db_tran_info.get('sender')} tran_id = {tran_id}") 
 
                 db_tran_info["state"] = tran_info["state"]
-                self._dbclient.set_proof(db_tran_info.get("version"), json.dumps(db_tran_info))
-                self._logger.info(f"change state succeed. version = {db_tran_info.get('version')} tran_id = {db_tran_id} state={db_tran_info['state']}")
+                self._dbclient.set_proof(tran_id, db_tran_info)
+                self._logger.info(f"change state succeed. tran_id = {db_tran_id} state={db_tran_info['state']}")
 
             ret = result(error.SUCCEED, "", {"new_proof":new_proof, "tran_id":tran_id})
         except Exception as e:
@@ -231,6 +191,13 @@ class aproof(abase):
             ret = parse_except(e)
         return ret
 
+    def get_transaction(self, txid):
+        try:
+            ret = self._vclient.getrawtransaction(txid)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
     def start(self):
         try:
             self._logger.debug("start vproof work")
@@ -258,25 +225,23 @@ class aproof(abase):
             self._logger.debug(f"proof latest_saved_ver={self._dbclient.get_latest_saved_ver().datas} start version = {start_version}  \
                     step = {self.get_step()} valid transaction latest_saved_ver = {latest_saved_ver} ")
 
-            keys = self._fdbclient.list_version_keys(start_version)
+            dates = self._fdbclient.find({"_id":{$gte:version}}, limit = self.get_step()).sort(["_id":pymongo.ASCENDING])
             latest_filter_ver = start_version
-            for version in keys:
+            for data in datas:
                 try:
-                    if count >= self.get_step() and self.work() == False:
+                    if self.work() == False:
                         break
                     #record last version(parse), maybe version is not exists
-                    #self._logger.debug(f"parse transaction:{version}")
+                    self._logger.debug(f"parse transaction:{version}")
 
                     latest_filter_ver = version
 
-                    ret = self._fdbclient.get(version)
+                    txid = ret.datas.get("txid")
+                    ret = self.get_transaction(txid)
                     if ret.state != error.SUCCEED:
                         return ret
 
-                    if ret.datas is None:
-                        continue
-
-                    tran_data = json.loads(ret.datas)
+                    tran_data = ret.datas
                     ret = self.parse_tran(tran_data)
                     if ret.state != error.SUCCEED: 
                         continue
@@ -295,18 +260,9 @@ class aproof(abase):
 
                     #mark it, watch only, True: new False: update
                     # maybe btc not save when state == end, because start - > end some minue time
-                    if ret.datas.get("new_proof") == True or tran_filter.get("flag") == self.trantype.BTC:  
+                    if ret.datas.get("new_proof") == True:  
                         self._dbclient.set_latest_saved_ver(version)
-
-                    tran_id = ret.datas.get("tran_id")
-                    ret = self._dbclient.get_proof_by_hash(tran_id)
-                    if ret.state != error.SUCCEED:
-                        return ret
                     
-                    if (ret.datas is not None or len(ret.datas) > 0) and self.can_record():
-                        ret = self._rdbclient.update_address_info(json.loads(ret.datas))
-                        if ret.state != error.SUCCEED:
-                            return ret
                     count += 1
                 except Exception as e:
                     ret = parse_except(e)

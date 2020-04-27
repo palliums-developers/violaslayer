@@ -180,6 +180,7 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
+    # get vout vin
     def gettxoutin(self, txid):
         try:
             self._logger.debug(f"start gettxoutin({txid})")
@@ -187,11 +188,10 @@ class btcclient(baseobject):
             if ret.state != error.SUCCEED:
                 return ret
             tran = ret.datas
-            datas = {
-                    "txid" : txid,
-                    "vin" : [{"txid": vin.get("txid"), "vout" : vin.get("vout"), "coinbase": vin.get("coinbase"), "sequence": vin.get("sequence")} for vin in tran.get("vin")],
-                    "vout" : tran.get("vout")
-                    }
+
+            ret = self.gettxinfromdata(tran)
+            if ret.state != error.SUCCEED:
+                return ret
 
             ret = result(error.SUCCEED, "", datas)
             self._logger.info(f"result: vin count: {len(ret.datas.get('vin'))} , vout count: {len(ret.datas.get('vout'))}")
@@ -204,7 +204,11 @@ class btcclient(baseobject):
             self._logger.debug(f"start gettxoutinfromdata({tran.get('txid')})")
             datas = {
                     "txid" : tran.get("txid"),
-                    "vin" : [{"txid": vin.get("txid"), "vout" : vin.get("vout"),"coinbase":vin.get("coinbase"), "sequence": vin.get("sequence")} for vin in tran.get("vin")],
+                    "vin" : [{"txid": vin.get("txid"), \
+                            "vout" : vin.get("vout"),\
+                            "coinbase":vin.get("coinbase"), \
+                            "sequence": vin.get("sequence")} \
+                            for vin in tran.get("vin")],
                     "vout" : tran.get("vout")
                     }
 
@@ -221,12 +225,8 @@ class btcclient(baseobject):
             if ret.state != error.SUCCEED:
                 return ret
             tran = ret.datas
-            datas = {
-                    "txid" : txid,
-                    "vin" : [{"txid": vin.get("txid"), "vout" : vin.get("vout"),"coinbase":vin.get("coinbase"), "sequence": vin.get("sequence")} for vin in tran.get("vin")],
-                    }
 
-            ret = result(error.SUCCEED, "", datas)
+            datas = self.gettxinfromdata(tran)
             self._logger.info(f"result: vin count: {len(ret.datas.get('vin'))}")
         except Exception as e:
             ret = parse_except(e)
@@ -237,7 +237,11 @@ class btcclient(baseobject):
             self._logger.debug(f"start gettxoutin({txid})")
             datas = {
                     "txid" : tran.get("txid"),
-                    "vin" : [{"txid": vin.get("txid"), "vout" : vin.get("vout"), "coinbase":vin.get("coinbase") ,"sequence": vin.get("sequence")} for vin in tran.get("vin")],
+                    "vin" : [{"txid": vin.get("txid"), \
+                            "vout" : vin.get("vout"), \
+                            "coinbase":vin.get("coinbase") ,\
+                            "sequence": vin.get("sequence")} \
+                            for vin in tran.get("vin")],
                     }
 
             ret = result(error.SUCCEED, "", datas)
@@ -246,6 +250,23 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
+    def gettxinwithnfromdata(self, tran, n):
+        try:
+            ret = self.gettxinfromdata(tran)
+            if ret.state != error.SUCCEED:
+                return ret
+
+            vins = ret.datas.get("vin")
+            datas = None
+            for vin in vins:
+                if vin.get("vout") == n:
+                    return result(error.SUCCEED, "", vin)
+
+            #not found txid vout n
+            ret = result(error.ARG_INVALID)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
     def gettxoutwithn(self, txid, n):
         try:
             ret = self.gettxoutin(txid)
@@ -280,6 +301,23 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
+    def getopreturnfromdata(self, tran):
+        try:
+            vouts = tran.get("vout")
+            datas = None
+            for vout in vouts:
+                ret = self.parsevout(vout)
+                if ret.state != error.SUCCEED:
+                    return ret
+                if ret.datas.get("type") == "nulldata":
+                    return ret
+
+            #not found txid vout n
+            ret = result(error.ARG_INVALID)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
     def parsevout(self, vout):
         try:
             datas = {}
@@ -298,6 +336,17 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
+    def parsevin(self, vin):
+        try:
+            datas = {}
+            datas["vout"] = vin.get("vout")
+            datas["txid"] = vin.get("txid")
+            datas["sequence"] = vin.get("sequence")
+
+            ret = result(error.SUCCEED, "", datas)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
     def help(self):
         try:
             self._logger.debug("start help")

@@ -30,51 +30,32 @@ name="dbvproof"
 
 class dbvproof(dbvbase):
     __KEY_MIN_VERSION_START = "min_version_start"
-    def __init__(self, name, host, port, db, passwd = None):
-        dbvbase.__init__(self, name, host, port, db, passwd)
+    def __init__(self, name, hosts, db, user = None, password = None, 
+            authdb = 'admin', rsname = None, newdb = False):
+        dbvbase.__init__(self, name = name, hosts = hosts, db = db, user = user, password = password, 
+                authdb = authdb, rsname = rsname, newdb = newdb)
 
     def __del__(self):
         dbvbase.__del__(self)
 
-    def set_proof(self, version, value):
+    def set_proof(self, key, value):
         try:
-            dict = json.loads(value)
-            tran_id = dict.get("tran_id", None)
-            if tran_id is None or len(tran_id) <= 0:
-                return result(error.ARG_INVALID, "tran id is invalid.")
-
-            ret = self.set(version, value)
-            if ret.state != error.SUCCEED:
-                return ret
-
-            ret = self.set(tran_id, version)
-
+            if "_id" not in value:
+                value["_id"] = key
+            ret = self.insert_one(value)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def get_proof_by_hash(self, tran_id):
+    def update_proof(self, key, value):
         try:
-            ret = self.get(tran_id)
-            if ret.state != error.SUCCEED:
-                return ret
-
-            version = ret.datas
-            if version is None or len(version) == 0:
-                return result(error.TRAN_INFO_INVALID, f"not found proof, tran_id: {tran_id}.")
-            
-            return self.get(ret.datas)
+            if "_id" not in value:
+                value["_id"] = key
+            ret = self.updata_one(value)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-
-    def get_proof_version(self, version):
-        try:
-            return self.get(version)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
 
     def set_proof_min_version_for_start(self, version):
         try:
@@ -93,11 +74,3 @@ class dbvproof(dbvbase):
             ret = parse_except(e)
         return ret
 
-    def create_haddress_name(self, tran_info):
-        return f"{tran_info['sender']}_{tran_info['flag']}"
-
-    def create_haddress_key(self, tran_info):
-        return f"{tran_info['version']}"
-
-    def create_haddress_value(self, tran_info):
-        return json.dumps({"version":tran_info["version"], "type":tran_info["type"], "state":tran_info["state"], "to_address":tran_info["to_address"], "amount":tran_info["amount"]})

@@ -31,6 +31,10 @@ from enum import Enum
 #module name
 name="payload"
 class payload(baseobject):
+    __valid_mark = "violas"
+    __version_0 = 0
+    __version_1 = 1
+
     class optcodetype(Enum):
         # push value
         OP_0 = 0x00
@@ -182,17 +186,54 @@ class payload(baseobject):
     def __init__(self, name):
         baseobject.__init__(self, name)
         self.bigendian_flag = self.is_bigendian()
+        self._type_version = {}
+        self.__init_type_with_version()
         self._reset(None)
+
+    def __init_type_with_version(self):
+        self._type_version = {
+                        self.txtype.BTC_MARK : {"version" : [self.__version_1], "block": 0}, \
+                        self.txtype.EX_START : {"version" : [self.__version_1], "block": 0}, \
+                        self.txtype.EX_END   : {"version" : [self.__version_1], "block": 0}, \
+                        self.txtype.EX_CANCEL: {"version" : [self.__version_1], "block": 0}, \
+                        self.txtype.EX_MARK  : {"version" : [self.__version_1], "block": 0}, \
+                }
+
+    @property
+    def type_version(self):
+        return self._type_version
 
     def _reset(self, payload):
         self.payload_hex= payload
         self.tx_version = 0
         self.tx_type = self.txtype.UNKNOWN
         self.op_code = self.optcodetype.OP_INVALIDOPCODE
-        self.__op_data = None
-        self.__op_size = 0
-        self.__op_mark = None
-        self.__proof_data = None
+        self.op_data = None
+        self.op_size = 0
+        self.op_mark = None
+        self.proof_data = None
+
+    @classmethod 
+    def state_name_to_value(self, state):
+        if state == self.txtype.EX_START:
+            return "start"
+        elif state == self.txtype.EX_CANCEL:
+            return "cancel"
+        elif state == self.txtype.EX_END:
+            return "end"
+        else:
+            return "unkown"
+
+    @classmethod
+    def state_value_to_name(self, state):
+        if state == "start":
+            return self.txtype.EX_START
+        elif state == "cancel":
+            return self.txtype.EX_CANCEL
+        elif state == "end":
+            return self.txtype.EX_END
+        else:
+            return self.txtype.UNKNOWN
 
     def is_bigendian(self):
         #0x0001
@@ -200,6 +241,10 @@ class payload(baseobject):
         if val[0] == 1:
             return False
         return True
+
+    @property
+    def valid_mark(self):
+        return self.__valid_mark
 
     @property 
     def op_code(self):
@@ -266,11 +311,32 @@ class payload(baseobject):
         self.__proof_data  = data
     
 
+    def reset(self):
+        self.op_code = None
+        self.op_data = None
+        self.op_mark = None
+        self.op_size = 0
+        self.proof_data = None
+        self.payload_hex = None
+        self.tx_version = None
+        self.tx_type = None
+
     def is_allow_txtype(self, txtype):
         #EnumUtils.isValidEnum(self.txtype.class, txtype)
         return txtype in self.txtype._value2member_map_
 
     
+    def is_allow_opreturn(self, txtype, version, block):
+        type_version = self.type_version.get(txtype)
+        if type_version is None:
+            return False
+        if version not in type_version.get("version"):
+            return False
+        if block < type_version.get("block"):
+            return False
+
+        return True
+
     def parse_data(self):
         try:
             if self.tx_type == self.txtype.EX_START:
@@ -287,10 +353,25 @@ class payload(baseobject):
             ret = parse_except(e)
         return ret
 
+    def is_valid_violas(self, payload):
+        try:
+            self.reset()
+            ret = self.parse(payload)
+            if ret.state != error.SUCCEED:
+                return ret
+
+            valid = (self.op_mark == self.valid_mark and \
+                    self.is_found_txtype(self.tx_type))
+            ret = result(error.SUCCEED, "", self.op_mark == self.valid_mark)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
     def parse(self, payload):
         try:
             self._reset(payload)
             bdata = bytes.fromhex(self.payload_hex)
+            data_len = len(bdata)
             if bdata[0] != self.optcodetype.OP_RETURN.value:
                 self._logger.debug(f"{bdata[0]} not OP_RETURN({self.optcodetype.OP_RETURN.value}) ")
                 return False
@@ -315,13 +396,28 @@ class payload(baseobject):
             opcode_value = struct.unpack_from('B', bdata, 0)[0]
             self.op_code = self.optcodetype(opcode_value)
 
+
+            #makesure data is valid
+            if data_offer + 6 >= data_len:
+                return result(error.ARG_INVALID)
+
             #violas mark
+
             mark = struct.unpack_from('cccccc', bdata, data_offer)
             self.op_mark = "".join([v.decode() for v in mark])
             data_offer = data_offer + 6
 
+            if self.op_mark != self.valid_mark:
+                return result(error.ARG_INVALID)
+
+            if data_offer + 2 >= data_len:
+                return result(error.ARG_INVALID)
+
             self.tx_version = struct.unpack_from('>H', bdata, data_offer)[0]
             data_offer = data_offer + 2
+
+            if data_offer + 2 >= data_len:
+                return result(error.ARG_INVALID)
 
             tx_type = struct.unpack_from('>H', bdata, data_offer)[0]
             self.tx_type = self.txtype(tx_type)
@@ -335,11 +431,11 @@ class payload(baseobject):
 
             self.proof_data = ret.datas
             datas = {
-                    "opcode" : self.op_code,
+                    "opcode" : self.op_code.name,
                     "datasize": self.op_size,
                     "mark" : self.op_mark,
                     "version": self.tx_version,
-                    "type": self.tx_type,
+                    "type": self.tx_type.name,
                     "proof": self.proof_data
                     }
             ret = result(error.SUCCEED, datas = datas) 
@@ -366,8 +462,10 @@ def test_np():
 
     pdata = payload(name)
 
-    pdata.parse(opstr)
-    json_print(pdata.proof_data)
+    print(f"check op_return is valid: {pdata.is_valid_violas(opstr).datas}")
+    ret = pdata.parse(opstr)
+    assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
+    json_print(ret.datas)
     
  
     

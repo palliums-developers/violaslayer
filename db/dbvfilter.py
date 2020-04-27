@@ -4,7 +4,7 @@ btc exchange vtoken db
 '''
 import operator
 import sys,os
-sys.path.append(os.getcwd())
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 import log
 import log.logger
 import traceback
@@ -27,8 +27,10 @@ from enum import Enum
 name="dbvfilter"
 
 class dbvfilter(dbvbase):
-    def __init__(self, name, host,  db, passwd = None):
-        dbvbase.__init__(self, name, port, db, passwd)
+    def __init__(self, name, hosts, db, user = None, password = None, 
+            authdb = 'admin', rsname = None, newdb = False):
+        dbvbase.__init__(self, name = name, hosts = hosts, db = db, user = user, password = password, 
+                authdb = authdb, rsname = rsname, newdb = newdb)
 
     def __del__(self):
         dbvbase.__del__(self)

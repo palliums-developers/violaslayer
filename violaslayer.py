@@ -32,7 +32,7 @@ class works:
     __work_looping = {}
     __work_obj = {}
 
-    __btc_min_valid_version     = 0
+    __btc_min_valid_version     = 170_0000
     def __init__(self):
         logger.debug("works __init__")
         for mod in self.__work_looping:
@@ -63,6 +63,7 @@ class works:
                     obj = analysis_filter.afilter(name="bfilter",  \
                             dbconf=stmanage.get_db("base"), \
                             nodes=stmanage.get_btc_conn())
+                    obj.set_min_valid_version(self.__btc_min_valid_version - 1)
                     self.set_work_obj(obj)
                     obj.start()
                 except Exception as e:

@@ -228,10 +228,13 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def is_exists(self, key):
         try:
-            ret = result(error.SUCCEED, "", self.count(key).datas > 0)
+            ret = result(error.SUCCEED, "", self.find_one(key) is not None)
         except Exception as e:
             ret = parse_except(e)
         return ret
+
+    def key_is_exists(self, key):
+        return is_exists(key)
 
     def delete_one(self, key, session=None):
         try:

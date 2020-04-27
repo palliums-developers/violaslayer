@@ -2,7 +2,6 @@
 import operator
 import sys, os
 import json
-import math
 sys.path.append("..")
 sys.path.append(os.getcwd())
 import log
@@ -19,64 +18,85 @@ import comm.values
 from comm.result import result, parse_except
 from comm.error import error
 from enum import Enum
-from db.dbvproof import dbvproof
-from baseobject import baseobject
-
+from analysis.analysis_base import abase
 #module name
 name="record"
 
-class record(baseobject):
-    def __init__(self, name, rdbconf):
-        baseobject.__init__(self, name)
-        #db use dbvproof, dbvfilter, not use violas/libra nodes
-        self._rdbclient = None
-        if rdbconf is not None:
-            self._rdbclient= dbvproof(name, rdbconf.get("host", "127.0.0.1"), rdbconf.get("port"), rdbconf.get("db"), rdbconf.get("password"))
+COINS = comm.values.COINS
+#load logging
+    
+class record(abase):
+    def __init__(self, name = "record", dbconf = None, vnodes = None):
+        abase.__init__(self, name, dbconf, vnodes) #no-use defalut db
+        self._dbclient.use_collection("record")
+        self.__split_count = 100
 
     def __del__(self):
-        if self._rdbclient is not None:
-            self._rdbclient.save()
+        abase.__del__(self)
 
-    def can_record(self):
-        return self._rdbclient is not None
+    def stop(self):
+        abase.stop(self)
+        self.work_stop()
 
-    def update_address_info(self, tran_info):
+    def create_address_id(self, info):
+        return f"{info.get('address')}-{info.get('index')}"
+
+    def get_address_info(self, address):
         try:
-            if self._rdbclient is None:
-                return result(error.SUCCEED, "db not set")
-
-            self._logger.debug(f"start update_address_info:{tran_info['version']}, state:{tran_info['state']}")
-            version = tran_info.get("version", None)
-
-            name = self._rdbclient.create_haddress_name(tran_info)
-            key = self._rdbclient.create_haddress_key(tran_info)
-            ret = self._rdbclient.hexists(name, key)
+            ret  = self._dbclient.find_with_id(address)
             if ret.state != error.SUCCEED:
-                self._logger.error(f"check state info <name={name}> failed, check db is run. messge:{ret.message}")
                 return ret
-
-            if ret.datas == 1:
-                info = self._rdbclient.hget(name, key)
-                if info.state != error.SUCCEED or info.datas is None:
-                    self._logger.error(f"get state info <name={name}, key={key}> failed, check db is run. messge:{info.message}")
-                    return info
-                data = json.loads(info.datas)
-                data["state"] = tran_info["state"]
-                ret = self._rdbclient.hset(name, key, json.dumps(data))
-                if ret.state != error.SUCCEED:
-                    self._logger.error(f"update state info <name={name}, key={key}, data={json.dumps(data)}> failed, check db is run. messge:{ret.message}")
-                    return ret
-            else:
-                data = self._rdbclient.create_haddress_value(tran_info)
-                ret = self._rdbclient.hset(name, key, data)
-                if ret.state != error.SUCCEED:
-                    self._logger.error(f"set state info <name={name}, key={key}, data={data}> failed, check db is run. messge:{ret.message}")
-                    return ret
+            info = ret.datas
+            split_count = info.get("split_count", self.__split_count)
+            count = info.get("count", 0)
+            maxindex=info.get("maxindex", 0) #now no-use
+            index = (count) // (split_count)
+            datas = {"address": address,\
+                    "count":count,\
+                    "index":index,\
+                    "split_count":split_count,
+                    }
+            ret = result(error.SUCCEED, "", datas)
 
         except Exception as e:
             ret = parse_except(e)
         return ret
 
+    def update_address_keys(self, address, info):
+        try:
+            self._dbclient.update_with_id(address, {"split_count":info.get("split_index", self.__split_count), "count":info.get("count", 0) + 1, "maxindex": info.get("index") })
+            ret = result(error.SUCCEED)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def save_address_txout(self, txid, txout, blockhash):
+        try:
+            with self._dbclient.start_session(causal_consistency=True) as session:
+                with session.start_transaction():
+                    for vout in txout:
+                        data = {}
+                        ret = self._vclient.parsevout(vout)
+                        if ret.state != error.SUCCEED:
+                            return ret
+                        voutfmt = ret.datas
+                        addresses = voutfmt.get("addresses")
+                        if addresses is not None and len(addresses) > 0:
+                            self._logger.debug(f"txout addresses:{addresses}")
+                            for address in addresses:
+                                ret = get_address_info(address)
+                                if ret.state != error.SUCCEED:
+                                    return ret
+                                info = ret.datas
+                                id = self.create_address_id(info)
+
+                                self._dbclient.push({"_id":id}, \
+                                     {"txout": {"value":voutfmt.get("value", 0.0), "n":voutfmt.get("n"), "txid":txid}}, upsert = True)
+
+                                self.update_address_keys(address, info)
 
 
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
 

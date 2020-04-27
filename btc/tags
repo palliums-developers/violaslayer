@@ -4,11 +4,144 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+BTC_MARK	payload.py	/^        BTC_MARK    = 0x1030$/;"	v	line:179	class:payload.txtype
 COINS	btcclient.py	/^COINS = comm.values.COINS$/;"	v	line:31
+EX_CANCEL	payload.py	/^        EX_CANCEL   = 0x3002$/;"	v	line:182	class:payload.txtype
+EX_END	payload.py	/^        EX_END      = 0x3001$/;"	v	line:181	class:payload.txtype
+EX_MARK	payload.py	/^        EX_MARK     = 0x3010$/;"	v	line:183	class:payload.txtype
+EX_START	payload.py	/^        EX_START    = 0x3000$/;"	v	line:180	class:payload.txtype
+OP_0	payload.py	/^        OP_0 = 0x00$/;"	v	line:40	class:payload.optcodetype
+OP_0NOTEQUAL	payload.py	/^        OP_0NOTEQUAL    = 0x92$/;"	v	line:122	class:payload.optcodetype
+OP_1	payload.py	/^        OP_1 = 0x51$/;"	v	line:47	class:payload.optcodetype
+OP_10	payload.py	/^        OP_10 = 0x5a$/;"	v	line:57	class:payload.optcodetype
+OP_11	payload.py	/^        OP_11 = 0x5b$/;"	v	line:58	class:payload.optcodetype
+OP_12	payload.py	/^        OP_12 = 0x5c$/;"	v	line:59	class:payload.optcodetype
+OP_13	payload.py	/^        OP_13 = 0x5d$/;"	v	line:60	class:payload.optcodetype
+OP_14	payload.py	/^        OP_14 = 0x5e$/;"	v	line:61	class:payload.optcodetype
+OP_15	payload.py	/^        OP_15 = 0x5f$/;"	v	line:62	class:payload.optcodetype
+OP_16	payload.py	/^        OP_16 = 0x60$/;"	v	line:63	class:payload.optcodetype
+OP_1ADD	payload.py	/^        OP_1ADD     = 0x8b$/;"	v	line:115	class:payload.optcodetype
+OP_1NEGATE	payload.py	/^        OP_1NEGATE = 0x4f$/;"	v	line:45	class:payload.optcodetype
+OP_1SUB	payload.py	/^        OP_1SUB     = 0x8c$/;"	v	line:116	class:payload.optcodetype
+OP_2	payload.py	/^        OP_2 = 0x52$/;"	v	line:49	class:payload.optcodetype
+OP_2DIV	payload.py	/^        OP_2DIV     = 0x8e$/;"	v	line:118	class:payload.optcodetype
+OP_2DROP	payload.py	/^        OP_2DROP    = 0x6d$/;"	v	line:79	class:payload.optcodetype
+OP_2DUP	payload.py	/^        OP_2DUP     = 0x6e$/;"	v	line:80	class:payload.optcodetype
+OP_2MUL	payload.py	/^        OP_2MUL     = 0x8d$/;"	v	line:117	class:payload.optcodetype
+OP_2OVER	payload.py	/^        OP_2OVER    = 0x70$/;"	v	line:82	class:payload.optcodetype
+OP_2ROT	payload.py	/^        OP_2ROT     = 0x71$/;"	v	line:83	class:payload.optcodetype
+OP_2SWAP	payload.py	/^        OP_2SWAP    = 0x72$/;"	v	line:84	class:payload.optcodetype
+OP_3	payload.py	/^        OP_3 = 0x53$/;"	v	line:50	class:payload.optcodetype
+OP_3DUP	payload.py	/^        OP_3DUP     = 0x6f$/;"	v	line:81	class:payload.optcodetype
+OP_4	payload.py	/^        OP_4 = 0x54$/;"	v	line:51	class:payload.optcodetype
+OP_5	payload.py	/^        OP_5 = 0x55$/;"	v	line:52	class:payload.optcodetype
+OP_6	payload.py	/^        OP_6 = 0x56$/;"	v	line:53	class:payload.optcodetype
+OP_7	payload.py	/^        OP_7 = 0x57$/;"	v	line:54	class:payload.optcodetype
+OP_8	payload.py	/^        OP_8 = 0x58$/;"	v	line:55	class:payload.optcodetype
+OP_9	payload.py	/^        OP_9 = 0x59$/;"	v	line:56	class:payload.optcodetype
+OP_ABS	payload.py	/^        OP_ABS      = 0x90$/;"	v	line:120	class:payload.optcodetype
+OP_ADD	payload.py	/^        OP_ADD      = 0x93$/;"	v	line:124	class:payload.optcodetype
+OP_AND	payload.py	/^        OP_AND      = 0x84$/;"	v	line:106	class:payload.optcodetype
+OP_BOOLAND	payload.py	/^        OP_BOOLAND  = 0x9a$/;"	v	line:132	class:payload.optcodetype
+OP_BOOLOR	payload.py	/^        OP_BOOLOR   = 0x9b$/;"	v	line:133	class:payload.optcodetype
+OP_CAT	payload.py	/^        OP_CAT      = 0x7e$/;"	v	line:98	class:payload.optcodetype
+OP_CHECKLOCKTIMEVERIFY	payload.py	/^        OP_CHECKLOCKTIMEVERIFY = 0xb1$/;"	v	line:160	class:payload.optcodetype
+OP_CHECKMULTISIG	payload.py	/^        OP_CHECKMULTISIG = 0xae$/;"	v	line:155	class:payload.optcodetype
+OP_CHECKMULTISIGVERIFY	payload.py	/^        OP_CHECKMULTISIGVERIFY = 0xaf$/;"	v	line:156	class:payload.optcodetype
+OP_CHECKSEQUENCEVERIFY	payload.py	/^        OP_CHECKSEQUENCEVERIFY = 0xb2$/;"	v	line:162	class:payload.optcodetype
+OP_CHECKSIG	payload.py	/^        OP_CHECKSIG = 0xac$/;"	v	line:153	class:payload.optcodetype
+OP_CHECKSIGVERIFY	payload.py	/^        OP_CHECKSIGVERIFY = 0xad$/;"	v	line:154	class:payload.optcodetype
+OP_CODESEPARATOR	payload.py	/^        OP_CODESEPARATOR = 0xab$/;"	v	line:152	class:payload.optcodetype
+OP_DEPTH	payload.py	/^        OP_DEPTH    = 0x74$/;"	v	line:86	class:payload.optcodetype
+OP_DIV	payload.py	/^        OP_DIV      = 0x96$/;"	v	line:127	class:payload.optcodetype
+OP_DROP	payload.py	/^        OP_DROP     = 0x75$/;"	v	line:87	class:payload.optcodetype
+OP_DUP	payload.py	/^        OP_DUP      = 0x76$/;"	v	line:88	class:payload.optcodetype
+OP_ELSE	payload.py	/^        OP_ELSE     = 0x67$/;"	v	line:72	class:payload.optcodetype
+OP_ENDIF	payload.py	/^        OP_ENDIF    = 0x68$/;"	v	line:73	class:payload.optcodetype
+OP_EQUAL	payload.py	/^        OP_EQUAL    = 0x87$/;"	v	line:109	class:payload.optcodetype
+OP_EQUALVERIFY	payload.py	/^        OP_EQUALVERIFY  = 0x88$/;"	v	line:110	class:payload.optcodetype
+OP_FALSE	payload.py	/^        OP_FALSE = OP_0$/;"	v	line:41	class:payload.optcodetype
+OP_FROMALTSTACK	payload.py	/^        OP_FROMALTSTACK = 0x6c$/;"	v	line:78	class:payload.optcodetype
+OP_GREATERTHAN	payload.py	/^        OP_GREATERTHAN      = 0xa0$/;"	v	line:138	class:payload.optcodetype
+OP_GREATERTHANOREQUAL	payload.py	/^        OP_GREATERTHANOREQUAL = 0xa2$/;"	v	line:140	class:payload.optcodetype
+OP_HASH160	payload.py	/^        OP_HASH160  = 0xa9$/;"	v	line:150	class:payload.optcodetype
+OP_HASH256	payload.py	/^        OP_HASH256  = 0xaa$/;"	v	line:151	class:payload.optcodetype
+OP_IF	payload.py	/^        OP_IF       = 0x63$/;"	v	line:68	class:payload.optcodetype
+OP_IFDUP	payload.py	/^        OP_IFDUP    = 0x73$/;"	v	line:85	class:payload.optcodetype
+OP_INVALIDOPCODE	payload.py	/^        OP_INVALIDOPCODE = 0xff$/;"	v	line:176	class:payload.optcodetype
+OP_INVERT	payload.py	/^        OP_INVERT   = 0x83$/;"	v	line:105	class:payload.optcodetype
+OP_LEFT	payload.py	/^        OP_LEFT     = 0x80$/;"	v	line:100	class:payload.optcodetype
+OP_LESSTHAN	payload.py	/^        OP_LESSTHAN         = 0x9f$/;"	v	line:137	class:payload.optcodetype
+OP_LESSTHANOREQUAL	payload.py	/^        OP_LESSTHANOREQUAL  = 0xa1$/;"	v	line:139	class:payload.optcodetype
+OP_LSHIFT	payload.py	/^        OP_LSHIFT   = 0x98$/;"	v	line:129	class:payload.optcodetype
+OP_MAX	payload.py	/^        OP_MAX      = 0xa4$/;"	v	line:142	class:payload.optcodetype
+OP_MIN	payload.py	/^        OP_MIN      = 0xa3$/;"	v	line:141	class:payload.optcodetype
+OP_MOD	payload.py	/^        OP_MOD      = 0x97$/;"	v	line:128	class:payload.optcodetype
+OP_MUL	payload.py	/^        OP_MUL      = 0x95$/;"	v	line:126	class:payload.optcodetype
+OP_NEGATE	payload.py	/^        OP_NEGATE   = 0x8f$/;"	v	line:119	class:payload.optcodetype
+OP_NIP	payload.py	/^        OP_NIP      = 0x77$/;"	v	line:89	class:payload.optcodetype
+OP_NOP	payload.py	/^        OP_NOP      = 0x61$/;"	v	line:66	class:payload.optcodetype
+OP_NOP1	payload.py	/^        OP_NOP1 = 0xb0$/;"	v	line:159	class:payload.optcodetype
+OP_NOP10	payload.py	/^        OP_NOP10 = 0xb9$/;"	v	line:170	class:payload.optcodetype
+OP_NOP2	payload.py	/^        OP_NOP2 = OP_CHECKLOCKTIMEVERIFY$/;"	v	line:161	class:payload.optcodetype
+OP_NOP3	payload.py	/^        OP_NOP3 = OP_CHECKSEQUENCEVERIFY$/;"	v	line:163	class:payload.optcodetype
+OP_NOP4	payload.py	/^        OP_NOP4 = 0xb3$/;"	v	line:164	class:payload.optcodetype
+OP_NOP5	payload.py	/^        OP_NOP5 = 0xb4$/;"	v	line:165	class:payload.optcodetype
+OP_NOP6	payload.py	/^        OP_NOP6 = 0xb5$/;"	v	line:166	class:payload.optcodetype
+OP_NOP7	payload.py	/^        OP_NOP7 = 0xb6$/;"	v	line:167	class:payload.optcodetype
+OP_NOP8	payload.py	/^        OP_NOP8 = 0xb7$/;"	v	line:168	class:payload.optcodetype
+OP_NOP9	payload.py	/^        OP_NOP9 = 0xb8$/;"	v	line:169	class:payload.optcodetype
+OP_NOT	payload.py	/^        OP_NOT      = 0x91$/;"	v	line:121	class:payload.optcodetype
+OP_NOTIF	payload.py	/^        OP_NOTIF    = 0x64$/;"	v	line:69	class:payload.optcodetype
+OP_NUMEQUAL	payload.py	/^        OP_NUMEQUAL = 0x9c$/;"	v	line:134	class:payload.optcodetype
+OP_NUMEQUALVERIFY	payload.py	/^        OP_NUMEQUALVERIFY   = 0x9d$/;"	v	line:135	class:payload.optcodetype
+OP_NUMNOTEQUAL	payload.py	/^        OP_NUMNOTEQUAL      = 0x9e$/;"	v	line:136	class:payload.optcodetype
+OP_OR	payload.py	/^        OP_OR       = 0x85$/;"	v	line:107	class:payload.optcodetype
+OP_OVER	payload.py	/^        OP_OVER     = 0x78$/;"	v	line:90	class:payload.optcodetype
+OP_PICK	payload.py	/^        OP_PICK     = 0x79$/;"	v	line:91	class:payload.optcodetype
+OP_PUBKEY	payload.py	/^        OP_PUBKEY       = 0xfe$/;"	v	line:175	class:payload.optcodetype
+OP_PUBKEYHASH	payload.py	/^        OP_PUBKEYHASH   = 0xfd$/;"	v	line:174	class:payload.optcodetype
+OP_PUBKEYS	payload.py	/^        OP_PUBKEYS      = 0xfb$/;"	v	line:173	class:payload.optcodetype
+OP_PUSHDATA1	payload.py	/^        OP_PUSHDATA1 = 0x4c$/;"	v	line:42	class:payload.optcodetype
+OP_PUSHDATA2	payload.py	/^        OP_PUSHDATA2 = 0x4d$/;"	v	line:43	class:payload.optcodetype
+OP_PUSHDATA4	payload.py	/^        OP_PUSHDATA4 = 0x4e$/;"	v	line:44	class:payload.optcodetype
+OP_RESERVED	payload.py	/^        OP_RESERVED = 0x50$/;"	v	line:46	class:payload.optcodetype
+OP_RESERVED1	payload.py	/^        OP_RESERVED1    = 0x89$/;"	v	line:111	class:payload.optcodetype
+OP_RESERVED2	payload.py	/^        OP_RESERVED2    = 0x8a$/;"	v	line:112	class:payload.optcodetype
+OP_RETURN	payload.py	/^        OP_RETURN   = 0x6a$/;"	v	line:75	class:payload.optcodetype
+OP_RIGHT	payload.py	/^        OP_RIGHT    = 0x81$/;"	v	line:101	class:payload.optcodetype
+OP_RIPEMD160	payload.py	/^        OP_RIPEMD160 = 0xa6$/;"	v	line:147	class:payload.optcodetype
+OP_ROLL	payload.py	/^        OP_ROLL     = 0x7a$/;"	v	line:92	class:payload.optcodetype
+OP_ROT	payload.py	/^        OP_ROT      = 0x7b$/;"	v	line:93	class:payload.optcodetype
+OP_RSHIFT	payload.py	/^        OP_RSHIFT   = 0x99$/;"	v	line:130	class:payload.optcodetype
+OP_SHA1	payload.py	/^        OP_SHA1     = 0xa7$/;"	v	line:148	class:payload.optcodetype
+OP_SHA256	payload.py	/^        OP_SHA256   = 0xa8$/;"	v	line:149	class:payload.optcodetype
+OP_SIZE	payload.py	/^        OP_SIZE     = 0x82$/;"	v	line:102	class:payload.optcodetype
+OP_SMALLINTEGER	payload.py	/^        OP_SMALLINTEGER = 0xfa$/;"	v	line:172	class:payload.optcodetype
+OP_SUB	payload.py	/^        OP_SUB      = 0x94$/;"	v	line:125	class:payload.optcodetype
+OP_SUBSTR	payload.py	/^        OP_SUBSTR   = 0x7f$/;"	v	line:99	class:payload.optcodetype
+OP_SWAP	payload.py	/^        OP_SWAP     = 0x7c$/;"	v	line:94	class:payload.optcodetype
+OP_TOALTSTACK	payload.py	/^        OP_TOALTSTACK   = 0x6b$/;"	v	line:77	class:payload.optcodetype
+OP_TRUE	payload.py	/^        OP_TRUE=0x51$/;"	v	line:48	class:payload.optcodetype
+OP_TUCK	payload.py	/^        OP_TUCK     = 0x7d$/;"	v	line:95	class:payload.optcodetype
+OP_VER	payload.py	/^        OP_VER      = 0x62$/;"	v	line:67	class:payload.optcodetype
+OP_VERIF	payload.py	/^        OP_VERIF    = 0x65$/;"	v	line:70	class:payload.optcodetype
+OP_VERIFY	payload.py	/^        OP_VERIFY   = 0x69$/;"	v	line:74	class:payload.optcodetype
+OP_VERNOTIF	payload.py	/^        OP_VERNOTIF = 0x66$/;"	v	line:71	class:payload.optcodetype
+OP_WITHIN	payload.py	/^        OP_WITHIN   = 0xa5$/;"	v	line:144	class:payload.optcodetype
+OP_XOR	payload.py	/^        OP_XOR      = 0x86$/;"	v	line:108	class:payload.optcodetype
+UNKNOWN	payload.py	/^        UNKNOWN     = 0xFFFF$/;"	v	line:184	class:payload.txtype
 __init__	btcclient.py	/^        def __init__(self, datas):$/;"	m	line:34	class:btcclient.transaction	access:public
 __init__	btcclient.py	/^    def __init__(self, name, btc_conn):$/;"	m	line:41	class:btcclient	access:public
+__init__	payload.py	/^    def __init__(self, name):$/;"	m	line:186	class:payload	access:public
+__init_type_with_version	payload.py	/^    def __init_type_with_version(self):$/;"	m	line:193	class:payload	file:	access:private
+__valid_mark	payload.py	/^    __valid_mark = "violas"$/;"	v	line:34	class:payload
+__version_0	payload.py	/^    __version_0 = 0$/;"	v	line:35	class:payload
+__version_1	payload.py	/^    __version_1 = 1$/;"	v	line:36	class:payload
+_reset	payload.py	/^    def _reset(self, payload):$/;"	m	line:206	class:payload	access:public
 btcclient	btcclient.py	/^class btcclient(baseobject):$/;"	c	line:32	inherits:baseobject
 btchelp	btctools.py	/^def btchelp():$/;"	f	line:34	access:public
+check	payload.py	/^def check(src, dest):$/;"	f	line:456	access:public
 disconn_node	btcclient.py	/^    def disconn_node(self):$/;"	m	line:63	class:btcclient	access:public
 get_version	btcclient.py	/^        def get_version(self):$/;"	m	line:36	class:btcclient.transaction	access:public
 getblockcount	btcclient.py	/^    def getblockcount(self):$/;"	m	line:70	class:btcclient	access:public
@@ -24,24 +157,63 @@ getblockwithhash	btctools.py	/^def getblockwithhash(blockhash):$/;"	f	line:52	ac
 getblockwithindex	btcclient.py	/^    def getblockwithindex(self, index):$/;"	m	line:117	class:btcclient	access:public
 getblockwithindex	btctools.py	/^def getblockwithindex(index):$/;"	f	line:58	access:public
 getbtcclient	btctools.py	/^def getbtcclient():$/;"	f	line:31	access:public
+getopreturnfromdata	btcclient.py	/^    def getopreturnfromdata(self, tran):$/;"	m	line:272	class:btcclient	access:public
 getrawtransaction	btcclient.py	/^    def getrawtransaction(self, txid, verbose = True, blockhash = None):$/;"	m	line:162	class:btcclient	access:public
 getrawtransaction	btctools.py	/^def getrawtransaction(txid, verbose = True, blockhash = None):$/;"	f	line:76	access:public
-gettxin	btcclient.py	/^    def gettxin(self, txid):$/;"	m	line:211	class:btcclient	access:public
-gettxinfromdata	btcclient.py	/^    def gettxinfromdata(self, tran):$/;"	m	line:229	class:btcclient	access:public
-gettxoutin	btcclient.py	/^    def gettxoutin(self, txid):$/;"	m	line:177	class:btcclient	access:public
-gettxoutin	btctools.py	/^def gettxoutin(txid):$/;"	f	line:82	access:public
-gettxoutinfromdata	btcclient.py	/^    def gettxoutinfromdata(self, tran):$/;"	m	line:196	class:btcclient	access:public
-gettxoutwithn	btcclient.py	/^    def gettxoutwithn(self, txid, n):$/;"	m	line:243	class:btcclient	access:public
-gettxoutwithn	btctools.py	/^def gettxoutwithn(txid, n):$/;"	f	line:88	access:public
-gettxoutwithnfromdata	btcclient.py	/^    def gettxoutwithnfromdata(self, tran, n):$/;"	m	line:262	class:btcclient	access:public
-help	btcclient.py	/^    def help(self):$/;"	m	line:295	class:btcclient	access:public
-init_args	btctools.py	/^def init_args(pargs):$/;"	f	line:94	access:public
+gettxin	btcclient.py	/^    def gettxin(self, txid):$/;"	m	line:183	class:btcclient	access:public
+gettxinfromdata	btcclient.py	/^    def gettxinfromdata(self, tran):$/;"	m	line:201	class:btcclient	access:public
+gettxinwithnfromdata	btcclient.py	/^    def gettxinwithnfromdata(self, tran, n):$/;"	m	line:220	class:btcclient	access:public
+gettxoutin	btctools.py	/^def gettxoutin(txid):$/;"	f	line:83	access:public
+gettxoutwithn	btcclient.py	/^    def gettxoutwithn(self, txid, n):$/;"	m	line:238	class:btcclient	access:public
+gettxoutwithn	btctools.py	/^def gettxoutwithn(txid, n):$/;"	f	line:89	access:public
+gettxoutwithnfromdata	btcclient.py	/^    def gettxoutwithnfromdata(self, tran, n):$/;"	m	line:257	class:btcclient	access:public
+help	btcclient.py	/^    def help(self):$/;"	m	line:318	class:btcclient	access:public
+init_args	btctools.py	/^def init_args(pargs):$/;"	f	line:95	access:public
+is_allow_opreturn	payload.py	/^    def is_allow_opreturn(self, txtype, version, block):$/;"	m	line:329	class:payload	access:public
+is_allow_txtype	payload.py	/^    def is_allow_txtype(self, txtype):$/;"	m	line:324	class:payload	access:public
+is_bigendian	payload.py	/^    def is_bigendian(self):$/;"	m	line:238	class:payload	access:public
+is_valid_violas	payload.py	/^    def is_valid_violas(self, payload):$/;"	m	line:356	class:payload	access:public
 logger	btctools.py	/^logger = log.logger.getLogger(name) $/;"	v	line:29
-main	btcclient.py	/^def main():$/;"	f	line:304	access:public
+main	btcclient.py	/^def main():$/;"	f	line:327	access:public
 name	btcclient.py	/^name="bclient"$/;"	v	line:27
 name	btctools.py	/^name="btctools"$/;"	v	line:26
-parsevout	btcclient.py	/^    def parsevout(self, vout):$/;"	m	line:277	class:btcclient	access:public
-run	btctools.py	/^def run(argc, argv):$/;"	f	line:106	access:public
+name	parse_exchange.py	/^name="parseex"$/;"	v	line:25
+name	payload.py	/^name="payload"$/;"	v	line:32
+op_code	payload.py	/^    def op_code(self):$/;"	m	line:250	class:payload	access:public
+op_code	payload.py	/^    def op_code(self, code):$/;"	m	line:254	class:payload	access:public
+op_data	payload.py	/^    def op_data(self):$/;"	m	line:282	class:payload	access:public
+op_data	payload.py	/^    def op_data(self, data):$/;"	m	line:286	class:payload	access:public
+op_mark	payload.py	/^    def op_mark(self):$/;"	m	line:298	class:payload	access:public
+op_mark	payload.py	/^    def op_mark(self, mark):$/;"	m	line:302	class:payload	access:public
+op_size	payload.py	/^    def op_size(self):$/;"	m	line:290	class:payload	access:public
+op_size	payload.py	/^    def op_size(self, size):$/;"	m	line:294	class:payload	access:public
+opstr	payload.py	/^opstr = "6a4c5276696f6c617300003000f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2"$/;"	v	line:450
+optcodetype	payload.py	/^    class optcodetype(Enum):$/;"	c	line:38	class:payload	inherits:Enum
+parse	payload.py	/^    def parse(self, payload):$/;"	m	line:370	class:payload	access:public
+parse_btc_mark	parse_exchange.py	/^def parse_btc_mark(data):$/;"	f	line:94	access:public
+parse_data	payload.py	/^    def parse_data(self):$/;"	m	line:340	class:payload	access:public
+parse_ex_cancel	parse_exchange.py	/^def parse_ex_cancel(data):$/;"	f	line:72	access:public
+parse_ex_end	parse_exchange.py	/^def parse_ex_end(data):$/;"	f	line:49	access:public
+parse_ex_start	parse_exchange.py	/^def parse_ex_start(data):$/;"	f	line:26	access:public
+parsevin	btcclient.py	/^    def parsevin(self, vin):$/;"	m	line:307	class:btcclient	access:public
+parsevout	btcclient.py	/^    def parsevout(self, vout):$/;"	m	line:289	class:btcclient	access:public
+payload	payload.py	/^class payload(baseobject):$/;"	c	line:33	inherits:baseobject
+payload_hex	payload.py	/^    def payload_hex(self):$/;"	m	line:274	class:payload	access:public
+payload_hex	payload.py	/^    def payload_hex(self, payload):$/;"	m	line:278	class:payload	access:public
+proof_data	payload.py	/^    def proof_data(self):$/;"	m	line:306	class:payload	access:public
+proof_data	payload.py	/^    def proof_data(self, data):$/;"	m	line:310	class:payload	access:public
+reset	payload.py	/^    def reset(self):$/;"	m	line:314	class:payload	access:public
+run	btctools.py	/^def run(argc, argv):$/;"	f	line:107	access:public
+state_name_to_value	payload.py	/^    def state_name_to_value(self, state):$/;"	m	line:217	class:payload	access:public
+state_value_to_name	payload.py	/^    def state_value_to_name(self, state):$/;"	m	line:228	class:payload	access:public
 stop	btcclient.py	/^    def stop(self):$/;"	m	line:67	class:btcclient	access:public
+test_np	payload.py	/^def test_np():$/;"	f	line:459	access:public
 to_json	btcclient.py	/^        def to_json(self):$/;"	m	line:38	class:btcclient.transaction	access:public
 transaction	btcclient.py	/^    class transaction(object):$/;"	c	line:33	class:btcclient	inherits:object
+tx_type	payload.py	/^    def tx_type(self):$/;"	m	line:266	class:payload	access:public
+tx_type	payload.py	/^    def tx_type(self, txtype):$/;"	m	line:270	class:payload	access:public
+tx_version	payload.py	/^    def tx_version(self):$/;"	m	line:258	class:payload	access:public
+tx_version	payload.py	/^    def tx_version(self, txversion):$/;"	m	line:262	class:payload	access:public
+txtype	payload.py	/^    class txtype(Enum):$/;"	c	line:178	class:payload	inherits:Enum
+type_version	payload.py	/^    def type_version(self):$/;"	m	line:203	class:payload	access:public
+valid_mark	payload.py	/^    def valid_mark(self):$/;"	m	line:246	class:payload	access:public
