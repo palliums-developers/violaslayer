@@ -21,6 +21,7 @@ from comm.functions import json_print
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 from btc.btcclient import btcclient
 from enum import Enum
+from btc.payload import payload
 
 #module name
 name="btctools"
@@ -80,6 +81,13 @@ def getrawtransaction(txid, verbose = True, blockhash = None):
     print(f"size: {ret.datas.get('vinsize') + ret.datas.get('voutsize')}")
     json_print(ret.datas)
 
+def decoderawtransaction(data, isswitness):
+    client = getbtcclient()
+    ret = client.decoderawtransaction(data, isswitness)
+    assert ret.state == error.SUCCEED, f"decoderawtransaction(date, {isswitness}) failed"
+    print(f"size: {ret.datas.get('vinsize') + ret.datas.get('voutsize')}")
+    json_print(ret.datas)
+
 def gettxoutin(txid):
     client = getbtcclient()
     ret = client.gettxoutin(txid)
@@ -92,6 +100,55 @@ def gettxoutwithn(txid, n):
     assert ret.state == error.SUCCEED, f"gettxoutwithn({txid}, {n}) failed"
     json_print(ret.datas)
 
+def parsetranpayload(txid):
+    client = getbtcclient()
+    ret = client.getrawtransaction(txid)
+    assert ret.state == error.SUCCEED, f"getrawtransaction({txid}) failed"
+    tran = ret.datas
+    blockhash = ret.datas.get("blockhash")
+    ret = client.getblockwithhash(blockhash)
+    assert ret.state == error.SUCCEED, f"getblockwithhash({txid}) failed"
+    block = ret.datas.get("height")
+
+    ret = client.getopreturnfromdata(tran)
+    assert ret.state == error.SUCCEED, f"getopreturnfromdata() failed"
+    assert ret.datas is not None, f"getopreturnfromdata() failed"
+    payload_data = ret.datas
+
+    parse_payload = payload(name)
+    ret = parse_payload.parse(payload_data)
+    info = {"is allow opreturn": parse_payload.is_allow_opreturn(parse_payload.tx_type, parse_payload.tx_version, block),
+            "block" : block,
+            "txid": tran.get("txid"),
+            "blockhash": blockhash,
+        }
+
+    json_print(info)
+
+def parserawtranpayload(data):
+    client = getbtcclient()
+    ret = client.decoderawtransaction(data)
+    assert ret.state == error.SUCCEED, f"decoderawtransaction({txid}) failed"
+    tran = ret.datas
+    blockhash = ret.datas.get("blockhash")
+    block = None
+
+    ret = client.getopreturnfromdata(tran)
+    assert ret.state == error.SUCCEED, f"getopreturnfromdata() failed"
+    assert ret.datas is not None, f"getopreturnfromdata() failed"
+    payload_data = ret.datas
+
+    parse_payload = payload(name)
+    ret = parse_payload.parse(payload_data)
+    info = {"is allow opreturn": parse_payload.is_allow_opreturn(parse_payload.tx_type, parse_payload.tx_version, block),
+            "block" : "",
+            "txid": tran.get("txid"),
+            "blockhash": blockhash,
+        }
+
+    json_print(info)
+
+    
 def init_args(pargs):
     pargs.append("help", "show arg list")
     pargs.append("getblockcount", "get block count.")
@@ -103,6 +160,9 @@ def init_args(pargs):
     pargs.append("getrawtransaction", "get raw transaction", True, ["txid", "verbose", "blockhash"])
     pargs.append("gettxoutin", "get transaction vin and vout", True, ["txid"])
     pargs.append("gettxoutwithn", "get transaction vout[n]", True, ["txid", "n"])
+    pargs.append("parsetranpayload", "parse transaction payload", True, ["txid"])
+    pargs.append("decoderawtransaction", "decode raw transaction payload", True, ["data-hex", "isswitness"])
+    pargs.append("parserawtranpayload", "parse raw transaction payload", True, ["data-hex"])
 
 def run(argc, argv):
     try:
@@ -175,6 +235,24 @@ def run(argc, argv):
             if len(arg_list) != 2:
                 pargs.exit_error_opt(opt)
             ret = gettxoutwithn(arg_list[0], int(arg_list[1]))
+        elif pargs.is_matched(opt, ["parsetranpayload"]):
+            if len(arg_list) != 1:
+                pargs.exit_error_opt(opt)
+            ret = parsetranpayload(arg_list[0])
+        elif pargs.is_matched(opt, ["parserawtranpayload"]):
+            if len(arg_list) != 1:
+                pargs.exit_error_opt(opt)
+            ret = parserawtranpayload(arg_list[0])
+        elif pargs.is_matched(opt, ["decoderawtransaction"]):
+            if len(arg_list) not in (1, 2):
+                pargs.exit_error_opt(opt)
+            data = None
+            isswitness = True
+            if len(arg_list) >= 1:
+                data = arg_list[0]
+            if len(arg_list) >= 2:
+                isswitness = arg_list[1] == "True"
+            ret = decoderawtransaction(data, isswitness)
 
     logger.debug("end manage.main")
 

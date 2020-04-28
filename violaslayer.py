@@ -32,7 +32,7 @@ class works:
     __work_looping = {}
     __work_obj = {}
 
-    __btc_min_valid_version     = 170_0000
+    __btc_min_valid_version     = 165_8036
     def __init__(self):
         logger.debug("works __init__")
         for mod in self.__work_looping:

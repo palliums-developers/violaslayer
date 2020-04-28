@@ -323,16 +323,18 @@ class payload(baseobject):
 
     def is_allow_txtype(self, txtype):
         #EnumUtils.isValidEnum(self.txtype.class, txtype)
-        return txtype in self.txtype._value2member_map_
+        return txtype.value in self.txtype._value2member_map_
 
     
-    def is_allow_opreturn(self, txtype, version, block):
+    def is_allow_opreturn(self, txtype, version, block = None):
         type_version = self.type_version.get(txtype)
+        if not self.is_allow_txtype(txtype):
+            return False
         if type_version is None:
             return False
         if version not in type_version.get("version"):
             return False
-        if block < type_version.get("block"):
+        if block is not None and block < type_version.get("block"):
             return False
 
         return True
@@ -361,14 +363,15 @@ class payload(baseobject):
                 return ret
 
             valid = (self.op_mark == self.valid_mark and \
-                    self.is_found_txtype(self.tx_type))
-            ret = result(error.SUCCEED, "", self.op_mark == self.valid_mark)
+                    self.is_allow_txtype(self.tx_type))
+            ret = result(error.SUCCEED, "", valid)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def parse(self, payload):
         try:
+            self._logger.debug(f"payload:{payload}")
             self._reset(payload)
             bdata = bytes.fromhex(self.payload_hex)
             data_len = len(bdata)
@@ -396,16 +399,18 @@ class payload(baseobject):
             opcode_value = struct.unpack_from('B', bdata, 0)[0]
             self.op_code = self.optcodetype(opcode_value)
 
-
+            #violas mark
             #makesure data is valid
             if data_offer + 6 >= data_len:
                 return result(error.ARG_INVALID)
 
-            #violas mark
+            try:
+                mark = struct.unpack_from('cccccc', bdata, data_offer)
+                self.op_mark = "".join([v.decode() for v in mark])
+                data_offer = data_offer + 6
+            except Exception as e:
+                return result(error.ARG_INVALID)
 
-            mark = struct.unpack_from('cccccc', bdata, data_offer)
-            self.op_mark = "".join([v.decode() for v in mark])
-            data_offer = data_offer + 6
 
             if self.op_mark != self.valid_mark:
                 return result(error.ARG_INVALID)
@@ -439,6 +444,7 @@ class payload(baseobject):
                     "proof": self.proof_data
                     }
             ret = result(error.SUCCEED, datas = datas) 
+            json_print(datas)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -448,6 +454,7 @@ class payload(baseobject):
 #opstr = "6a4c5276696f6c617300003000f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000000001ed048cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2"
     
 opstr = "6a4c5276696f6c617300003000f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2"
+#opstr = "6a4c5000027dbe00023efe054e8eead55dfc2f4d8699319e24ca0e9f5fee325b769d2b715457c163a9b3a9f769b376bf077f566ddf2cb85e180b6c050114edad1ca9a627de9305ad5bc9212a4ce706aebc7497"
     ###txid: f30a9f9497b97aa5f95a46f1bd6fceeb26241686526068c309dee8d8fafc0a97
     ###to_address:f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c6 
     ###sequence: 20200110006
@@ -465,7 +472,6 @@ def test_np():
     print(f"check op_return is valid: {pdata.is_valid_violas(opstr).datas}")
     ret = pdata.parse(opstr)
     assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
-    json_print(ret.datas)
     
  
     

@@ -191,12 +191,6 @@ class aproof(abase):
             ret = parse_except(e)
         return ret
 
-    def get_transaction(self, txid):
-        try:
-            ret = self._vclient.getrawtransaction(txid)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
 
     def start(self):
         try:

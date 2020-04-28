@@ -180,6 +180,24 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
+    
+    def decoderawtransaction(self, data, isswitness = True):
+        try:
+            self._logger.debug(f"start decoderawtransaction({data}, {isswitness})")
+            
+            datas = self.__rpc_connection.decoderawtransaction(data, isswitness)
+            datas["vinsize"] = len(datas.get("vin"))
+            datas["voutsize"] = len(datas.get("vout"))
+            for i, value in enumerate(datas["vout"]):
+                script_pub_key = datas["vout"][i]["scriptPubKey"]
+                if script_pub_key.get("type", "") == "nonstandard":
+                    script_pub_key["asm"] = ""
+                    script_pub_key["hex"] = ""
+
+            ret = result(error.SUCCEED, "", json_reset(datas))
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
     # get vout vin
     def gettxoutin(self, txid):
         try:
@@ -286,6 +304,14 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
+    def gettxoutcountfromdata(self, tran):
+        try:
+            vouts = tran.get("vout")
+            #not found txid vout n
+            ret = result(error.SUCCEED, datas = len(vouts))
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
     def gettxoutwithnfromdata(self, tran, n):
         try:
             vouts = tran.get("vout")
@@ -310,7 +336,7 @@ class btcclient(baseobject):
                 if ret.state != error.SUCCEED:
                     return ret
                 if ret.datas.get("type") == "nulldata":
-                    return ret
+                    return result(error.SUCCEED, "", ret.datas.get("hex"))
 
             #not found txid vout n
             ret = result(error.ARG_INVALID)
