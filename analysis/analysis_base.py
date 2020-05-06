@@ -123,11 +123,10 @@ class abase(baseobject):
             ret = self._vclient.gettxoutwithnfromdata(pre_tran, vout)
             if ret.state != error.SUCCEED:
                 return ret
-
             
             input_type = ret.datas.get("type")
 
-            if not self.is_allow_inputtype(input_type)
+            if not self.is_allow_inputtype(input_type):
                 return result(error.ARG_INVALID, "input type is invalid.")
 
             datas = {
@@ -195,12 +194,13 @@ class abase(baseobject):
                     "create_block": tran.get("blockhash"), 
                     "update_block": tran.get("blockhash"),
                     "address":payload_info.proof_data.get("to_address"),
-                    "vtoken":payload_info.proof_data.get("token"),
+                    "vtoken":payload_info.proof_data.get("token"), #token is module
                     "num_btc":amount,
                     "issuer":issuser, 
                     "receiver":receiver, 
                     "sequence":payload_info.proof_data.get("sequence"),
-                    "type":payload_info.tx_type,
+                    "state":payload_info.tx_type,
+                    "type":payload_info.proof_type,
                     }
             ret = result(error.SUCCEED, datas = datas)
         except Exception as e:

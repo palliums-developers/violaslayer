@@ -102,7 +102,7 @@ class aproof(abase):
 
                 tran_info["tran_id"] = tran_id
                 tran_info["state"] = self.proofstate_value_to_name(tran_info("state"))
-                ret = self._dbclient.set_proof(tran_id, tran_info)
+                ret = self._dbclient.set_proof(version, tran_info)
                 if ret.state != error.SUCCEED:
                     return ret
                 self._logger.info(f"saved new proof succeed. version = {tran_info.get('version')} tran_id = {tran_id} state={tran_info['state']}")
@@ -247,6 +247,7 @@ class aproof(abase):
                     self._logger.debug(f"transaction parse: {tran_filter}")
 
                     #this is target transaction, todo work here
+                    tran_filter["_id"] = version
                     ret = self.update_proof_info(tran_filter)
                     if ret.state != error.SUCCEED:
                         self._logger.error(ret.message)

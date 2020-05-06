@@ -213,6 +213,21 @@ class payload(baseobject):
         self.op_mark = None
         self.proof_data = None
 
+    @property
+    def proof_type(self):
+        return self.__proof_type
+
+    def txtype_map_proof_type(self, txtype):
+        if txtype == self.txtype.EX_START or \
+                txtype == self.txtype.EX_END or \
+                txtype == self.txtype.EX_CANCEL:
+            return "b"
+        elif txtype == self.txtype.EX_MARK:
+            return "v"
+        else:
+            return None
+
+    #state is txtype
     @classmethod 
     def state_name_to_value(self, state):
         if state == self.txtype.EX_START:
@@ -235,6 +250,15 @@ class payload(baseobject):
         else:
             return self.txtype.UNKNOWN
 
+    @classmethod
+    def state_value_to_txtype(self, value):
+        try:
+            return self.txtype(value)
+        except Exception as e:
+            pass
+        return self.txtype.UNKNOWN
+
+    @classmethod
     def is_bigendian(self):
         #0x0001
         val = array.array('H',[1]).tostring()
@@ -309,7 +333,6 @@ class payload(baseobject):
     @proof_data.setter
     def proof_data(self, data):
         self.__proof_data  = data
-    
 
     def reset(self):
         self.op_code = None
@@ -425,7 +448,8 @@ class payload(baseobject):
                 return result(error.ARG_INVALID)
 
             tx_type = struct.unpack_from('>H', bdata, data_offer)[0]
-            self.tx_type = self.txtype(tx_type)
+            self.tx_type = self.state_value_to_txtype(tx_type)
+            self.proof_type = self.txtype_map_proof_state(self.tx_type)
             data_offer = data_offer + 2
 
             self.op_data = bdata[data_offer:]
@@ -441,7 +465,8 @@ class payload(baseobject):
                     "mark" : self.op_mark,
                     "version": self.tx_version,
                     "type": self.tx_type.name,
-                    "proof": self.proof_data
+                    "proof": self.proof_data,
+                    "type" : self.proof_type
                     }
             ret = result(error.SUCCEED, datas = datas) 
             json_print(datas)
