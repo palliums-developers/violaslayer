@@ -15,7 +15,7 @@ import stmanage
 from time import sleep, ctime
 import comm.functions as fn
 from comm.result import parse_except
-from analysis import analysis_filter 
+from analysis import analysis_filter, analysis_proof
 import subprocess
 from enum import Enum
 
@@ -74,18 +74,20 @@ class works:
         finally:
             logger.critical("stop: bload")
 
-    def work_proof(self, nsec):
+    def work_b2vproof(self, nsec):
         try:
             logger.critical("start: btc b2v proof")
             while (self.__work_looping.get(work_mod.B2VPROOF.name, False)):
                 logger.debug("looping: b2vproof")
                 try:
-                    dtype = "b2v"   #libra transaction's data types 
-                    basedata = "bfilter"
-                    obj = analysis_proof.aproof(name="b2vproof", dtype=dtype, \
-                            dbconf=stmanage.get_db(dtype), fdbconf=stmanage.get_db(basedata))
+                    basedata = "base"
+                    dtype = "b2vproof"
+                    obj = analysis_proof.aproof(name="b2vproof", \
+                            dbconf=stmanage.get_db(dtype), \
+                            fdbconf=stmanage.get_db(basedata), \
+                            nodes = stmanage.get_btc_conn() \
+                            )
                     obj.set_step(stmanage.get_db(dtype).get("step", 100))
-                    obj.set_min_valid_version(self.__btc_min_valid_version - 1)
                     self.set_work_obj(obj)
                     obj.start()
                 except Exception as e:
@@ -94,7 +96,7 @@ class works:
         except Exception as e:
             parse_except(e)
         finally:
-            logger.critical("stop: v2lproof")
+            logger.critical("stop: b2vproof")
 
     def work_comm(self, nsec):
         try:

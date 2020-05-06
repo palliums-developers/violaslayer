@@ -23,6 +23,15 @@ def get_db(mtype):
         parse_except(e)
     return None
 
+def list_db_name():
+    try:
+        dbs = [dict.get("db") for dict in setting.db_list]
+        if len(dbs) > 0:
+            return dbs
+    except Exception as e:
+        parse_except(e)
+    return None
+
 def get_btc_conn():
     try:
         return setting.btc_conn

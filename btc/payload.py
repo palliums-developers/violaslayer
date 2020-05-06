@@ -212,10 +212,15 @@ class payload(baseobject):
         self.op_size = 0
         self.op_mark = None
         self.proof_data = None
+        self.is_valid = False
 
     @property
-    def proof_type(self):
-        return self.__proof_type
+    def is_valid(self):
+        return self.__is_valid
+
+    @is_valid.setter
+    def is_valid(self, value):
+        self.__is_valid = value
 
     def txtype_map_proof_type(self, txtype):
         if txtype == self.txtype.EX_START or \
@@ -229,7 +234,7 @@ class payload(baseobject):
 
     #state is txtype
     @classmethod 
-    def state_name_to_value(self, state):
+    def state_value_to_name(self, state):
         if state == self.txtype.EX_START:
             return "start"
         elif state == self.txtype.EX_CANCEL:
@@ -240,7 +245,7 @@ class payload(baseobject):
             return "unkown"
 
     @classmethod
-    def state_value_to_name(self, state):
+    def state_name_to_value(self, state):
         if state == "start":
             return self.txtype.EX_START
         elif state == "cancel":
@@ -344,10 +349,12 @@ class payload(baseobject):
         self.tx_version = None
         self.tx_type = None
 
+    def is_allow_mark(self, mark):
+        return self.valid_mark == mark
+
     def is_allow_txtype(self, txtype):
         #EnumUtils.isValidEnum(self.txtype.class, txtype)
         return txtype.value in self.txtype._value2member_map_
-
     
     def is_allow_opreturn(self, txtype, version, block = None):
         type_version = self.type_version.get(txtype)
@@ -385,8 +392,7 @@ class payload(baseobject):
             if ret.state != error.SUCCEED:
                 return ret
 
-            valid = (self.op_mark == self.valid_mark and \
-                    self.is_allow_txtype(self.tx_type))
+            valid = self.is_valid()
             ret = result(error.SUCCEED, "", valid)
         except Exception as e:
             ret = parse_except(e)
@@ -449,7 +455,6 @@ class payload(baseobject):
 
             tx_type = struct.unpack_from('>H', bdata, data_offer)[0]
             self.tx_type = self.state_value_to_txtype(tx_type)
-            self.proof_type = self.txtype_map_proof_state(self.tx_type)
             data_offer = data_offer + 2
 
             self.op_data = bdata[data_offer:]
@@ -459,6 +464,7 @@ class payload(baseobject):
                 return ret
 
             self.proof_data = ret.datas
+            self.is_valid = self.is_allow_opreturn(self.tx_type, self.tx_version) and self.is_allow_mark(self.op_mark)
             datas = {
                     "opcode" : self.op_code.name,
                     "datasize": self.op_size,
@@ -466,7 +472,7 @@ class payload(baseobject):
                     "version": self.tx_version,
                     "type": self.tx_type.name,
                     "proof": self.proof_data,
-                    "type" : self.proof_type
+                    "valid": self.is_valid,
                     }
             ret = result(error.SUCCEED, datas = datas) 
             json_print(datas)

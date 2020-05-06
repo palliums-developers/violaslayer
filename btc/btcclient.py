@@ -169,6 +169,7 @@ class btcclient(baseobject):
                 datas = self.__rpc_connection.getrawtransaction(txid, verbose, blockhash)
             datas["vinsize"] = len(datas.get("vin"))
             datas["voutsize"] = len(datas.get("vout"))
+            datas["txid"] = txid 
             for i, value in enumerate(datas["vout"]):
                 script_pub_key = datas["vout"][i]["scriptPubKey"]
                 if script_pub_key.get("type", "") == "nonstandard":
@@ -252,7 +253,7 @@ class btcclient(baseobject):
 
     def gettxinfromdata(self, tran):
         try:
-            self._logger.debug(f"start gettxoutin({txid})")
+            self._logger.debug(f"start gettxoutin({tran.get('txid')})")
             datas = {
                     "txid" : tran.get("txid"),
                     "vin" : [{"txid": vin.get("txid"), \

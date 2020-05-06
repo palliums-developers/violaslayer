@@ -141,8 +141,8 @@ __version_1	payload.py	/^    __version_1 = 1$/;"	v	line:36	class:payload
 _reset	payload.py	/^    def _reset(self, payload):$/;"	m	line:206	class:payload	access:public
 btcclient	btcclient.py	/^class btcclient(baseobject):$/;"	c	line:32	inherits:baseobject
 btchelp	btctools.py	/^def btchelp():$/;"	f	line:35	access:public
-check	payload.py	/^def check(src, dest):$/;"	f	line:463	access:public
-decoderawtransaction	btcclient.py	/^    def decoderawtransaction(self, hex, isswitness = True):$/;"	m	line:184	class:btcclient	access:public
+check	payload.py	/^def check(src, dest):$/;"	f	line:488	access:public
+decoderawtransaction	btcclient.py	/^    def decoderawtransaction(self, data, isswitness = True):$/;"	m	line:184	class:btcclient	access:public
 decoderawtransaction	btctools.py	/^def decoderawtransaction(data, isswitness):$/;"	f	line:84	access:public
 disconn_node	btcclient.py	/^    def disconn_node(self):$/;"	m	line:63	class:btcclient	access:public
 get_version	btcclient.py	/^        def get_version(self):$/;"	m	line:36	class:btcclient.transaction	access:public
@@ -173,53 +173,57 @@ gettxoutwithn	btcclient.py	/^    def gettxoutwithn(self, txid, n):$/;"	m	line:28
 gettxoutwithn	btctools.py	/^def gettxoutwithn(txid, n):$/;"	f	line:97	access:public
 gettxoutwithnfromdata	btcclient.py	/^    def gettxoutwithnfromdata(self, tran, n):$/;"	m	line:315	class:btcclient	access:public
 help	btcclient.py	/^    def help(self):$/;"	m	line:376	class:btcclient	access:public
-init_args	btctools.py	/^def init_args(pargs):$/;"	f	line:128	access:public
-is_allow_opreturn	payload.py	/^    def is_allow_opreturn(self, txtype, version, block = 0):$/;"	m	line:329	class:payload	access:public
-is_allow_txtype	payload.py	/^    def is_allow_txtype(self, txtype):$/;"	m	line:324	class:payload	access:public
-is_bigendian	payload.py	/^    def is_bigendian(self):$/;"	m	line:238	class:payload	access:public
-is_valid_violas	payload.py	/^    def is_valid_violas(self, payload):$/;"	m	line:358	class:payload	access:public
+init_args	btctools.py	/^def init_args(pargs):$/;"	f	line:152	access:public
+is_allow_opreturn	payload.py	/^    def is_allow_opreturn(self, txtype, version, block = None):$/;"	m	line:352	class:payload	access:public
+is_allow_txtype	payload.py	/^    def is_allow_txtype(self, txtype):$/;"	m	line:347	class:payload	access:public
+is_bigendian	payload.py	/^    def is_bigendian(self):$/;"	m	line:262	class:payload	access:public
+is_valid_violas	payload.py	/^    def is_valid_violas(self, payload):$/;"	m	line:381	class:payload	access:public
 logger	btctools.py	/^logger = log.logger.getLogger(name) $/;"	v	line:30
 main	btcclient.py	/^def main():$/;"	f	line:385	access:public
 name	btcclient.py	/^name="bclient"$/;"	v	line:27
 name	btctools.py	/^name="btctools"$/;"	v	line:27
 name	parse_exchange.py	/^name="parseex"$/;"	v	line:25
 name	payload.py	/^name="payload"$/;"	v	line:32
-op_code	payload.py	/^    def op_code(self):$/;"	m	line:250	class:payload	access:public
-op_code	payload.py	/^    def op_code(self, code):$/;"	m	line:254	class:payload	access:public
-op_data	payload.py	/^    def op_data(self):$/;"	m	line:282	class:payload	access:public
-op_data	payload.py	/^    def op_data(self, data):$/;"	m	line:286	class:payload	access:public
-op_mark	payload.py	/^    def op_mark(self):$/;"	m	line:298	class:payload	access:public
-op_mark	payload.py	/^    def op_mark(self, mark):$/;"	m	line:302	class:payload	access:public
-op_size	payload.py	/^    def op_size(self):$/;"	m	line:290	class:payload	access:public
-op_size	payload.py	/^    def op_size(self, size):$/;"	m	line:294	class:payload	access:public
-opstr	payload.py	/^opstr = "6a4c5276696f6c617300003000f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2"$/;"	v	line:456
+op_code	payload.py	/^    def op_code(self):$/;"	m	line:274	class:payload	access:public
+op_code	payload.py	/^    def op_code(self, code):$/;"	m	line:278	class:payload	access:public
+op_data	payload.py	/^    def op_data(self):$/;"	m	line:306	class:payload	access:public
+op_data	payload.py	/^    def op_data(self, data):$/;"	m	line:310	class:payload	access:public
+op_mark	payload.py	/^    def op_mark(self):$/;"	m	line:322	class:payload	access:public
+op_mark	payload.py	/^    def op_mark(self, mark):$/;"	m	line:326	class:payload	access:public
+op_size	payload.py	/^    def op_size(self):$/;"	m	line:314	class:payload	access:public
+op_size	payload.py	/^    def op_size(self, size):$/;"	m	line:318	class:payload	access:public
+opstr	payload.py	/^opstr = "6a4c5276696f6c617300003000f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2"$/;"	v	line:481
 optcodetype	payload.py	/^    class optcodetype(Enum):$/;"	c	line:38	class:payload	inherits:Enum
-parse	payload.py	/^    def parse(self, payload):$/;"	m	line:372	class:payload	access:public
+parse	payload.py	/^    def parse(self, payload):$/;"	m	line:395	class:payload	access:public
 parse_btc_mark	parse_exchange.py	/^def parse_btc_mark(data):$/;"	f	line:94	access:public
-parse_data	payload.py	/^    def parse_data(self):$/;"	m	line:342	class:payload	access:public
+parse_data	payload.py	/^    def parse_data(self):$/;"	m	line:365	class:payload	access:public
 parse_ex_cancel	parse_exchange.py	/^def parse_ex_cancel(data):$/;"	f	line:72	access:public
 parse_ex_end	parse_exchange.py	/^def parse_ex_end(data):$/;"	f	line:49	access:public
 parse_ex_start	parse_exchange.py	/^def parse_ex_start(data):$/;"	f	line:26	access:public
-parsetranpayload	btctools.py	/^def parsetranpayload(txid):$/;"	f	line:102	access:public
+parserawtranpayload	btctools.py	/^def parserawtranpayload(data):$/;"	f	line:128	access:public
+parsetranpayload	btctools.py	/^def parsetranpayload(txid):$/;"	f	line:103	access:public
 parsevin	btcclient.py	/^    def parsevin(self, vin):$/;"	m	line:365	class:btcclient	access:public
 parsevout	btcclient.py	/^    def parsevout(self, vout):$/;"	m	line:347	class:btcclient	access:public
 payload	payload.py	/^class payload(baseobject):$/;"	c	line:33	inherits:baseobject
-payload_hex	payload.py	/^    def payload_hex(self):$/;"	m	line:274	class:payload	access:public
-payload_hex	payload.py	/^    def payload_hex(self, payload):$/;"	m	line:278	class:payload	access:public
-proof_data	payload.py	/^    def proof_data(self):$/;"	m	line:306	class:payload	access:public
-proof_data	payload.py	/^    def proof_data(self, data):$/;"	m	line:310	class:payload	access:public
-reset	payload.py	/^    def reset(self):$/;"	m	line:314	class:payload	access:public
-run	btctools.py	/^def run(argc, argv):$/;"	f	line:142	access:public
-state_name_to_value	payload.py	/^    def state_name_to_value(self, state):$/;"	m	line:217	class:payload	access:public
-state_value_to_name	payload.py	/^    def state_value_to_name(self, state):$/;"	m	line:228	class:payload	access:public
+payload_hex	payload.py	/^    def payload_hex(self):$/;"	m	line:298	class:payload	access:public
+payload_hex	payload.py	/^    def payload_hex(self, payload):$/;"	m	line:302	class:payload	access:public
+proof_data	payload.py	/^    def proof_data(self):$/;"	m	line:330	class:payload	access:public
+proof_data	payload.py	/^    def proof_data(self, data):$/;"	m	line:334	class:payload	access:public
+proof_type	payload.py	/^    def proof_type(self):$/;"	m	line:217	class:payload	access:public
+reset	payload.py	/^    def reset(self):$/;"	m	line:337	class:payload	access:public
+run	btctools.py	/^def run(argc, argv):$/;"	f	line:167	access:public
+state_name_to_value	payload.py	/^    def state_name_to_value(self, state):$/;"	m	line:232	class:payload	access:public
+state_value_to_name	payload.py	/^    def state_value_to_name(self, state):$/;"	m	line:243	class:payload	access:public
+state_value_to_txtype	payload.py	/^    def state_value_to_txtype(self, value):$/;"	m	line:254	class:payload	access:public
 stop	btcclient.py	/^    def stop(self):$/;"	m	line:67	class:btcclient	access:public
-test_np	payload.py	/^def test_np():$/;"	f	line:466	access:public
+test_np	payload.py	/^def test_np():$/;"	f	line:491	access:public
 to_json	btcclient.py	/^        def to_json(self):$/;"	m	line:38	class:btcclient.transaction	access:public
 transaction	btcclient.py	/^    class transaction(object):$/;"	c	line:33	class:btcclient	inherits:object
-tx_type	payload.py	/^    def tx_type(self):$/;"	m	line:266	class:payload	access:public
-tx_type	payload.py	/^    def tx_type(self, txtype):$/;"	m	line:270	class:payload	access:public
-tx_version	payload.py	/^    def tx_version(self):$/;"	m	line:258	class:payload	access:public
-tx_version	payload.py	/^    def tx_version(self, txversion):$/;"	m	line:262	class:payload	access:public
+tx_type	payload.py	/^    def tx_type(self):$/;"	m	line:290	class:payload	access:public
+tx_type	payload.py	/^    def tx_type(self, txtype):$/;"	m	line:294	class:payload	access:public
+tx_version	payload.py	/^    def tx_version(self):$/;"	m	line:282	class:payload	access:public
+tx_version	payload.py	/^    def tx_version(self, txversion):$/;"	m	line:286	class:payload	access:public
 txtype	payload.py	/^    class txtype(Enum):$/;"	c	line:178	class:payload	inherits:Enum
+txtype_map_proof_type	payload.py	/^    def txtype_map_proof_type(self, txtype):$/;"	m	line:220	class:payload	access:public
 type_version	payload.py	/^    def type_version(self):$/;"	m	line:203	class:payload	access:public
-valid_mark	payload.py	/^    def valid_mark(self):$/;"	m	line:246	class:payload	access:public
+valid_mark	payload.py	/^    def valid_mark(self):$/;"	m	line:270	class:payload	access:public

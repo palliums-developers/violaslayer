@@ -30,6 +30,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
     __key_latest_saved_txid     = "latest_saved_txid"
     __key_id_state_info         = "state_info"
     __key_latest_opreturn_index = "latest_opreturn_index"
+    __name_datainfo             = "datainfo"
     class filterstate(Enum):
         START       = 1
         COMPLETE    = 2
@@ -52,12 +53,23 @@ class dbvbase(baseobject, pymongo.MongoClient):
         pass
 
     @property
+    def db_pos(self):
+        return f"{self.__hosts}.{self.db_name}.{self.collection_name}"
+
+    @property
     def db_name(self):
         return self.__db_name
 
     @property
     def collection_name(self):
         return self.__collection_name
+
+    def use_collection_datas(self):
+        return self.use_collection("datas", True)
+
+    def use_default_collections(self):
+        if self.collection_name != self.__name_datainfo:
+            self.use_collection(self.__name_datainfo, True)
 
     def __get_connect_db_uri(self, hosts, user, password, authdb, rsname):
         login = ""
@@ -77,6 +89,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
             uri = self.__get_connect_db_uri(hosts = hosts, user = user, password = password, authdb = authdb, rsname = rsname)
             pymongo.MongoClient.__init__(self, uri, retryWrites=False, appname="violaslayer", readPreference="secondaryPreferred")
             self.use_db(db, newdb)
+            self.use_collection("datainfo", newdb)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -96,6 +109,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
         if create == False and db not in self.list_collection_names().datas:
             raise Exception(f"not found collection({collection}).")
         return self._client[collection]
+
     def use_db(self, db, create = False):
         if create == False and db not in self.list_database_names().datas:
             raise Exception(f"not found db({db}).")
@@ -129,7 +143,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def find(self, key):
         try:
-            datas = self._collection.find(key)
+            datas = self.collection.find(key)
             ret = result(error.SUCCEED, "", datas)
         except Exception as e:
             ret = parse_except(e)
@@ -144,7 +158,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def find_with_id(self, id):
         try:
-            datas = self._collection.find_one({"_id": id})
+            datas = self.collection.find_one({"_id": id})
             if datas is None:
                 datas = {}
             ret = result(error.SUCCEED, "", datas)
@@ -228,13 +242,13 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def is_exists(self, key):
         try:
-            ret = result(error.SUCCEED, "", self.find_one(key) is not None)
+            ret = result(error.SUCCEED, "", self.collection.find_one(key) is not None)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def key_is_exists(self, key):
-        return is_exists(key)
+        return self.is_exists(key)
 
     def delete_one(self, key, session=None):
         try:
@@ -300,6 +314,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def set_latest_filter_state(self, state, session=None):
         try:
+            self.use_default_collections()
             self.update_with_id(self.__key_id_state_info, {self.__key_latest_filter_state:state.name}, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:
@@ -308,6 +323,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def get_latest_filter_state(self):
         try:
+            self.use_default_collections()
             ret = self.find_with_id(self.__key_id_state_info)
             if ret.state != error.SUCCEED:
                 return ret
@@ -318,6 +334,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def set_latest_filter_ver(self, ver, session=None):
         try:
+            self.use_default_collections()
             self.update_with_id(self.__key_id_state_info, {self.__key_latest_filter_ver:ver, self.__key_latest_filter_state:self.filterstate.START.name, self.__key_latest_saved_txid:""}, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:
@@ -326,6 +343,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def get_latest_filter_ver(self):
         try:
+            self.use_default_collections()
             ret = self.find_with_id(self.__key_id_state_info)
             if ret.state != error.SUCCEED:
                 return ret
@@ -336,6 +354,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def set_latest_saved_ver(self, ver, session=None):
         try:
+            self.use_default_collections()
             self.update_with_id(self.__key_id_state_info, {self.__key_latest_saved_ver:ver}, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:
@@ -344,6 +363,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def get_latest_saved_ver(self):
         try:
+            self.use_default_collections()
             ret = self.find_with_id(self.__key_id_state_info)
             if ret.state != error.SUCCEED:
                 return ret
@@ -354,6 +374,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def set_latest_saved_txid(self, txid, session=None):
         try:
+            self.use_default_collections()
             self.update_with_id(self.__key_id_state_info, {self.__key_latest_saved_txid:txid}, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:
@@ -362,6 +383,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def get_latest_saved_txid(self):
         try:
+            self.use_default_collections()
             ret = self.find_with_id(self.__key_id_state_info)
             if ret.state != error.SUCCEED:
                 return ret
@@ -372,6 +394,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def set_min_valid_ver(self, ver, session=None):
         try:
+            self.use_default_collections()
             ret = self.save(self.__key_id_state_info, {self.__key_min_valid_ver: ver}, session=session)
             if ret.state != error.SUCCEED:
                 return ret
@@ -382,6 +405,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def get_min_valid_ver(self):
         try:
+            self.use_default_collections()
             ret = self.find_with_id(self.__key_id_state_info)
             if ret.state != error.SUCCEED:
                 return ret
@@ -392,6 +416,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def set_latest_opreturn_index(self, index, session=None):
         try:
+            self.use_default_collections()
             ret = self.save(self.__key_id_state_info, {self.__key_latest_opreturn_index: index}, session=session)
             if ret.state != error.SUCCEED:
                 return ret
@@ -402,6 +427,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def get_latest_opreturn_index(self):
         try:
+            self.use_default_collections()
             ret = self.find_with_id(self.__key_id_state_info)
             if ret.state != error.SUCCEED:
                 return ret
@@ -412,6 +438,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def get_state_info(self):
         try:
+            self.use_default_collections()
             ret = self.find_with_id(self.__key_id_state_info)
         except Exception as e:
             ret = parse_except(e)

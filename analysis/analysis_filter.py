@@ -184,6 +184,7 @@ class afilter(abase):
             ret = parse_except(e)
         return ret
 
+
     def init_collections(self):
         try:
             colls =  self._dbclient.list_collection_names().datas
@@ -241,8 +242,6 @@ class afilter(abase):
             #The genesis block coinbase is not considered an ordinary transaction and cannot be retrieved
             if start_version == 0:
                 start_version = 1
-    
-            latest_saved_ver = self._dbclient.get_latest_saved_ver().datas
             
             if start_version > chain_latest_ver:
                return result(error.SUCCEED)
@@ -325,8 +324,6 @@ class afilter(abase):
                             if self.map_to_local:
                                 ret = self.save_transaction(txid, tran, blockhash, session=session)
                                 assert ret.state == error.SUCCEED, f"save transaction failed.txid = {txid}"
-
-
 
                             if self.map_to_local:
                                 ret = self._vclient.gettxoutinfromdata(tran)

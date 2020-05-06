@@ -35,14 +35,20 @@ class managedb(dbvbase):
     def __init__(self, name, rconf):
         dbvbase.__init__(self, name, rconf.get("host", "127.0.0.1:37017"), rconf.get("db"), rconf.get("user", None), rconf.get("password", None), rconf.get("authdb", "admin"), rsname=rconf.get("rsname","rsviolas"))
 
-def get_basedb():
-    return managedb(name, stmanage.get_db("base"))
+def get_db(db):
+    if db not in stmanage.list_db_name():
+        raise f"db({db}) not found."
 
-def get_exproofdb():
-    return managedb(name, stmanage.get_db("exproof"))
+    return managedb(name, stmanage.get_db(db))
+
+def get_basedb():
+    return get_db("base")
+
+def get_b2vproofdb():
+    return get_db("b2vproof")
 
 def get_addressesdb():
-    return managedb(name, stmanage.get_db("addresses"))
+    return get_db("addresses")
 
 def showbaseinfo():
     dbclient = get_basedb()
@@ -55,15 +61,26 @@ def cleanbase():
     dbclient = get_basedb()
     dbclient.drop_db("base")
 
-def showexproofinfo():
-    dbclient = get_exproofdb()
+def showb2vproofinfo():
+    dbclient = get_b2vproofdb()
     dbclient.use_collection("datainfo")
     ret = dbclient.get_state_info()
     json_print(ret.datas)
 
-def cleanexproof():
-    dbclient = get_basedb()
-    dbclient.drop_db("exproof")
+def cleanb2vproof():
+    dbclient = get_b2vproofdb()
+    dbclient.drop_db("b2vproof")
+
+def showdbinfo(db):
+    dbclient = get_db(db)
+    dbclient.use_collection("datainfo")
+
+    ret = dbclient.get_state_info()
+    json_print(ret.datas)
+
+def cleandb(db):
+    dbclient = get_db(db)
+    dbclient.drop_db(db)
 
 def showaddressesinfo():
     dbclient = get_addressesdb()
@@ -78,12 +95,14 @@ def cleanaddresses():
 
 def init_args(pargs):
     pargs.append("help", "show arg list")
-    pargs.append("showbaseinfo", "clean btc base db info.")
+    pargs.append("showbaseinfo", "show btc base db info.")
     pargs.append("cleanbase", "clean btc base db.")
-    pargs.append("showexproofinfo", "show btc exproof db info.")
-    pargs.append("cleanexproof", "clean btc exproof db.")
+    pargs.append("showv2bproofinfo", "show btc v2bproof db info.")
+    pargs.append("cleanv2bproof", "clean btc v2bproof db.")
+    pargs.append("showaddressesinfo", "show btc addresses txout db info.")
     pargs.append("cleanaddresses", "clean btc addresses db.")
-
+    pargs.append("showdbinfo", f"show db({stmanage.list_db_name()}) info.", True, ["db name"])
+    pargs.append("cleandb", f"clean db({stmanage.list_db_name()}).", True, ["db name"])
 
 def run(argc, argv):
     try:
@@ -115,12 +134,22 @@ def run(argc, argv):
             ret = showbaseinfo()
         elif pargs.is_matched(opt, ["cleanbase"]):
             ret = cleanbase()
-        elif pargs.is_matched(opt, ["showexproofinfo"]):
-            ret = showexproofinfo()
-        elif pargs.is_matched(opt, ["cleanexproof"]):
-            ret = cleanexproof()
+        elif pargs.is_matched(opt, ["showb2vproofinfo"]):
+            ret = showb2vproofinfo()
+        elif pargs.is_matched(opt, ["cleanb2vproof"]):
+            ret = cleanb2vproof()
+        elif pargs.is_matched(opt, ["showaddressesinfo"]):
+            ret = showaddressesinfo()
         elif pargs.is_matched(opt, ["cleanaddresses"]):
             ret = cleanaddresses()
+        elif pargs.is_matched(opt, ["showdbinfo"]):
+            if len(arg_list) != 1:
+                pargs.exit_error_opt(opt)
+            ret = showdbinfo(arg_list[0])
+        elif pargs.is_matched(opt, ["cleandb"]):
+            if len(arg_list) != 1:
+                pargs.exit_error_opt(opt)
+            ret = cleandb(arg_list[0])
 
     logger.debug("end managedb.main")
 

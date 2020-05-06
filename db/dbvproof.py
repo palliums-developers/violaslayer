@@ -38,19 +38,30 @@ class dbvproof(dbvbase):
     def __del__(self):
         dbvbase.__del__(self)
 
-    def set_proof(self, key, value):
+    def set_proof(self, tran_id, value):
         try:
-            if "_id" not in value:
-                value["_id"] = key
-            ret = self.insert_one(value)
+            version = value.get("version", None)
+            if version is None or version < 0:
+                return result(error.ARG_INVALID, "tran id is invalid.")
+
+            value["_id"] = version
+            ret = self.insert_many([value, {"_id":tran_id, "version":version}])
+           
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def update_proof(self, key, value):
+    def update_proof(self, tran_id, value):
         try:
-            if "_id" not in value:
-                value["_id"] = key
+            ret = self.find_with_id(tran_id)
+            if ret.state != error.SUCCEED:
+                return ret
+
+            version = ret.get("version")
+            if version is None or version < 0:
+                return result(error.DB_PROOF_INFO_INVALID, f"not fount transaction({tran_id}).")
+
+            value["_id"] = version
             ret = self.updata_one(value)
         except Exception as e:
             ret = parse_except(e)

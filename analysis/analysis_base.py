@@ -96,7 +96,7 @@ class abase(baseobject):
         return self._step
 
     def create_tran_id(self, address, sequence):
-        return f"{txid}_{sequence}"
+        return f"{address}_{sequence}"
 
     def json_to_dict(self, data):
         try:
@@ -147,11 +147,15 @@ class abase(baseobject):
             amount = 0
             payload_hex = None
             issuser = ret.datas.get("address")
-            vout_count = self._vclient.gettxoutcountfromdata(tran)
+            ret = self._vclient.gettxoutcountfromdata(tran)
+            if ret.state != error.SUCCEED:
+                return ret
+
+            vout_count = ret.datas
             if vout_count < 2:
                 return result(error.TRAN_INFO_INVALID)
             elif vout_count == 2:
-                for i in range(i):
+                for i in range(vout_count):
                     ret = self._vclient.gettxoutwithnfromdata(tran, i)
                     if ret.state != error.SUCCEED:
                         return ret
@@ -164,7 +168,7 @@ class abase(baseobject):
                     receiver = vout.get("addresses")[0]
                     amount = vout.get("value")
             else:
-                for i in range(i):
+                for i in range(vout_count):
                     ret = self._vclient.gettxoutwithnfromdata(tran, i)
                     if ret.state != error.SUCCEED:
                         return ret
@@ -188,23 +192,23 @@ class abase(baseobject):
             if ret.state != error.SUCCEED:
                 return ret
 
-            payload_info = ret.datas
-
             datas = {\
                     "create_block": tran.get("blockhash"), 
                     "update_block": tran.get("blockhash"),
-                    "address":payload_info.proof_data.get("to_address"),
-                    "vtoken":payload_info.proof_data.get("token"), #token is module
+                    "address":payload_parse.proof_data.get("to_address"),
+                    "vtoken":payload_parse.proof_data.get("token"), #token is module
                     "num_btc":amount,
                     "issuer":issuser, 
                     "receiver":receiver, 
-                    "sequence":payload_info.proof_data.get("sequence"),
-                    "state":payload_info.tx_type,
-                    "type":payload_info.proof_type,
+                    "sequence":payload_parse.proof_data.get("sequence"),
+                    "state":payload_parse.tx_type,
+                    "valid": payload_parse.is_valid,
+                    "txid": tran.get("txid"),
+                    "txver": payload_parse.tx_version,
                     }
             ret = result(error.SUCCEED, datas = datas)
         except Exception as e:
-            ret = parse_except(e, transaction)
+            ret = parse_except(e, tran)
         return ret
 
     def get_transaction(self, txid):
