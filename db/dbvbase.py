@@ -34,6 +34,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
     class filterstate(Enum):
         START       = 1
         COMPLETE    = 2
+
     def __init__(self, name, hosts, db, user = None, password = None, authdb = 'admin', rsname = None, newdb = False):
         baseobject.__init__(self, name)
         self.__hosts = hosts
@@ -176,6 +177,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def update_with_id(self, id, value, session=None):
         try:
+            print(f"id:{id} vlaue={value}")
             ret = self.update({"_id":id}, value, session=session)
         except Exception as e:
             ret = parse_except(e)
@@ -312,70 +314,73 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = parse_except(e)
         return ret
 
-    def set_latest_filter_state(self, state, session=None):
+    def set_state_info(self, value, session = None):
         try:
             self.use_default_collections()
-            self.update_with_id(self.__key_id_state_info, {self.__key_latest_filter_state:state.name}, session=session)
+            self.update_with_id(self.__key_id_state_info, value, session=session)
             ret = result(error.SUCCEED)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def get_state_info(self, key = None, defvalue = None):
+        try:
+            self.use_default_collections()
+            ret = self.find_with_id(self.__key_id_state_info)
+            if ret.state != error.SUCCEED:
+                return ret
+
+            if key is not None:
+                ret = result(error.SUCCEED, "", ret.datas.get(key, defvalue))
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def set_latest_filter_state(self, state, session=None):
+        try:
+            ret = self.set_state_info({self.__key_latest_filter_state:state.name}, session=session)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def get_latest_filter_state(self):
         try:
-            self.use_default_collections()
-            ret = self.find_with_id(self.__key_id_state_info)
-            if ret.state != error.SUCCEED:
-                return ret
-            ret = result(error.SUCCEED, "", ret.datas.get(self.__key_latest_filter_state, self.filterstate.COMPLETE.name))
+            ret = self.get_state_info(self.__key_latest_filter_state, self.filterstate.COMPLETE.name)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def set_latest_filter_ver(self, ver, session=None):
         try:
-            self.use_default_collections()
-            self.update_with_id(self.__key_id_state_info, {self.__key_latest_filter_ver:ver, self.__key_latest_filter_state:self.filterstate.START.name, self.__key_latest_saved_txid:""}, session=session)
-            ret = result(error.SUCCEED)
+            ret = self.set_state_info({self.__key_latest_filter_ver:ver, self.__key_latest_filter_state:self.filterstate.START.name, self.__key_latest_saved_txid:""}, session=session)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def get_latest_filter_ver(self):
         try:
-            self.use_default_collections()
-            ret = self.find_with_id(self.__key_id_state_info)
-            if ret.state != error.SUCCEED:
-                return ret
-            ret = result(error.SUCCEED, "", ret.datas.get(self.__key_latest_filter_ver, -1))
+            ret = self.get_state_info(self.__key_latest_filter_ver, -1)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def set_latest_saved_ver(self, ver, session=None):
         try:
-            self.use_default_collections()
-            self.update_with_id(self.__key_id_state_info, {self.__key_latest_saved_ver:ver}, session=session)
-            ret = result(error.SUCCEED)
+            ret = self.set_state_info({self.__key_latest_saved_ver:ver}, session=session)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def get_latest_saved_ver(self):
         try:
-            self.use_default_collections()
-            ret = self.find_with_id(self.__key_id_state_info)
-            if ret.state != error.SUCCEED:
-                return ret
-            ret = result(error.SUCCEED, "", ret.datas.get(self.__key_latest_saved_ver, -1))
+            ret = self.get_state_info(self.__key_latest_saved_ver, -1)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def set_latest_saved_txid(self, txid, session=None):
         try:
-            self.use_default_collections()
-            self.update_with_id(self.__key_id_state_info, {self.__key_latest_saved_txid:txid}, session=session)
+            ret = self.set_state_info({self.__key_latest_saved_txid:txid}, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -383,11 +388,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def get_latest_saved_txid(self):
         try:
-            self.use_default_collections()
-            ret = self.find_with_id(self.__key_id_state_info)
-            if ret.state != error.SUCCEED:
-                return ret
-            ret = result(error.SUCCEED, "", ret.datas.get(self.__key_latest_saved_txid))
+            ret = self.get_state_info(self.__key_latest_saved_txid)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -416,30 +417,14 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def set_latest_opreturn_index(self, index, session=None):
         try:
-            self.use_default_collections()
-            ret = self.save(self.__key_id_state_info, {self.__key_latest_opreturn_index: index}, session=session)
-            if ret.state != error.SUCCEED:
-                return ret
-            ret = result(error.SUCCEED)
+            ret = self.set_state_info({self.__key_latest_opreturn_index: index}, session=session)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def get_latest_opreturn_index(self):
         try:
-            self.use_default_collections()
-            ret = self.find_with_id(self.__key_id_state_info)
-            if ret.state != error.SUCCEED:
-                return ret
-            ret = result(error.SUCCEED, "", ret.datas.get(self.__key_latest_opreturn_index, -1))
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def get_state_info(self):
-        try:
-            self.use_default_collections()
-            ret = self.find_with_id(self.__key_id_state_info)
+            ret = self.get_state_info(self.__key_latest_opreturn_index, -1)
         except Exception as e:
             ret = parse_except(e)
         return ret

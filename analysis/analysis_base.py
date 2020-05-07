@@ -39,6 +39,7 @@ class abase(baseobject):
         USED        = 2
 
     class collection(Enum):
+        DATAINFO    = 0
         BLOCKINFO   = 1
         TRANSACTION = 2
         TXOUT       = 3
@@ -185,8 +186,9 @@ class abase(baseobject):
                     receiver = address
 
             if receiver is None or payload_hex is None:
-                return result(error.TRAN_INFO_INVALID)
+                return result(error.TRAN_INFO_INVALID, "transaction format is invalid.")
 
+            self._logger.debug(f"parse transaction payload:txid = {tran.get('txid')} issuser:{issuser}  receiver:{receiver}")
             payload_parse = payload(self.name())
             ret = payload_parse.parse(payload_hex)
             if ret.state != error.SUCCEED:

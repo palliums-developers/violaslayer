@@ -31,8 +31,6 @@ COINS = comm.values.COINS
 class afilter(abase):
     def __init__(self, name = "bfilter", dbconf = None, nodes = None, **argkeys):
         abase.__init__(self, name, None, nodes) #no-use defalut db
-        if dbconf is not None:
-            self._dbclient
         self.__maptolocal = argkeys.get("maptolocal", False)
         self.__storeoptran = argkeys.get("storeoptran", True)
         self._connect_db(name, dbconf)
@@ -44,6 +42,7 @@ class afilter(abase):
                     rconf.get("user", None), rconf.get("password", None), rconf.get("authdb", "admin"), 
                     newdb = rconf.get("newdb", True), rsname=rconf.get("rsname", None))
         return self._dbclient
+
     def __del__(self):
         abase.__del__(self)
 
@@ -204,9 +203,9 @@ class afilter(abase):
         #init
         try:
             self._logger.debug(f"start filter work(map_to_local:{self.map_to_local}, store_op_tran:{self.store_op_tran})")
-            self._dbclient.use_collection("datainfo", True)
             payload_parse = payload(name)
             self.init_collections()
+            self._dbclient.use_collection("datainfo", True)
             ret = self._vclient.getblockcount();
             if ret.state != error.SUCCEED:
                 return ret
@@ -269,7 +268,7 @@ class afilter(abase):
                 if latest_filter_state != self._dbclient.filterstate.START:
                     ret = self._dbclient.set_latest_filter_ver(version)
                     assert ret.state == error.SUCCEED, \
-                            f"set latest filter height failed.blockhash = {blockhash}, height={version}"
+                        f"set latest filter height failed.blockhash = {blockhash}, height={version}"
 
                     if self.map_to_local:
                         ret = self.save_blockinfo(block)
@@ -301,6 +300,8 @@ class afilter(abase):
                     #remove datas with txid == latest_saved_ver  ????
 
                     #some txid is saved, next txid..
+
+
                 for txid in txids:
                     if self.work() == False:
                         self._logger.debug(f"will stop work, next height: {version + 1}")
@@ -377,7 +378,7 @@ class afilter(abase):
 
 def works():
     filter = afilter(name, stmanage.get_db("base"),  stmanage.get_btc_conn())
-    filter.set_min_valid_version(1658035)
+    filter.set_min_valid_version(1721914)
     filter.set_step(1)
     def signal_stop(signal, frame):        
         filter.stop()

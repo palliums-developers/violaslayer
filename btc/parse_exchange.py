@@ -26,7 +26,7 @@ name="parseex"
 def parse_ex_start(data):
     try:
         if len(data) != 72:
-            return result(error.ARG_INVALID)
+            return result(error.ARG_INVALID, f"data len(len(data)) is too small.")
         data_offer = 0
 
         #receiver address  32 Hex
@@ -49,7 +49,7 @@ def parse_ex_start(data):
 def parse_ex_end(data):
     try:
         if len(data) != 66:
-            return result(error.ARG_INVALID)
+            return result(error.ARG_INVALID, f"data len(len(data)) is too small.")
         data_offer = 0
 
         #receiver address  32 Hex
@@ -72,7 +72,7 @@ def parse_ex_end(data):
 def parse_ex_cancel(data):
     try:
         if len(data) != 40:
-            return result(error.ARG_INVALID)
+            return result(error.ARG_INVALID, f"data len(len(data)) is too small.")
         data_offer = 0
 
         #receiver address  32 Hex
@@ -94,7 +94,7 @@ def parse_ex_cancel(data):
 def parse_btc_mark(data):
     try:
         if len(data) < 40:
-            return result(error.ARG_INVALID)
+            return result(error.ARG_INVALID, f"data len(len(data)) is too small.")
         data_offer = 0
 
         #receiver address  32 Hex

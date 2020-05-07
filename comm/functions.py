@@ -69,6 +69,11 @@ def json_print(data):
         print("")
     print(json.dumps(data, sort_keys=True, cls= DecimalEncoder, indent=5))
 
+def json_dumps(data):
+    if data is None:
+        print("")
+    return json.dumps(data, sort_keys=True, cls= DecimalEncoder, indent=5)
+
 def json_reset(data):
     if data is None:
         return {}

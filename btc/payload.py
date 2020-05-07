@@ -20,8 +20,7 @@ import comm.result
 import comm.values
 from comm.result import result, parse_except
 from comm.error import error
-from comm.functions import json_reset
-from comm.functions import json_print
+from comm.functions import json_print, json_dumps, json_reset
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 #from .models import BtcRpc
 from baseobject import baseobject
@@ -380,7 +379,7 @@ class payload(baseobject):
             elif self.txtype == self.txtype.BTC_MARK:
                 pass
             else:
-                ret = result(error.TRAN_INFO_INVALID)
+                ret = result(error.TRAN_INFO_INVALID, f"tx type({self.tx_type.name}) is invalid.")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -392,7 +391,7 @@ class payload(baseobject):
             if ret.state != error.SUCCEED:
                 return ret
 
-            valid = self.is_valid()
+            valid = self.is_valid
             ret = result(error.SUCCEED, "", valid)
         except Exception as e:
             ret = parse_except(e)
@@ -406,7 +405,8 @@ class payload(baseobject):
             data_len = len(bdata)
             if bdata[0] != self.optcodetype.OP_RETURN.value:
                 self._logger.debug(f"{bdata[0]} not OP_RETURN({self.optcodetype.OP_RETURN.value}) ")
-                return False
+                return result(error.ARG_INVALID, f"{bdata[0]} not OP_RETURN({self.optcodetype.OP_RETURN.value})")
+
             size = struct.unpack_from('B', bdata, 2)[0]
             data_offer = 3 #0~n
             if size < self.optcodetype.OP_PUSHDATA1.value:
@@ -431,27 +431,27 @@ class payload(baseobject):
             #violas mark
             #makesure data is valid
             if data_offer + 6 >= data_len:
-                return result(error.ARG_INVALID)
+                return result(error.ARG_INVALID, "mark(violas) not found")
 
             try:
                 mark = struct.unpack_from('cccccc', bdata, data_offer)
                 self.op_mark = "".join([v.decode() for v in mark])
                 data_offer = data_offer + 6
             except Exception as e:
-                return result(error.ARG_INVALID)
+                return result(error.ARG_INVALID, "get mark(violas) failed. maybe op_return's is not violas's format")
 
 
             if self.op_mark != self.valid_mark:
-                return result(error.ARG_INVALID)
+                return result(error.ARG_INVALID, f"mark({self.op_mark}) is not valid mark({self.valid_mark})")
 
             if data_offer + 2 >= data_len:
-                return result(error.ARG_INVALID)
+                return result(error.ARG_INVALID, "tx version not found.")
 
             self.tx_version = struct.unpack_from('>H', bdata, data_offer)[0]
             data_offer = data_offer + 2
 
             if data_offer + 2 >= data_len:
-                return result(error.ARG_INVALID)
+                return result(error.ARG_INVALID, "tx type not found.")
 
             tx_type = struct.unpack_from('>H', bdata, data_offer)[0]
             self.tx_type = self.state_value_to_txtype(tx_type)
@@ -475,7 +475,8 @@ class payload(baseobject):
                     "valid": self.is_valid,
                     }
             ret = result(error.SUCCEED, datas = datas) 
-            json_print(datas)
+            self._logger.debug(json_dumps(datas))
+
         except Exception as e:
             ret = parse_except(e)
         return ret

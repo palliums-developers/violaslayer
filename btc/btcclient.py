@@ -253,7 +253,7 @@ class btcclient(baseobject):
 
     def gettxinfromdata(self, tran):
         try:
-            self._logger.debug(f"start gettxoutin({tran.get('txid')})")
+            self._logger.debug(f"start gettxoutinfromdata({tran.get('txid')})")
             datas = {
                     "txid" : tran.get("txid"),
                     "vin" : [{"txid": vin.get("txid"), \
@@ -271,23 +271,25 @@ class btcclient(baseobject):
 
     def gettxinwithnfromdata(self, tran, n):
         try:
+            self._logger.debug(f"start gettxinwithnfromdata(tran, {n})")
             ret = self.gettxinfromdata(tran)
             if ret.state != error.SUCCEED:
                 return ret
 
             vins = ret.datas.get("vin")
             datas = None
-            for vin in vins:
-                if vin.get("vout") == n:
+            for index, vin in enumerate(vins):
+                if index == n:
                     return result(error.SUCCEED, "", vin)
 
             #not found txid vout n
-            ret = result(error.ARG_INVALID)
+            ret = result(error.ARG_INVALID, f"not found index({n}) in tx vins. transaction:{tran}")
         except Exception as e:
             ret = parse_except(e)
         return ret
     def gettxoutwithn(self, txid, n):
         try:
+            self._logger.debug(f"start gettxoutwithn({txid}, {n})")
             ret = self.gettxoutin(txid)
             if ret.state != error.SUCCEED:
                 return ret
@@ -300,7 +302,7 @@ class btcclient(baseobject):
                     return ret
 
             #not found txid vout n
-            ret = result(error.ARG_INVALID)
+            ret = result(error.ARG_INVALID, f"not found index({n}) in tx vouts")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -315,6 +317,7 @@ class btcclient(baseobject):
         return ret
     def gettxoutwithnfromdata(self, tran, n):
         try:
+            self._logger.debug(f"start gettxoutwithnfromdata(tran, {n})")
             vouts = tran.get("vout")
             datas = None
             for vout in vouts:
@@ -323,13 +326,14 @@ class btcclient(baseobject):
                     return ret
 
             #not found txid vout n
-            ret = result(error.ARG_INVALID)
+            ret = result(error.ARG_INVALID, f"not found index({n}) in tx vouts")
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def getopreturnfromdata(self, tran):
         try:
+            self._logger.debug(f"start getopreturnfromdata(tran)")
             vouts = tran.get("vout")
             datas = None
             for vout in vouts:
@@ -340,7 +344,7 @@ class btcclient(baseobject):
                     return result(error.SUCCEED, "", ret.datas.get("hex"))
 
             #not found txid vout n
-            ret = result(error.ARG_INVALID)
+            ret = result(error.ARG_INVALID, f"not found txout type is nulldata")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -360,7 +364,7 @@ class btcclient(baseobject):
 
             ret = result(error.SUCCEED, "", datas)
         except Exception as e:
-            ret = parse_except(e)
+            ret = parse_except(e, "parsevount Exception")
         return ret
 
     def parsevin(self, vin):

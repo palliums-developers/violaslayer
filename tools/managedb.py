@@ -97,7 +97,7 @@ def init_args(pargs):
     pargs.append("help", "show arg list")
     pargs.append("showbaseinfo", "show btc base db info.")
     pargs.append("cleanbase", "clean btc base db.")
-    pargs.append("showv2bproofinfo", "show btc v2bproof db info.")
+    pargs.append("showb2vproofinfo", "show btc b2vproof db info.")
     pargs.append("cleanv2bproof", "clean btc v2bproof db.")
     pargs.append("showaddressesinfo", "show btc addresses txout db info.")
     pargs.append("cleanaddresses", "clean btc addresses db.")

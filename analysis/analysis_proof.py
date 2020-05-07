@@ -169,49 +169,6 @@ class aproof(abase):
         except Exception as e:
             ret = parse_except(e)
         return ret
-        
-    def update_min_version_for_start(self):
-        try:
-            self._logger.debug(f"start update_min_version_for_start")
-            #update min version for state is start
-            ret = self._dbclient.get_proof_min_version_for_start()
-            if ret.state != error.SUCCEED:
-                return ret
-            start_version = max(int(ret.datas), self.get_min_valid_version())
-
-            ret = self._dbclient.get_latest_saved_ver()
-            if ret.state != error.SUCCEED:
-                return ret
-            max_version = ret.datas
-
-            keys = self._dbclient.list_version_keys(start_version)
-            new_version = start_version
-            for version in keys:
-                if self.work() != True:
-                    break
-                    
-                #self._logger.debug(f"check version {version}")
-
-                ret = self._dbclient.get(version)
-                if ret.state != error.SUCCEED:
-                    return ret
-
-                if ret.datas is None:
-                    continue
-
-                new_version = version
-                tran_data = json.loads(ret.datas)
-                if self.proofstate_name_to_value(tran_data.get("state")) == self.proofstate.START and \
-                        self.is_valid_moudle(tran_data.get("token")):
-                    break
-
-            ret = self._dbclient.set_proof_min_version_for_start(new_version)
-            if ret.state == error.SUCCEED and start_version != new_version:
-                self._logger.info(f"update min version for start(proof state) {start_version} -> {version}")
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
 
     def start(self):
         try:
@@ -249,7 +206,7 @@ class aproof(abase):
                     if self.work() == False:
                         break
                     #record last version(parse), maybe version is not exists
-                    self._logger.debug(f"parse transaction:{version}")
+                    self._logger.debug(f"parse transaction:txid = {txid} version={version}")
 
                     latest_filter_ver = version
 
@@ -262,12 +219,12 @@ class aproof(abase):
                     tran_data = ret.datas
                     ret = self.parse_tran(tran_data)
                     if ret.state != error.SUCCEED: 
-                        self._logger.error(ret.state.name)
+                        self._logger.error(ret.to_json())
                         continue
 
                     tran_filter = ret.datas
                     if self.check_tran_is_valid(tran_filter) != True:
-                        self._logger.debug(f"transaction({txid}) is invalid.")
+                        self._logger.warning(f"transaction({txid}) is invalid.")
                         continue
 
                     self._logger.debug(f"transaction parse: {tran_filter}")
@@ -293,7 +250,6 @@ class aproof(abase):
 
             #here version is not analysis
             self._dbclient.set_latest_filter_ver(latest_filter_ver)
-            #self.update_min_version_for_start()
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)

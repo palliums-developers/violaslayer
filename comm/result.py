@@ -39,7 +39,7 @@ def parse_except(e, msg = None, datas = None):
         ret = result(e_type, msg, datas)
         return ret
     except Exception as e: #at last
-        ret = result(error.EXCEPT, "", e)
+        ret = result(error.EXCEPT, "parse_excep exception", e)
     return ret
 
 
