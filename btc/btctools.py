@@ -117,10 +117,12 @@ def parsetranpayload(txid):
 
     parse_payload = payload(name)
     ret = parse_payload.parse(payload_data)
+
     info = {"is allow opreturn": parse_payload.is_allow_opreturn(parse_payload.tx_type, parse_payload.tx_version, block),
             "block" : block,
             "txid": tran.get("txid"),
             "blockhash": blockhash,
+            "datas": ret.to_json()
         }
 
     json_print(info)
@@ -149,6 +151,13 @@ def parserawtranpayload(data):
     json_print(info)
 
     
+def parsepayload(data):
+    parse_payload = payload(name)
+    ret = parse_payload.parse(data)
+    
+
+    json_print(ret.to_json())
+
 def init_args(pargs):
     pargs.append("help", "show arg list")
     pargs.append("getblockcount", "get block count.")
@@ -163,6 +172,7 @@ def init_args(pargs):
     pargs.append("parsetranpayload", "parse transaction payload", True, ["txid"])
     pargs.append("decoderawtransaction", "decode raw transaction payload", True, ["data-hex", "isswitness"])
     pargs.append("parserawtranpayload", "parse raw transaction payload", True, ["data-hex"])
+    pargs.append("parsepayload", "parse raw payload", True, ["data-hex"])
 
 def run(argc, argv):
     try:
@@ -243,6 +253,10 @@ def run(argc, argv):
             if len(arg_list) != 1:
                 pargs.exit_error_opt(opt)
             ret = parserawtranpayload(arg_list[0])
+        elif pargs.is_matched(opt, ["parsepayload"]):
+            if len(arg_list) != 1:
+                pargs.exit_error_opt(opt)
+            ret = parsepayload(arg_list[0])
         elif pargs.is_matched(opt, ["decoderawtransaction"]):
             if len(arg_list) not in (1, 2):
                 pargs.exit_error_opt(opt)

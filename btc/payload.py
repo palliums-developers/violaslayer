@@ -372,14 +372,14 @@ class payload(baseobject):
         try:
             if self.tx_type == self.txtype.EX_START:
                 ret = parse_exchange.parse_ex_start(self.op_data)
-            elif self.txtype == self.txtype.EX_END:
+            elif self.tx_type == self.txtype.EX_END:
                 ret = parse_exchange.parse_ex_end(self.op_data)
-            elif self.txtype == self.txtype.EX_CANCEL:
+            elif self.tx_type == self.txtype.EX_CANCEL:
                 ret = parse_exchange.parse_ex_cancel(self.op_data)
-            elif self.txtype == self.txtype.BTC_MARK:
+            elif self.tx_type == self.txtype.BTC_MARK:
                 pass
             else:
-                ret = result(error.TRAN_INFO_INVALID, f"tx type({self.tx_type.name}) is invalid.")
+                ret = result(error.TRAN_INFO_INVALID, f"tx type({self.tx_type.value}) is invalid.")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -407,11 +407,11 @@ class payload(baseobject):
                 self._logger.debug(f"{bdata[0]} not OP_RETURN({self.optcodetype.OP_RETURN.value}) ")
                 return result(error.ARG_INVALID, f"{bdata[0]} not OP_RETURN({self.optcodetype.OP_RETURN.value})")
 
-            size = struct.unpack_from('B', bdata, 2)[0]
-            data_offer = 3 #0~n
+            size = bdata[1]
+            data_offer = 2 #0~n
             if size < self.optcodetype.OP_PUSHDATA1.value:
-                pass
-            if size == self.optcodetype.OP_PUSHDATA1.value:
+                data_offer = data_offer
+            elif size == self.optcodetype.OP_PUSHDATA1.value:
                 size = struct.unpack_from('>B', bdata, 2)[0]
                 data_offer = data_offer + 1
             elif size == self.optcodetype.OP_PUSHDATA2.value:
