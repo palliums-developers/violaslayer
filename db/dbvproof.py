@@ -57,17 +57,30 @@ class dbvproof(dbvbase):
             if ret.state != error.SUCCEED:
                 return ret
 
-            version = ret.get("version")
+            version = ret.datas.get("version")
             if version is None or version < 0:
                 return result(error.DB_PROOF_INFO_INVALID, f"not fount transaction({tran_id}).")
 
-            value["_id"] = version
-            ret = self.updata_one(value)
+            ret = self.update_with_id(version, value)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
 
+    def get_proof(self, tran_id):
+        try:
+            ret = self.find_with_id(tran_id)
+            if ret.state != error.SUCCEED:
+                return ret
+
+            version = ret.datas.get("version")
+            if version is None or version < 0:
+                return result(error.DB_PROOF_INFO_INVALID, f"not fount transaction({tran_id}).")
+
+            ret = self.find_with_id(version)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
     def set_proof_min_version_for_start(self, version):
         try:
             ret = self.set(self.__KEY_MIN_VERSION_START, version)

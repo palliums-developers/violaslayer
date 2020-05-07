@@ -68,16 +68,13 @@ class aproof(abase):
         return datas
 
     def is_valid_proofstate(self, state):
-
         assert isinstance(state, payload.txtype), "state type is invalid."
         if state == payload.txtype.UNKNOWN:
             return False
 
-        if state == payload.txtype.EX_START:
-            return True
-
-        if state in (payload.txtype.EX_START, payload.txtype.EX_END, payload.txtype.EX_CANCEL):
+        if state not in (payload.txtype.EX_START, payload.txtype.EX_END, payload.txtype.EX_CANCEL):
             return False
+
         return True
 
     def is_valid_proofstate_change(self, new_state, old_state):
@@ -135,7 +132,7 @@ class aproof(abase):
 
                 #get tran info from db(tran_id -> version -> tran info)
 
-                ret = self._dbclient.find_with_id(tran_id)
+                ret = self._dbclient.get_proof(tran_id)
                 if ret.state != error.SUCCEED:
                     #btc transaction is end , diff libra and violas
                     self._logger.debug(f"find transaction ({tran_id}) failed.")
@@ -157,11 +154,13 @@ class aproof(abase):
                             old state is {old_proofstate.name}. tran id: {tran_id}")
 
                 #only recevier can change state (start -> end/cancel)
-                if db_tran_info.get("receiver", "start state receiver") != tran_info.get("sender", "to end address"):
-                    return result(error.TRAN_INFO_INVALID, f"change state error. sender[state = end] != recever[state = start] \
-                            sender: {tran_info.get('receiver')}  receiver : {db_tran_info.get('sender')} tran_id = {tran_id}") 
+                if db_tran_info.get("receiver", "start state receiver") != tran_info.get("issuser", "to end address"):
+                    return result(error.TRAN_INFO_INVALID, f"change state error. issuser[state = end] != recever[state = start] \
+                            issuser: {tran_info.get('receiver')}  receiver : {db_tran_info.get('issuser')} tran_id = {tran_id}") 
 
-                db_tran_info["state"] = tran_info["state"]
+                
+                db_tran_info["state"] = self.proofstate_value_to_name(tran_info["state"])
+                db_tran_info["vheight"] = tran_info["vheight"]
                 self._dbclient.update_proof(tran_id, db_tran_info)
                 self._logger.info(f"change state succeed. tran_id = {db_tran_id} state={db_tran_info['state']}")
 

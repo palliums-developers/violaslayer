@@ -177,7 +177,6 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def update_with_id(self, id, value, session=None):
         try:
-            print(f"id:{id} vlaue={value}")
             ret = self.update({"_id":id}, value, session=session)
         except Exception as e:
             ret = parse_except(e)

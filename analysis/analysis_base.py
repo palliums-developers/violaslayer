@@ -200,13 +200,14 @@ class abase(baseobject):
                     "address":payload_parse.proof_data.get("to_address"),
                     "vtoken":payload_parse.proof_data.get("token"), #token is module
                     "num_btc":amount,
-                    "issuer":issuser, 
+                    "issuser":issuser, 
                     "receiver":receiver, 
                     "sequence":payload_parse.proof_data.get("sequence"),
                     "state":payload_parse.tx_type,
                     "valid": payload_parse.is_valid,
                     "txid": tran.get("txid"),
                     "txver": payload_parse.tx_version,
+                    "vheight": payload_parse.proof_data.get("version"), #violas version(ex_end)
                     }
             ret = result(error.SUCCEED, datas = datas)
         except Exception as e:
