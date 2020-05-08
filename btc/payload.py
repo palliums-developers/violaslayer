@@ -191,7 +191,7 @@ class payload(baseobject):
 
     def __init_type_with_version(self):
         self._type_version = {
-                        self.txtype.BTC_MARK : {"version" : [self.__version_1], "block": 0}, \
+                        self.txtype.BTC_MARK : {"version" : [self.__version_1, self.__version_0], "block": 0}, \
                         self.txtype.EX_START : {"version" : [self.__version_1], "block": 0}, \
                         self.txtype.EX_END   : {"version" : [self.__version_1], "block": 0}, \
                         self.txtype.EX_CANCEL: {"version" : [self.__version_1], "block": 0}, \
