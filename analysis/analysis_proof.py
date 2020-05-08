@@ -60,10 +60,10 @@ class aproof(abase):
         proofstate = tran_info.get("state", "")
         return self.is_valid_proofstate(proofstate) and tran_info.get("valid")
 
-    def get_opreturn_txids(self, version, limit = 10, sort = pymongo.ASCENDING):
-        self._logger.debug("get_opreturn_txids(version={version})")
+    def get_opreturn_txids(self, index, limit = 10, sort = pymongo.ASCENDING):
+        self._logger.debug("get_opreturn_txids(index={index})")
         coll = self._fdbclient.get_collection(self.collection.OPTRANSACTION.name.lower(), create = True)
-        datas = coll.find({"_id":{"$gte":version}}, limit = limit)#.sort(["_id", sort])
+        datas = coll.find({"_id":{"$gte":index}}, limit = limit)#.sort(["_id", sort])
         print(datas)
         return datas
 
@@ -97,7 +97,6 @@ class aproof(abase):
     def update_proof_info(self, tran_info):
         try:
             self._logger.debug(f"start update_proof_info tran info: {tran_info}")
-            version = tran_info.get("version", None)
 
             tran_id = None
             new_proof = False
@@ -113,7 +112,7 @@ class aproof(abase):
                 if ret.state != error.SUCCEED:
                     return ret
 
-                #found key = version info, db has old datas , must be flush db?
+                #found key = index info, db has old datas , must be flush db?
                 if ret.datas == True:
                     return result(error.TRAN_INFO_INVALID, f"key{tran_id} is exists, db datas is old, flushdb ?. violas tran info : {tran_info}")
 
@@ -124,13 +123,13 @@ class aproof(abase):
                 ret = self._dbclient.set_proof(tran_id, tran_info)
                 if ret.state != error.SUCCEED:
                     return ret
-                self._logger.info(f"saved new proof succeed. version = {tran_info.get('version')} tran_id = {tran_id} state={tran_info['state']}")
+                self._logger.info(f"saved new proof succeed. index = {tran_info.get('index')} tran_id = {tran_id} state={tran_info['state']}")
 
             else:
                 if tran_id is None or len(tran_id) == 0:
                     return result(error.TRAN_INFO_INVALID, f"new tran data info is invalid, tran info : {tran_info}")
 
-                #get tran info from db(tran_id -> version -> tran info)
+                #get tran info from db(tran_id -> index -> tran info)
 
                 ret = self._dbclient.get_proof(tran_id)
                 if ret.state != error.SUCCEED:
@@ -161,6 +160,8 @@ class aproof(abase):
                 
                 db_tran_info["state"] = self.proofstate_value_to_name(tran_info["state"])
                 db_tran_info["vheight"] = tran_info["vheight"]
+                db_tran_info["update_txid"] = tran_info["update_txid"]
+                db_tran_info["update_block"] = tran_info["update_block"]
                 self._dbclient.update_proof(tran_id, db_tran_info)
                 self._logger.info(f"change state succeed. tran_id = {db_tran_id} state={db_tran_info['state']}")
 
@@ -205,7 +206,7 @@ class aproof(abase):
                     if self.work() == False:
                         break
                     #record last version(parse), maybe version is not exists
-                    self._logger.debug(f"parse transaction:txid = {txid} version={version}")
+                    self._logger.debug(f"parse transaction:txid = {txid} index={version}")
 
                     latest_filter_ver = version
 
@@ -229,7 +230,7 @@ class aproof(abase):
                     self._logger.debug(f"transaction parse: {tran_filter}")
 
                     #this is target transaction, todo work here
-                    tran_filter["version"] = version
+                    tran_filter["index"] = version
                     ret = self.update_proof_info(tran_filter)
                     if ret.state != error.SUCCEED:
                         self._logger.error(ret.message)
@@ -244,7 +245,6 @@ class aproof(abase):
                 except Exception as e:
                     ret = parse_except(e)
                 finally:
-                    #version += 1
                     pass
 
             #here version is not analysis

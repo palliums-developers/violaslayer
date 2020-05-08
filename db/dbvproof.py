@@ -40,12 +40,12 @@ class dbvproof(dbvbase):
 
     def set_proof(self, tran_id, value):
         try:
-            version = value.get("version", None)
+            version = value.get("index", None)
             if version is None or version < 0:
                 return result(error.ARG_INVALID, "tran id is invalid.")
 
             value["_id"] = version
-            ret = self.insert_many([value, {"_id":tran_id, "version":version}])
+            ret = self.insert_many([value, {"_id":tran_id, "index":version}])
            
         except Exception as e:
             ret = parse_except(e)
@@ -57,7 +57,7 @@ class dbvproof(dbvbase):
             if ret.state != error.SUCCEED:
                 return ret
 
-            version = ret.datas.get("version")
+            version = ret.datas.get("index")
             if version is None or version < 0:
                 return result(error.DB_PROOF_INFO_INVALID, f"not fount transaction({tran_id}).")
 
@@ -73,7 +73,7 @@ class dbvproof(dbvbase):
             if ret.state != error.SUCCEED:
                 return ret
 
-            version = ret.datas.get("version")
+            version = ret.datas.get("index")
             if version is None or version < 0:
                 return result(error.DB_PROOF_INFO_INVALID, f"not fount transaction({tran_id}).")
 

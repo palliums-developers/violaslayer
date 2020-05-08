@@ -142,9 +142,9 @@ class dbvbase(baseobject, pymongo.MongoClient):
             ret = parse_except(e)
         return ret
 
-    def find(self, key):
+    def find(self, key, limit = 99999999):
         try:
-            datas = self.collection.find(key)
+            datas = self.collection.find(key, limit = limit)
             ret = result(error.SUCCEED, "", datas)
         except Exception as e:
             ret = parse_except(e)

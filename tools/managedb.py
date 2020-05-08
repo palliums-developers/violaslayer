@@ -98,7 +98,7 @@ def init_args(pargs):
     pargs.append("showbaseinfo", "show btc base db info.")
     pargs.append("cleanbase", "clean btc base db.")
     pargs.append("showb2vproofinfo", "show btc b2vproof db info.")
-    pargs.append("cleanv2bproof", "clean btc v2bproof db.")
+    pargs.append("cleanb2vproof", "clean btc b2vproof db.")
     pargs.append("showaddressesinfo", "show btc addresses txout db info.")
     pargs.append("cleanaddresses", "clean btc addresses db.")
     pargs.append("showdbinfo", f"show db({stmanage.list_db_name()}) info.", True, ["db name"])

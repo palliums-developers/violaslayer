@@ -206,6 +206,7 @@ class abase(baseobject):
                     "state":payload_parse.tx_type,
                     "valid": payload_parse.is_valid,
                     "txid": tran.get("txid"),
+                    "update_txid": tran.get("txid"),
                     "txver": payload_parse.tx_version,
                     "vheight": payload_parse.proof_data.get("version"), #violas version(ex_end)
                     }

@@ -17,6 +17,7 @@ db_list=[
         ]
 
 looping_sleep={
-        'bfilter' : 100,
+        'bfilter' : 1,
+        'b2vproof' : 1,
         'comm': 80,          #communication thread loop time
         }
