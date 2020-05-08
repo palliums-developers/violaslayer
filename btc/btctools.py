@@ -154,8 +154,12 @@ def parserawtranpayload(data):
 def parsepayload(data):
     parse_payload = payload(name)
     ret = parse_payload.parse(data)
-    
 
+    json_print(ret.to_json())
+
+def getaddressunspent(address):
+    client = getbtcclient()
+    ret = client.getaddressunspent(address)
     json_print(ret.to_json())
 
 def init_args(pargs):
@@ -173,6 +177,7 @@ def init_args(pargs):
     pargs.append("decoderawtransaction", "decode raw transaction payload", True, ["data-hex", "isswitness"])
     pargs.append("parserawtranpayload", "parse raw transaction payload", True, ["data-hex"])
     pargs.append("parsepayload", "parse raw payload", True, ["data-hex"])
+    pargs.append("getaddressunspent", "get unspent txout of address", True, ["address"])
 
 def run(argc, argv):
     try:
@@ -267,6 +272,10 @@ def run(argc, argv):
             if len(arg_list) >= 2:
                 isswitness = arg_list[1] == "True"
             ret = decoderawtransaction(data, isswitness)
+        elif pargs.is_matched(opt, ["getaddressunspent"]):
+            if len(arg_list) != 1:
+                pargs.exit_error_opt(opt)
+            ret = getaddressunspent(arg_list[0])
 
     logger.debug("end manage.main")
 

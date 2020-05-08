@@ -67,6 +67,25 @@ class btcclient(baseobject):
     def stop(self):
         self.work_stop()
 
+    def getaddressunspent(self, address, minconf = 0, maxconf = 99999999):
+        try:
+            self._logger.debug(f"start getaddressunspent(address={address}, minconf = {minconf}, maxconf={maxconf})")
+            datas = self.__rpc_connection.listunspent(minconf, maxconf, [address])
+            unspent = {}
+            filter = []
+            amountsum = 0
+            for data in datas:
+                amountsum += data.get("amount")
+                filter.append({"txid": data.get("txid"), \
+                        "amount": data.get("amount"), \
+                        "vout":data.get("vout")})
+
+            unspent = {"amountsum": amountsum, "unspents": filter}
+            ret = result(error.SUCCEED, "", unspent)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
     def getblockcount(self):
         try:
             self._logger.debug(f"start getblockcount()")
