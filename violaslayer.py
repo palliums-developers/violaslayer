@@ -16,23 +16,19 @@ from time import sleep, ctime
 import comm.functions as fn
 from comm.result import parse_except
 from analysis import analysis_filter, analysis_proof
+from btc.payload import payload
 import subprocess
 from enum import Enum
 
 name="violaslayer"
 
-class work_mod(Enum):
-    COMM        = 0
-    BFILTER     = 1
-    B2VPROOF    = 2
-    MARK        = 3
 
 class works:
     __threads = []
     __work_looping = {}
     __work_obj = {}
 
-    __btc_min_valid_version     = 172_1914
+    __btc_min_valid_version     = 161_2270
     def __init__(self):
         logger.debug("works __init__")
         for mod in self.__work_looping:
@@ -87,6 +83,9 @@ class works:
                             fdbconf=stmanage.get_db(basedata), \
                             nodes = stmanage.get_btc_conn() \
                             )
+                    obj.append_valid_txtype(payload.txtype.EX_CANCEL)
+                    obj.append_valid_txtype(payload.txtype.EX_END)
+                    obj.append_valid_txtype(payload.txtype.EX_START)
                     obj.set_step(stmanage.get_db(dtype).get("step", 100))
                     self.set_work_obj(obj)
                     obj.start()
@@ -97,6 +96,32 @@ class works:
             parse_except(e)
         finally:
             logger.critical("stop: b2vproof")
+
+    def work_markproof(self, nsec):
+        try:
+            logger.critical("start: btc mark proof")
+            while (self.__work_looping.get(work_mod.B2VPROOF.name, False)):
+                logger.debug("looping: markproof")
+                try:
+                    basedata = "base"
+                    dtype = "markproof"
+                    obj = analysis_proof.aproof(name="markproof", \
+                            dbconf=stmanage.get_db(dtype), \
+                            fdbconf=stmanage.get_db(basedata), \
+                            nodes = stmanage.get_btc_conn() \
+                            )
+                    obj.append_valid_txtype(payload.txtype.BTC_MARK)
+                    obj.append_valid_txtype(payload.txtype.EX_MARK)
+                    obj.set_step(stmanage.get_db(dtype).get("step", 100))
+                    self.set_work_obj(obj)
+                    obj.start()
+                except Exception as e:
+                    parse_except(e)
+                sleep(nsec)
+        except Exception as e:
+            parse_except(e)
+        finally:
+            logger.critical("stop: markproof")
 
     def work_comm(self, nsec):
         try:
@@ -150,6 +175,9 @@ class works:
             if work_mods.get(work_mod.B2VPROOF.name, False):
                 self.thread_append(self.work_b2vproof, work_mod.B2VPROOF)
 
+            if work_mods.get(work_mod.MARKPROOF.name, False):
+                self.thread_append(self.work_markproof, work_mod.MARKPROOF)
+
             for work in self.__threads:
                 work.start() #start work
 
@@ -179,6 +207,11 @@ class works:
             if obj is not None:
                 obj.stop()
 
+class work_mod(Enum):
+    COMM        = 0
+    BFILTER     = 1
+    B2VPROOF    = 2
+    MARKPROOF   = 3
 
 logger = log.logger.getLogger(name)
 work_manage = works()

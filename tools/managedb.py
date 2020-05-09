@@ -78,9 +78,11 @@ def showdbinfo(db):
     ret = dbclient.get_state_info()
     json_print(ret.datas)
 
-def cleandb(db):
-    dbclient = get_db(db)
-    dbclient.drop_db(db)
+def cleandb(dbs):
+    for name in dbs:
+        print(name)
+        dbclient = get_db(name)
+        dbclient.drop_db(name)
 
 def showaddressesinfo():
     dbclient = get_addressesdb()
@@ -147,9 +149,9 @@ def run(argc, argv):
                 pargs.exit_error_opt(opt)
             ret = showdbinfo(arg_list[0])
         elif pargs.is_matched(opt, ["cleandb"]):
-            if len(arg_list) != 1:
+            if len(arg_list) < 1:
                 pargs.exit_error_opt(opt)
-            ret = cleandb(arg_list[0])
+            ret = cleandb(arg_list)
 
     logger.debug("end managedb.main")
 

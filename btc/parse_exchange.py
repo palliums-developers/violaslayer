@@ -103,11 +103,18 @@ def parse_btc_mark(data):
         [sequence, amount]= struct.unpack_from(">QQ", data, data_offer)
         data_offer = data_offer + 16 
 
+
+        name = ""
+        while data_offer < len(data) - 1: # '\0' end
+            stream = struct.unpack_from("c", data, data_offer)
+            name += "".join([v.decode() for v in stream])
+            data_offer = data_offer + 1
+        
         datas = {
                 "to_address": data[:32].hex(),
                 "sequence" : sequence,
                 "amount": amount,
-                "name": "".join(v for v in data[data_offer:])
+                "name": name
                 }
 
         print(datas)

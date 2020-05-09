@@ -20,9 +20,7 @@ import comm.values
 from comm.result import result, parse_except
 from comm.error import error
 from enum import Enum
-from db.dbvfilter import dbvfilter
-from db.dbvproof import dbvproof
-from analysis.analysis_base import abase
+from analysis.analysis_proof_base import aproofbase
 from btc.payload import payload
 from btc.btcclient import btcclient
 
@@ -30,52 +28,16 @@ from btc.btcclient import btcclient
 name="aproof"
 
 COINS = comm.values.COINS
-class aproof(abase):
+class aproof(aproofbase):
 
     def __init__(self, name = "vproof", dbconf = None, fdbconf = None, nodes = None, chain = "btc"):
-        self._fdbclient = None
-        #db use dbvproof, dbvfilter, not use violas/libra nodes
-        super().__init__(name, None, nodes)
-        self._dbclient = None
-        self._fdbclient = None
-        self._module = None
-        if dbconf is not None:
-            self._dbclient = dbvproof(name, dbconf.get("host"), dbconf.get("db"), 
-                    dbconf.get("user"), dbconf.get("password"), dbconf.get("authdb", "admin"), 
-                    newdb = dbconf.get("newdb", True), rsname=dbconf.get("rsname", None))
-        if fdbconf is not None:
-            self._fdbclient = dbvfilter(name, fdbconf.get("host"), fdbconf.get("db"), 
-                    fdbconf.get("user"), fdbconf.get("password"), fdbconf.get("authdb", "admin"), 
-                    newdb = fdbconf.get("newdb", True), rsname=fdbconf.get("rsname"))
+        super().__init__(name, dbconf, fdbconf, nodes, chain)
 
     def __del__(self):
         super().__del__()
-        if self._fdbclient is not None:
-            pass
 
     def stop(self):
         super().stop()
-
-    def check_tran_is_valid(self, tran_info):
-        proofstate = tran_info.get("state", "")
-        return self.is_valid_proofstate(proofstate) and tran_info.get("valid")
-
-    def get_opreturn_txids(self, index, limit = 10, sort = pymongo.ASCENDING):
-        self._logger.debug("get_opreturn_txids(index={index})")
-        coll = self._fdbclient.get_collection(self.collection.OPTRANSACTION.name.lower(), create = True)
-        datas = coll.find({"_id":{"$gte":index}}, limit = limit)#.sort(["_id", sort])
-        print(datas)
-        return datas
-
-    def is_valid_proofstate(self, state):
-        assert isinstance(state, payload.txtype), "state type is invalid."
-        if state == payload.txtype.UNKNOWN:
-            return False
-
-        if state not in (payload.txtype.EX_START, payload.txtype.EX_END, payload.txtype.EX_CANCEL):
-            return False
-
-        return True
 
     def is_valid_proofstate_change(self, new_state, old_state):
         if new_state == payload.txtype.UNKNOWN:
@@ -87,12 +49,6 @@ class aproof(abase):
         if new_state in (payload.txtype.EX_END, payload.txtype.EX_CANCEL) and old_state != payload.txtype.EX_START:
             return False
         return True
-
-    def proofstate_name_to_value(self, name):
-        return payload.state_name_to_value(name)
-
-    def proofstate_value_to_name(self, value):
-        return payload.state_value_to_name(value)
 
     def update_proof_info(self, tran_info):
         try:

@@ -236,4 +236,4 @@ class abase(baseobject):
     def is_opreturn(self, scrpittype):
         #nonstandard  pubkey pubkeyhash scripthash multisig nulldata witness_v0_keyhash witness_v0_scripthash witness_unknown
         return scrpittype in ["nulldata"]
-        
+    

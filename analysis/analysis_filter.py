@@ -378,7 +378,7 @@ class afilter(abase):
 
 def works():
     filter = afilter(name, stmanage.get_db("base"),  stmanage.get_btc_conn())
-    filter.set_min_valid_version(1722193)
+    filter.set_min_valid_version(1612270)
     filter.set_step(1)
     def signal_stop(signal, frame):        
         filter.stop()

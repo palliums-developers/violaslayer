@@ -240,6 +240,10 @@ class payload(baseobject):
             return "cancel"
         elif state == self.txtype.EX_END:
             return "end"
+        elif state == self.txtype.BTC_MARK:
+            return "btcmark"
+        elif state == self.txtype.EX_MARK:
+            return "exmark"
         else:
             return "unkown"
 
@@ -251,6 +255,10 @@ class payload(baseobject):
             return self.txtype.EX_CANCEL
         elif state == "end":
             return self.txtype.EX_END
+        elif state == "btcmark":
+            return self.txtype.BTC_MARK
+        elif state == "exmark":
+            return self.txtype.EX_MARK
         else:
             return self.txtype.UNKNOWN
 
@@ -377,7 +385,7 @@ class payload(baseobject):
             elif self.tx_type == self.txtype.EX_CANCEL:
                 ret = parse_exchange.parse_ex_cancel(self.op_data)
             elif self.tx_type == self.txtype.BTC_MARK:
-                pass
+                ret = parse_exchange.parse_btc_mark(self.op_data)
             else:
                 ret = result(error.TRAN_INFO_INVALID, f"tx type({self.tx_type.value}) is invalid.")
         except Exception as e:

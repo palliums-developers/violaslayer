@@ -75,13 +75,150 @@ class btcclient(baseobject):
             filter = []
             amountsum = 0
             for data in datas:
-                amountsum += data.get("amount")
+                amount_sum += int(data.get("amount") * COINS)
                 filter.append({"txid": data.get("txid"), \
-                        "amount": data.get("amount"), \
+                        "amount": int(data.get("amount") * COINS), \
                         "vout":data.get("vout")})
 
-            unspent = {"amountsum": amountsum, "unspents": filter}
+            unspent = {"amountsum": amount_sum, "unspents": filter}
             ret = result(error.SUCCEED, "", unspent)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+
+    @classmethod
+    def getamountlist(self, amount, amounts):
+        use_amounts = None
+        if amounts is None or len(amounts) == 0:
+            return None
+
+        if amount > sum(amounts):
+            print(f"amounts sum({sum(amounts)}) is too small. amount : {amount}")
+            return None
+
+        if amount <= amounts[0]:
+            use_amounts = [amounts[0]]
+        elif amount >= amounts[len(amounts) - 1]:
+            use_amounts = [amounts[len(amounts) -1]]
+            new_amount = amount - amounts[len(amounts) -1]
+            amounts.pop()
+            if new_amount > 0:
+                ret = self.getamountlist(new_amount, amounts)
+                if ret is not None:
+                    use_amounts.extend(ret)
+        else:
+            #get split idx
+            idx_split = -1
+            for idx, av in enumerate(amounts):
+                idx_split = idx  #index : av > amount
+                if av > amount:
+                    break
+            start_idx = 0;
+            if idx_split > 3:
+                start_idx = idx_split - 3
+
+            sub_sum = sum(amounts[start_idx:idx_split])
+            if amount <= sub_sum :
+                idx_split = idx_split - 1
+            use_amounts = [amounts[idx_split]]
+
+            new_amount = amount - sum(use_amounts)
+            if new_amount > 0:
+                amounts.pop(idx_split)
+                ret = self.getamountlist(new_amount, amounts)
+                if ret is not None:
+                    use_amounts.extend(ret)
+
+        return use_amounts
+
+    def getaddressunspentwithamount(self, address, amount, minconf = 0, maxconf = 99999999):
+        try:
+            self._logger.debug(f"start getaddressunspent(address={address}, minconf = {minconf}, maxconf={maxconf})")
+            ret = self.getaddressunspent(address, minconf, maxconf)
+            if ret.state != error.SUCCEED:
+                return ret
+
+            if ret.datas.get("amountsum") < amount:
+                return result(error.ARG_INVALID, "address amount({ret.datas.get('amountsum')}) too small. ")
+
+            unspents = ret.datas
+            amounts = [v.get("amount") for v in unspents].sort()
+            use_amounts = self.getamountlist(amount, amounts)
+
+            datas = []
+            for unspent in unspents:
+                if unspent.get("amount") in use_amounts:
+                    datas.append(unspent)
+                    use_amounts.remove(unspent.get("amount"))
+
+            ret = result(error.SUCCEED, "", datas)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def createrawinputs(self):
+        try:
+            self._logger.debug(f"start createrawinputs()")
+            ret = result(error.SUCCEED, "", datas=[])
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def appendinput(self, inputs, txid, n, sequence = None):
+        try:
+            if inputs is None:
+                inputs = self.createrawinputs()
+            input = {"txid": txid, "vout": n}
+            if sequence is not None:
+                input["sequence"] = sequence
+
+            inputs.append(input)
+
+            ret = result(error.SUCCEED, "", inputs)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def createrawoutputs(self):
+        try:
+            self._logger.debug(f"start createrawoutputs()")
+            ret = result(error.SUCCEED, "", datas=[])
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def appendoutput(self, outputs, address, amount): #amount is float BTC
+        try:
+            if inputs is None:
+                inputs = self.createrawoutputs()
+            output = {address:amount}
+
+            outputs.append(output)
+
+            ret = result(error.SUCCEED, "", outputs)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def appendoutputdata(self, outputs, data): 
+        try:
+            if inputs is None:
+                inputs = self.createrawoutputs()
+            output = {"data": data}
+
+            outputs.append(output)
+
+            ret = result(error.SUCCEED, "", outputs)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def createrawtransaction(self, inputs, outputs, locktime = 0, replaceable = False):
+        try:
+            self._logger.debug(f"start createrawtransaction(inputs={inputs}, outputs = {outputs}, locktime={locktime}, replaceable={replaceable})")
+            datas = self.__rpc_connection.createrawtransaction(inputs, outputs, locktime, replaceable)
+            ret = result(error.SUCCEED, "", datas)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -408,13 +545,15 @@ class btcclient(baseobject):
 
 def main():
     try:
-       #load logging
-       pass
+        amounts = [1, 2, 3, 5, 8, 13, 21, 34, 36, 40, 50, 52, 100, 200]
+        ret = btcclient.getamountlist(int(sys.argv[1]), amounts)
+        print(f"list:{amounts}")
+        print(f"use amount: {ret}")
 
     except Exception as e:
         parse_except(e)
     finally:
-        self._logger.info("end main")
+        print("end main")
 
 if __name__ == "__main__":
     main()
