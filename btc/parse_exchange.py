@@ -91,6 +91,28 @@ def parse_ex_cancel(data):
         ret = parse_except(e)
     return ret
 
+def parse_ex_mark(data):
+    try:
+        if len(data) != 56:
+            return result(error.ARG_INVALID, f"data len{len(data)} is too small.")
+        data_offer = 0
+
+        #receiver address  32 Hex
+        data_offer = data_offer + 32
+
+        [sequence, version, amount] = struct.unpack_from(">QQQ", data, data_offer)
+
+        datas = {
+                "to_address": data[:32].hex(),
+                "sequence" : sequence,
+                "version" : version,
+                "amount" : amount,
+                }
+
+        ret = result(error.SUCCEED, datas = datas)
+    except Exception as e:
+        ret = parse_except(e)
+    return ret
 def parse_btc_mark(data):
     try:
         if len(data) < 40:
@@ -102,14 +124,9 @@ def parse_btc_mark(data):
 
         [sequence, amount]= struct.unpack_from(">QQ", data, data_offer)
         data_offer = data_offer + 16 
-
-
-        name = ""
-        while data_offer < len(data) - 1: # '\0' end
-            stream = struct.unpack_from("c", data, data_offer)
-            name += "".join([v.decode() for v in stream])
-            data_offer = data_offer + 1
         
+        bname = struct.unpack_from(f"{len(data) - data_offer}s", data, data_offer)
+        name = "".join([v.decode() for v in bname])
         datas = {
                 "to_address": data[:32].hex(),
                 "sequence" : sequence,
@@ -117,7 +134,6 @@ def parse_btc_mark(data):
                 "name": name
                 }
 
-        print(datas)
         ret = result(error.SUCCEED, datas = datas)
     except Exception as e:
         ret = parse_except(e)

@@ -2,12 +2,12 @@
 import operator
 import sys, os
 import json, decimal
-sys.path.append(os.getcwd())
-sys.path.append("..")
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 import log
 import log.logger
 import traceback
 import datetime
+import stmanage
 import sqlalchemy
 import requests
 import comm
@@ -22,6 +22,8 @@ from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 #from .models import BtcRpc
 from baseobject import baseobject
 from enum import Enum
+from payload import payload
+from transaction import transaction
 
 #module name
 name="bclient"
@@ -30,13 +32,6 @@ name="bclient"
 
 COINS = comm.values.COINS
 class btcclient(baseobject):
-    class transaction(object):
-        def __init__(self, datas):
-            self.__datas = dict(datas)
-        def get_version(self):
-            return self.__datas.get("version")
-        def to_json(self):
-            return self.__datas
 
     def __init__(self, name, btc_conn):
         self.__btc_url               = "http://%s:%s@%s:%i"
@@ -73,7 +68,7 @@ class btcclient(baseobject):
             datas = self.__rpc_connection.listunspent(minconf, maxconf, [address])
             unspent = {}
             filter = []
-            amountsum = 0
+            amount_sum = 0
             for data in datas:
                 amount_sum += int(data.get("amount") * COINS)
                 filter.append({"txid": data.get("txid"), \
@@ -86,9 +81,9 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
-
     @classmethod
     def getamountlist(self, amount, amounts):
+        amounts.sort()
         use_amounts = None
         if amounts is None or len(amounts) == 0:
             return None
@@ -142,9 +137,11 @@ class btcclient(baseobject):
             if ret.datas.get("amountsum") < amount:
                 return result(error.ARG_INVALID, "address amount({ret.datas.get('amountsum')}) too small. ")
 
-            unspents = ret.datas
-            amounts = [v.get("amount") for v in unspents].sort()
-            use_amounts = self.getamountlist(amount, amounts)
+            unspents = ret.datas.get("unspents")
+            print(unspents)
+            amounts = [v.get("amount") for v in unspents]
+            print(amounts)
+            use_amounts = self.getamountlist(amount, list(amounts))
 
             datas = []
             for unspent in unspents:
@@ -153,63 +150,6 @@ class btcclient(baseobject):
                     use_amounts.remove(unspent.get("amount"))
 
             ret = result(error.SUCCEED, "", datas)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def createrawinputs(self):
-        try:
-            self._logger.debug(f"start createrawinputs()")
-            ret = result(error.SUCCEED, "", datas=[])
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def appendinput(self, inputs, txid, n, sequence = None):
-        try:
-            if inputs is None:
-                inputs = self.createrawinputs()
-            input = {"txid": txid, "vout": n}
-            if sequence is not None:
-                input["sequence"] = sequence
-
-            inputs.append(input)
-
-            ret = result(error.SUCCEED, "", inputs)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def createrawoutputs(self):
-        try:
-            self._logger.debug(f"start createrawoutputs()")
-            ret = result(error.SUCCEED, "", datas=[])
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def appendoutput(self, outputs, address, amount): #amount is float BTC
-        try:
-            if inputs is None:
-                inputs = self.createrawoutputs()
-            output = {address:amount}
-
-            outputs.append(output)
-
-            ret = result(error.SUCCEED, "", outputs)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def appendoutputdata(self, outputs, data): 
-        try:
-            if inputs is None:
-                inputs = self.createrawoutputs()
-            output = {"data": data}
-
-            outputs.append(output)
-
-            ret = result(error.SUCCEED, "", outputs)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -542,11 +482,31 @@ class btcclient(baseobject):
         except Exception as e:
             ret = parse_except(e)
         return ret
+def test_createrawtransaction():
+        receiver_addr = "2N9gZbqRiLKAhYCBFu3PquZwmqCBEwu1ien"
+        combin_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
+        sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
+        client = btcclient(name, stmanage.get_btc_conn())
+        tran = transaction(name)
+        tran.appendoutput(receiver_addr, 0.000001)
+        tran.appendoutput(combin_addr, 0.000002)
+        ret = tran.getoutputamount()
+        print("output amount sum: {ret.datas * COINS}")
+
+        ret = client.getaddressunspentwithamount(sender_addr, ret.datas * COINS)
+        unspents = ret.datas
+        for unspent in unspents:
+            tran.appendinput(unspent.get("txid"), unspent.get("vout"))
+
+        print(f"inputs: {tran.inputs}")
+        print(f"outputs: {tran.outputs}")
+        ret = client.createrawtransaction(tran.inputs, tran.outputs)
+        json_print(ret.to_json())
 
 def main():
     try:
         amounts = [1, 2, 3, 5, 8, 13, 21, 34, 36, 40, 50, 52, 100, 200]
-        ret = btcclient.getamountlist(int(sys.argv[1]), amounts)
+        ret = btcclient.getamountlist(int(sys.argv[1]), list(amounts))
         print(f"list:{amounts}")
         print(f"use amount: {ret}")
 
@@ -556,4 +516,6 @@ def main():
         print("end main")
 
 if __name__ == "__main__":
-    main()
+    #main()
+    test_createrawtransaction()
+

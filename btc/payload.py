@@ -25,7 +25,9 @@ from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 #from .models import BtcRpc
 from baseobject import baseobject
 import btc.parse_exchange as parse_exchange
+import btc.create_exchange as create_exchange
 from enum import Enum
+from ctypes import create_string_buffer
 
 #module name
 name="payload"
@@ -191,13 +193,20 @@ class payload(baseobject):
 
     def __init_type_with_version(self):
         self._type_version = {
-                        self.txtype.BTC_MARK : {"version" : [self.__version_1, self.__version_0], "block": 0}, \
-                        self.txtype.EX_START : {"version" : [self.__version_1], "block": 0}, \
-                        self.txtype.EX_END   : {"version" : [self.__version_1], "block": 0}, \
-                        self.txtype.EX_CANCEL: {"version" : [self.__version_1], "block": 0}, \
-                        self.txtype.EX_MARK  : {"version" : [self.__version_1], "block": 0}, \
+                        self.txtype.BTC_MARK : {"version" : [self.version_1, self.version_0], "block": 0}, \
+                        self.txtype.EX_START : {"version" : [self.version_1], "block": 0}, \
+                        self.txtype.EX_END   : {"version" : [self.version_1], "block": 0}, \
+                        self.txtype.EX_CANCEL: {"version" : [self.version_1], "block": 0}, \
+                        self.txtype.EX_MARK  : {"version" : [self.version_1], "block": 0}, \
                 }
 
+    @property
+    def version_0(self):
+        return self.__version_0
+
+    @property
+    def version_1(self):
+        return self.__version_1
     @property
     def type_version(self):
         return self._type_version
@@ -405,6 +414,30 @@ class payload(baseobject):
             ret = parse_except(e)
         return ret
 
+    def get_data_size_offer(self, bdata, fixsize):
+        try:
+            data_offer = 0
+            size = fixsize
+            offer = 0
+            if size < self.optcodetype.OP_PUSHDATA1.value:
+                data_offer = 0
+            elif size == self.optcodetype.OP_PUSHDATA1.value:
+                size = struct.unpack_from('>B', bdata, offer)[0]
+                data_offer = data_offer + 1
+            elif size == self.optcodetype.OP_PUSHDATA2.value:
+                size = struct.unpack_from('>H', bdata, offer)[0]
+                data_offer = data_offer + 2
+            elif size == self.optcodetype.OP_PUSHDATA4.value:
+                size = struct.unpack_from('>I', bdata, offer)[0]
+                data_offer = data_offer + 4
+            else:
+                return result(error.ARG_INVALID, f"opt code type is not in {self.optcodetype}")
+
+            ret = result(error.SUCCEED, "", (size, data_offer))
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
     def parse(self, payload):
         try:
             self._logger.debug(f"payload:{payload}")
@@ -417,17 +450,12 @@ class payload(baseobject):
 
             size = bdata[1]
             data_offer = 2 #0~n
-            if size < self.optcodetype.OP_PUSHDATA1.value:
-                data_offer = data_offer
-            elif size == self.optcodetype.OP_PUSHDATA1.value:
-                size = struct.unpack_from('>B', bdata, 2)[0]
-                data_offer = data_offer + 1
-            elif size == self.optcodetype.OP_PUSHDATA2.value:
-                size = struct.unpack_from('>H', bdata, 2)[0]
-                data_offer = data_offer + 2
-            elif size == self.optcodetype.OP_PUSHDATA4.value:
-                size = struct.unpack_from('>I', bdata, 2)[0]
-                data_offer = data_offer + 4
+            ret = self.get_data_size_offer(bdata[2:], size)
+            if ret.state != error.SUCCEED:
+                return ret
+
+            size, offer = ret.datas
+            data_offer += offer
             
             #OP_RETURN size(datas)
             self.op_size = size
@@ -436,8 +464,27 @@ class payload(baseobject):
             opcode_value = struct.unpack_from('B', bdata, 0)[0]
             self.op_code = self.optcodetype(opcode_value)
 
+            ret = self.parse_opt_data(bdata[data_offer:])
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def parse_opt_datahex(self, data):
+        try:
+            self._reset(payload)
+            self.payload_hex = data
+            bdata = bytes.fromhex(data)
+            ret = self.parse_opt_data(bdata)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def parse_opt_data(self, bdata):
+        try:
             #violas mark
             #makesure data is valid
+            data_offer = 0
+            data_len = len(bdata)
             if data_offer + 6 >= data_len:
                 return result(error.ARG_INVALID, "mark(violas) not found")
 
@@ -489,12 +536,119 @@ class payload(baseobject):
             ret = parse_except(e)
         return ret
 
+    def create_opt_buf(self, size):
+        try:
+            datas = None
+            data_offer = 0
+            datas = create_string_buffer(size)
+            '''
+            if size < self.optcodetype.OP_PUSHDATA1.value:
+                datas = create_string_buffer(size + 1)
+                struct.pack_into('>B', datas, 0, size)
+                data_offer = 1
+            elif size < 0xff:
+                datas = create_string_buffer(size + 1 + 1)
+                struct.pack_into('>BB', datas, 0, self.optcodetype.OP_PUSHDATA1.value, size)
+                data_offer = 2
+            elif size < 0xffff:
+                datas = create_string_buffer(size + 1 + 2)
+                struct.pack_into('>BH', datas, 0, self.optcodetype.OP_PUSHDATA2.value, size)
+                data_offer = 3
+            else:
+                datas = create_string_buffer(size + 1 + 4)
+                struct.pack_into('>BQ', datas, 0, self.optcodetype.OP_PUSHDATA4.value, size)
+                data_offer = 5
+            '''
+
+            ret = result(error.SUCCEED, "", (data_offer, datas))
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+    def create_payload(self, txver, txtype, data):
+        try:
+            # mark.size + ver.size + txtype.sizde + data.size
+            size = len(self.valid_mark) + 2 + 2 + len(data)
+            ret = self.create_opt_buf(size)
+            if ret.state != error.SUCCEED:
+                return ret
+
+            offer, datas = ret.datas
+
+            struct.pack_into(f">{len(self.valid_mark)}sHH", datas, offer, 
+                    str.encode(self.valid_mark),
+                    txver,
+                    txtype.value
+                    )
+
+            index = offer + len(self.valid_mark) + 4
+            for c in data:
+                datas[index] = c
+                index += 1
+
+            redatas = struct.unpack_from(f"{len(datas)}s", datas, 0)[0]
+            ret = result(error.SUCCEED, "", redatas)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def create_ex_start(self, toaddress, sequence, module):
+        try:
+            ret = create_exchange.create_ex_start(toaddress, sequence, module)
+            if ret.state != error.SUCCEED:
+                return ret
+            
+            ret = self.create_payload(self.version_1, self.txtype.EX_START, ret.datas)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+    
+    def create_ex_end(self, toaddress, sequence, amount, version):
+        try:
+            ret = create_exchange.create_ex_end(toaddress, sequence, amount, version)
+            if ret.state != error.SUCCEED:
+                return ret
+            
+            ret = self.create_payload(self.version_1, self.txtype.EX_END, ret.datas)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+    
+    def create_ex_cancel(self, toaddress, sequence):
+        try:
+            ret = create_exchange.create_ex_cancel(toaddress, sequence)
+            if ret.state != error.SUCCEED:
+                return ret
+            
+            ret = self.create_payload(self.version_1, self.txtype.EX_CANCEL, ret.datas)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+    
+    def create_ex_mark(self, toaddress, sequence, version, amount):
+        try:
+            ret = create_exchange.create_ex_mark(toaddress, sequence, version, amount)
+            if ret.state != error.SUCCEED:
+                return ret
+            
+            ret = self.create_payload(self.version_1, self.txtype.EX_MARK, ret.datas)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+    def create_btc_mark(self, toaddress, sequence, amount, name):
+        try:
+            ret = create_exchange.create_btc_mark(toaddress, sequence, amount, name)
+            if ret.state != error.SUCCEED:
+                return ret
+            
+            ret = self.create_payload(self.version_1, self.txtype.BTC_MARK, ret.datas)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+    
     #b2v
     #open_return + violas 
-#opstr = "6a4c5276696f6c617300003000f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000000001ed048cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2"
     
 opstr = "6a4c5276696f6c617300003000f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2"
-#opstr = "6a4c5000027dbe00023efe054e8eead55dfc2f4d8699319e24ca0e9f5fee325b769d2b715457c163a9b3a9f769b376bf077f566ddf2cb85e180b6c050114edad1ca9a627de9305ad5bc9212a4ce706aebc7497"
     ###txid: f30a9f9497b97aa5f95a46f1bd6fceeb26241686526068c309dee8d8fafc0a97
     ###to_address:f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c6 
     ###sequence: 20200110006
@@ -504,18 +658,112 @@ def check(src, dest):
     return src == dest
 
 def test_np():
-    #dt = np.dtype(np.int32)
     global opstr
 
     pdata = payload(name)
 
     print(f"check op_return is valid: {pdata.is_valid_violas(opstr).datas}")
     ret = pdata.parse(opstr)
+    assert ret.state == error.SUCCEED, f"parse OP_RETURN failed.{ret.message}"
+    
+def test_exchange():
+    toaddress = "dcfa787ecb304c20ff24ed6b5519c2e5cae5f8464c564aabb684ecbcc19153e9"
+    sequence = 20200511
+    module = "00000000000000000000000000000000e1be1ab8360a35a0259f1c93e3eac736"
+    print(f'''************************************************************************create ex start
+    toaddress:{toaddress}
+    sequence: {sequence}
+    module:{module}
+**********************************************************************************''')
+    ret = create_exchange.create_ex_start(toaddress, sequence, module)
+    ret = parse_exchange.parse_ex_start(ret.datas)
+    json_print(ret.datas)
+    
+
+    amount = 100010
+    version = 123456
+    print(f'''************************************************************************create ex end
+    toaddress:{toaddress}
+    sequence: {sequence}
+    amount: {amount}
+    version: {version}
+**********************************************************************************''')
+    ret = create_exchange.create_ex_end(toaddress, sequence, amount, version)
+    ret = parse_exchange.parse_ex_end(ret.datas)
+    json_print(ret.datas)
+    
+    print(f'''************************************************************************create ex cancel
+    toaddress:{toaddress}
+    sequence: {sequence}
+**********************************************************************************''')
+    ret = create_exchange.create_ex_cancel(toaddress, sequence)
+    ret = parse_exchange.parse_ex_cancel(ret.datas)
+    json_print(ret.datas)
+
+    proofname = "btcmark"
+    print(f'''************************************************************************create btc mark
+    toaddress:{toaddress}
+    sequence: {sequence}
+    amount:{amount}
+    name: {proofname}
+**********************************************************************************''')
+    ret = create_exchange.create_btc_mark(toaddress, sequence, amount, proofname)
+    ret = parse_exchange.parse_btc_mark(ret.datas)
+    json_print(ret.datas)
+
+def test_payload():
+    pl = payload(name)
+    toaddress = "dcfa787ecb304c20ff24ed6b5519c2e5cae5f8464c564aabb684ecbcc19153e9"
+    sequence = 20200511
+    module = "00000000000000000000000000000000e1be1ab8360a35a0259f1c93e3eac736"
+    print(f'''************************************************************************create ex start
+    toaddress:{toaddress}
+    sequence: {sequence}
+    module:{module}
+**********************************************************************************''')
+    ret = pl.create_ex_start(toaddress, sequence, module)
+    assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
+    ret = pl.parse_opt_datahex(ret.datas.hex())
     assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
     
- 
+
+    amount = 100010
+    version = 123456
+    print(f'''************************************************************************create ex end
+    toaddress:{toaddress}
+    sequence: {sequence}
+    amount: {amount}
+    version: {version}
+**********************************************************************************''')
+    ret = pl.create_ex_end(toaddress, sequence, amount, version)
+    assert ret.state == error.SUCCEED, f"payload create_ex_end."
+    ret = pl.parse_opt_datahex(ret.datas.hex())
+    assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
     
+    
+    print(f'''************************************************************************create ex cancel
+    toaddress:{toaddress}
+    sequence: {sequence}
+**********************************************************************************''')
+    ret = pl.create_ex_cancel(toaddress, sequence)
+    assert ret.state == error.SUCCEED, f"payload create_ex_cancel."
+    ret = pl.parse_opt_datahex(ret.datas.hex())
+    assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
+
+    proofname = "btcmark"
+    print(f'''************************************************************************create btc mark
+    toaddress:{toaddress}
+    sequence: {sequence}
+    amount:{amount}
+    name: {proofname}
+**********************************************************************************''')
+    ret = pl.create_btc_mark(toaddress, sequence, amount, proofname)
+    assert ret.state == error.SUCCEED, f"payload create_btc_mark."
+    ret = pl.parse_opt_datahex(ret.datas.hex())
+    assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
 
 
 if __name__ == "__main__":
-    test_np()
+    #test_np()
+    #test_exchange()
+    test_payload()

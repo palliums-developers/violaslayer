@@ -162,6 +162,11 @@ def getaddressunspent(address):
     ret = client.getaddressunspent(address)
     json_print(ret.to_json())
 
+def checkaddressunspent(address, amount):
+    client = getbtcclient()
+    ret = client.getaddressunspentwithamount(address, amount)
+    json_print(ret.to_json())
+
 def init_args(pargs):
     pargs.append("help", "show arg list")
     pargs.append("getblockcount", "get block count.")
@@ -178,6 +183,7 @@ def init_args(pargs):
     pargs.append("parserawtranpayload", "parse raw transaction payload", True, ["data-hex"])
     pargs.append("parsepayload", "parse raw payload", True, ["data-hex"])
     pargs.append("getaddressunspent", "get unspent txout of address", True, ["address"])
+    pargs.append("checkaddressunspent", "get unspent txout of address with amount(satoshi)", True, ["address", "amount"])
 
 def run(argc, argv):
     try:
@@ -276,6 +282,11 @@ def run(argc, argv):
             if len(arg_list) != 1:
                 pargs.exit_error_opt(opt)
             ret = getaddressunspent(arg_list[0])
+
+        elif pargs.is_matched(opt, ["checkaddressunspent"]):
+            if len(arg_list) != 2:
+                pargs.exit_error_opt(opt)
+            ret = checkaddressunspent(arg_list[0], int(arg_list[1]))
 
     logger.debug("end manage.main")
 
