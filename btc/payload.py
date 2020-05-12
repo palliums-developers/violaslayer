@@ -586,7 +586,7 @@ class payload(baseobject):
                 index += 1
 
             redatas = struct.unpack_from(f"{len(datas)}s", datas, 0)[0]
-            ret = result(error.SUCCEED, "", redatas)
+            ret = result(error.SUCCEED, "", redatas.hex())
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -723,7 +723,7 @@ def test_payload():
 **********************************************************************************''')
     ret = pl.create_ex_start(toaddress, sequence, module)
     assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
-    ret = pl.parse_opt_datahex(ret.datas.hex())
+    ret = pl.parse_opt_datahex(ret.datas)
     assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
     
 
@@ -737,7 +737,7 @@ def test_payload():
 **********************************************************************************''')
     ret = pl.create_ex_end(toaddress, sequence, amount, version)
     assert ret.state == error.SUCCEED, f"payload create_ex_end."
-    ret = pl.parse_opt_datahex(ret.datas.hex())
+    ret = pl.parse_opt_datahex(ret.datas)
     assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
     
     
@@ -747,7 +747,7 @@ def test_payload():
 **********************************************************************************''')
     ret = pl.create_ex_cancel(toaddress, sequence)
     assert ret.state == error.SUCCEED, f"payload create_ex_cancel."
-    ret = pl.parse_opt_datahex(ret.datas.hex())
+    ret = pl.parse_opt_datahex(ret.datas)
     assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
 
     proofname = "btcmark"
@@ -759,7 +759,7 @@ def test_payload():
 **********************************************************************************''')
     ret = pl.create_btc_mark(toaddress, sequence, amount, proofname)
     assert ret.state == error.SUCCEED, f"payload create_btc_mark."
-    ret = pl.parse_opt_datahex(ret.datas.hex())
+    ret = pl.parse_opt_datahex(ret.datas)
     assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
 
 

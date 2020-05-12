@@ -22,8 +22,8 @@ from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 #from .models import BtcRpc
 from baseobject import baseobject
 from enum import Enum
-from payload import payload
-from transaction import transaction
+from btc.payload import payload
+from btc.transaction import transaction
 
 #module name
 name="bclient"
@@ -158,6 +158,24 @@ class btcclient(baseobject):
         try:
             self._logger.debug(f"start createrawtransaction(inputs={inputs}, outputs = {outputs}, locktime={locktime}, replaceable={replaceable})")
             datas = self.__rpc_connection.createrawtransaction(inputs, outputs, locktime, replaceable)
+            ret = result(error.SUCCEED, "", datas)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def signrawtransactionwithkey(self, hexstring, privkeys, prevtxs=None, sighashtype="ALL"):
+        try:
+            self._logger.debug(f"start signrawtransactionwithkey(hexstring={hexstring}, privkeys= {privkeys}, sighashtype={sighashtype})")
+            datas = self.__rpc_connection.signrawtransactionwithkey(hexstring, privkeys)
+            ret = result(error.SUCCEED, "", datas)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def sendrawtransaction(self, hexstring, maxfeerate=0.010):
+        try:
+            self._logger.debug(f"start sendrawtransaction(hexstring={hexstring}, maxfeerate={maxfeerate})")
+            datas = self.__rpc_connection.sendrawtransaction(hexstring, maxfeerate)
             ret = result(error.SUCCEED, "", datas)
         except Exception as e:
             ret = parse_except(e)
@@ -486,10 +504,25 @@ def test_createrawtransaction():
         receiver_addr = "2N9gZbqRiLKAhYCBFu3PquZwmqCBEwu1ien"
         combin_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
         sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
+        pl = payload(name)
+        toaddress = "dcfa787ecb304c20ff24ed6b5519c2e5cae5f8464c564aabb684ecbcc19153e9"
+        sequence = 20200512001
+        module = "00000000000000000000000000000000e1be1ab8360a35a0259f1c93e3eac736"
+        print(f'''************************************************************************create ex start
+        toaddress:{toaddress}
+        sequence: {sequence}
+        module:{module}
+**********************************************************************************''')
+        ret = pl.create_ex_start(toaddress, sequence, module)
+        assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
+        data = ret.datas
+
         client = btcclient(name, stmanage.get_btc_conn())
         tran = transaction(name)
         tran.appendoutput(receiver_addr, 0.000001)
         tran.appendoutput(combin_addr, 0.000002)
+        tran.appendoutputdata(data)
+        
         ret = tran.getoutputamount()
         print("output amount sum: {ret.datas * COINS}")
 
@@ -501,6 +534,12 @@ def test_createrawtransaction():
         print(f"inputs: {tran.inputs}")
         print(f"outputs: {tran.outputs}")
         ret = client.createrawtransaction(tran.inputs, tran.outputs)
+        assert ret.state == error.SUCCEED, ret.message
+
+        privkeys = ["cUrpMtcfh4s9CRdPEA2tx3hYQGb5yy7pkWQNzaMBZc8Sj42g8YA8"]
+        ret = client.signrawtransactionwithkey(ret.datas, privkeys)
+        assert ret.state == error.SUCCEED, ret.message
+
         json_print(ret.to_json())
 
 def main():

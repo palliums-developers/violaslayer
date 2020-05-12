@@ -22,7 +22,7 @@ from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 #from .models import BtcRpc
 from baseobject import baseobject
 from enum import Enum
-from payload import payload
+from btc.payload import payload
 
 #module name
 name="transaction"

@@ -149,7 +149,6 @@ def parserawtranpayload(data):
         }
 
     json_print(info)
-
     
 def parsepayload(data):
     parse_payload = payload(name)
