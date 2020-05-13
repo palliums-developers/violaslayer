@@ -165,8 +165,33 @@ class btcclient(baseobject):
 
     def signrawtransactionwithkey(self, hexstring, privkeys, prevtxs=None, sighashtype="ALL"):
         try:
-            self._logger.debug(f"start signrawtransactionwithkey(hexstring={hexstring}, privkeys= {privkeys}, sighashtype={sighashtype})")
+            self._logger.debug(f"start signrawtransactionwithkey(hexstring=hexstring, privkeys= {privkeys}, sighashtype={sighashtype})")
             datas = self.__rpc_connection.signrawtransactionwithkey(hexstring, privkeys)
+            ret = result(error.SUCCEED, "", datas)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def estimatesmartfee(self, target, mode="CONSERVATIVE"):
+        try:
+            self._logger.debug(f"estimatesmartfee(target={target}, mode={mode})")
+            datas = self.__rpc_connection.estimatesmartfee(target, mode)
+            if datas.get("errors") is not None:
+                ret = result(error.FAILED, datas.get("errors"))
+
+            ret = result(error.SUCCEED, "", float(datas.get("feerate")))
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    @property
+    def satoshiperk(self):
+        return self.__satoshi_per_k
+
+    def getminfeerate(self, satoshiperk, size):
+        try:
+            self._logger.debug(f"start getminfeerate(satoshiperk={satoshiperk}, size={size})")
+            datas = satoshiperk * size / 1000.0
             ret = result(error.SUCCEED, "", datas)
         except Exception as e:
             ret = parse_except(e)
@@ -303,6 +328,7 @@ class btcclient(baseobject):
             datas = self.__rpc_connection.decoderawtransaction(data, isswitness)
             datas["vinsize"] = len(datas.get("vin"))
             datas["voutsize"] = len(datas.get("vout"))
+            datas["weight"] = datas.get("weight")
             for i, value in enumerate(datas["vout"]):
                 script_pub_key = datas["vout"][i]["scriptPubKey"]
                 if script_pub_key.get("type", "") == "nonstandard":
@@ -539,8 +565,18 @@ def test_createrawtransaction():
         privkeys = ["cUrpMtcfh4s9CRdPEA2tx3hYQGb5yy7pkWQNzaMBZc8Sj42g8YA8"]
         ret = client.signrawtransactionwithkey(ret.datas, privkeys)
         assert ret.state == error.SUCCEED, ret.message
+        tran = ret.datas
+        print("*"*30)
+        json_print(tran)
 
-        json_print(ret.to_json())
+        estimatefee = client.estimatesmartfee(6).datas
+        print(f"estimatefee:{estimatefee}")
+
+        ret = client.decoderawtransaction(tran.get("hex"))
+        weight = ret.datas.get("weight")
+        ret = client.getminfeerate(estimatefee, weight)
+        print(f"transaction minfeerate:{ret.datas:.8f}")
+
 
 def main():
     try:

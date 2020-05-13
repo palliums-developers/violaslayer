@@ -414,6 +414,7 @@ class payload(baseobject):
             ret = parse_except(e)
         return ret
 
+    @classmethod
     def get_data_size_offer(self, bdata, fixsize):
         try:
             data_offer = 0
@@ -535,6 +536,19 @@ class payload(baseobject):
         except Exception as e:
             ret = parse_except(e)
         return ret
+
+    @classmethod
+    def get_bytes_compact_size(self, size):
+        compact_size = 0
+        if size < self.optcodetype.OP_PUSHDATA1.value:
+            compact_size = 1
+        elif size < 0xff:
+            compact_size = 2
+        elif size < 0xffff:
+            compact_size = 3
+        else:
+            compact_size = 5
+        return compact_size 
 
     def create_opt_buf(self, size):
         try:
