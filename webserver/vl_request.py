@@ -21,6 +21,9 @@ from comm.result import result, parse_except
 from comm.error import error
 from enum import Enum
 from vrequest.request_proof import requestproof
+from btc.btcclient import btcclient
+from btc.payload import payload
+
 
 #module self.name
 name="webserver"
@@ -30,19 +33,111 @@ logger = log.logger.getLogger(name)
 def main():
     args    = request.args
     opt     = args.get("opt")
-    cursor  = int(args.get("cursor", 0))
-    limit   = int(args.get("limit", 10))
-    state   = args.get("state")
+    type    = args.get("type")
     receiver= args.get("receiver")
 
     if opt is None:
         raise Exception("opt not found.")
-    if opt == "b2v":
-        return list_exproof_state(receiver, state, cursor, limit)
-    elif opt == "btcmark":
-        return list_btc_mark(receiver, cursor, limit)
+    if opt == "get":
+        cursor  = int(args.get("cursor", 0))
+        limit   = int(args.get("limit", 10))
+
+        if type == "b2v":
+            state = args.get("state")
+            return list_exproof_state(receiver, state, cursor, limit)
+        elif typ == "btcmark":
+            return list_btc_mark(receiver, cursor, limit)
+        elif type == "balance":
+            address = args.get("address")
+            minconf = args.get("minconf", 1)
+            maxconf = args.get("maxconf", 99999999)
+            return btc_get_address_balance(address, minconf, maxconf)
+        else:
+            raise Exception(f"type:{type} not found.")
+    elif opt == "set":
+        #btc transaction
+        fromaddress     = args.get("fromaddress")
+        toaddress       = args.get("toaddress")
+        toamount        = args.get("toamount")
+        fromprivkeys    = args.get("fromprivkeys")
+        combine         = args.get("combine")
+
+        #payload 
+        vreceiver       = args.get("vreceiver")
+        sequence        = args.get("sequence")
+        module          = args.get("module")
+        version         = args.get("version")
+        if type == "start":
+            return btc_send_exproof_start(fromaddress, toaddress, toamount, fromprivkeys, combine, \
+                    vreceiver, sequence, module)
+        elif type == "end":
+            return btc_send_exproof_end(fromaddress, toaddress, toamount, fromprivkeys, combine, \
+                    vreceiver, sequence, amount, version)
+        elif type == "mark":
+            return btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combine, \
+                    vreceiver, sequence, amount, version)
+        else:
+            raise Exception(f"type:{type} not found.")
     else:
-        raise Exception("opt not found.")
+        raise Exception(f"opt:{opt} not found.")
+
+def get_btcclient():
+    return btcclient(name, stmanage.get_btc_conn())
+
+def btc_get_address_balance(address, minconf = 0, maxconf = 99999999):
+    try:
+        bclient = get_btcclient()
+        ret = bclient.getaddressunspent(address, minconf, maxconf)
+        if ret.state == error.SUCCEED:
+            ret = result(error.SUCCEED, "", ret.datas.get("amountsum"))
+    except Exception as e:
+        ret = parse_except(e)
+    return ret.to_json()
+
+def btc_send_exproof_start(fromaddress, toaddress, toamount, fromprivkeys, combine = None, \
+        vreceiver, sequence, module):
+    try:
+        bclient = get_btcclient()
+        pl = payload(name)
+        ret = pl.create_ex_start(vreiceiver, sequence, module)
+        assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
+        data = ret.datas
+
+        ret = bclient.sendtoaddress(fromaddress, toaddress, toamount, fromprivkeys, \
+                data = data, combine = combine)
+    except Exception as e:
+        ret = parse_except(e)
+    return ret.to_json()
+    
+def btc_send_exproof_end(fromaddress, toaddress, toamount, fromprivkeys, combine = None, \
+        vreceiver, sequence, amount, version):
+    try:
+        bclient = get_btcclient()
+        pl = payload(name)
+        ret = pl.create_ex_end(vreiceiver, sequence, amount, version)
+        assert ret.state == error.SUCCEED, f"payload create_ex_end.{ret.message}"
+        data = ret.datas
+
+        ret = bclient.sendtoaddress(fromaddress, toaddress, toamount, fromprivkeys, \
+                data = data, combine = combine)
+    except Exception as e:
+        ret = parse_except(e)
+    return ret.to_json()
+
+def btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combine = None, \
+        vreceiver, sequence, amount, version):
+    try:
+        bclient = get_btcclient()
+        pl = payload(name)
+        ret = pl.create_ex_mark(vreiceiver, sequence, version, amount)
+        assert ret.state == error.SUCCEED, f"payload create_ex_mark.{ret.message}"
+        data = ret.datas
+
+        ret = bclient.sendtoaddress(fromaddress, toaddress, toamount, fromprivkeys, \
+                data = data, combine = combine)
+    except Exception as e:
+        ret = parse_except(e)
+    return ret.to_json()
 
 def get_v2bproof_client():
     return requestproof(name, stmanage.get_db("b2vproof"))
