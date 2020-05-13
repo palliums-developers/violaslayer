@@ -40,6 +40,7 @@ class btcclient(baseobject):
         self.__rpcip                 = "127.0.0.1"
         self.__rpcport               = 9409
         self.__rpc_connection        = ""
+        self.__feerate               = 0
         baseobject.__init__(self, name)
 
         if btc_conn :
@@ -58,9 +59,16 @@ class btcclient(baseobject):
     def disconn_node(self):
         pass
 
-
     def stop(self):
         self.work_stop()
+
+    def getunspentsamount(self, unspents):
+        if unspents is None:
+            return 0
+        amount_sum = 0
+        for unspent in unspents:
+            amount_sum += unspent.get("amount", 0) 
+        return amount_sum
 
     def getaddressunspent(self, address, minconf = 0, maxconf = 99999999):
         try:
@@ -80,6 +88,12 @@ class btcclient(baseobject):
         except Exception as e:
             ret = parse_except(e)
         return ret
+
+    @property
+    def feerate(self):
+        if self.__feerate <= 0:
+            self.__feerate = self.estimatesmartfee(6).datas
+        return self.__feerate
 
     @classmethod
     def getamountlist(self, amount, amounts):
@@ -127,7 +141,7 @@ class btcclient(baseobject):
 
         return use_amounts
 
-    def getaddressunspentwithamount(self, address, amount, minconf = 0, maxconf = 99999999):
+    def getaddressunspentwithamount(self, address, amount, minconf = 0, maxconf = 99999999): #amount is satoshi
         try:
             self._logger.debug(f"start getaddressunspent(address={address}, minconf = {minconf}, maxconf={maxconf})")
             ret = self.getaddressunspent(address, minconf, maxconf)
@@ -138,9 +152,7 @@ class btcclient(baseobject):
                 return result(error.ARG_INVALID, "address amount({ret.datas.get('amountsum')}) too small. ")
 
             unspents = ret.datas.get("unspents")
-            print(unspents)
             amounts = [v.get("amount") for v in unspents]
-            print(amounts)
             use_amounts = self.getamountlist(amount, list(amounts))
 
             datas = []
@@ -184,13 +196,103 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
+    def sendtoaddress(self, fromaddress, toaddress, toamount, fromprivkeys, data = None, combine = None): #toamount is BTC
+        try:
+            self._logger.debug(f"sendtoaddress(fromaddress={fromaddress}, toaddress={toaddress}, toamount={toamount}, data={data}, combine={combine})")
+            fee_rate = self.feerate
+            min_fee = 0
+
+            tran = transaction(name)
+            tran.appendoutputdata(data)
+            #transaction format: place holder
+            if combine is not None:
+                tran.appendoutput(combine, 0)
+            else:
+                tran.appendoutput(fromaddress, 0)
+
+            #must be last
+            tran.appendoutput(toaddress, toamount)
+
+            ret = tran.getoutputamount()
+            if ret.state != error.SUCCEED:
+                return ret
+            amount_out = ret.datas
+
+            while True:
+                ret = self.getaddressunspentwithamount(fromaddress, int((amount_out + min_fee) * COINS))
+                if ret.state != error.SUCCEED:
+                    return ret
+                unspents = ret.datas
+
+                for unspent in unspents:
+                    tran.appendinput(unspent.get("txid"), unspent.get("vout"), amount = unspent.get("amount"))
+
+                amount_in = tran.inputsamount
+                #for temp set amount for get signtransaction weight
+                overage = (amount_in - int(toamount * COINS)) / COINS
+                if combine is not None:
+                    tran.updateoutput(combine, overage)
+                else:
+                    tran.updateoutput(fromaddress, overage)
+
+                print(f"amount_in: {amount_in} toamount={toamount} COINS:{COINS} output amount :{(amount_in - int(toamount * COINS)) / COINS:.8f}")
+                ret = self.createrawtransaction(tran.inputs, tran.outputs)
+                if ret.state != error.SUCCEED:
+                    return ret
+
+                ret = self.signrawtransactionwithkey(ret.datas, fromprivkeys)
+                if ret.state != error.SUCCEED:
+                    return ret
+                signtran = ret.datas
+                json_print(signtran)
+                
+                
+                ret = self.decoderawtransaction(signtran.get("hex"))
+                if ret.state != error.SUCCEED:
+                    return ret
+
+                weight = ret.datas.get("weight")
+
+                ret = self.getminfeerate(fee_rate, weight)
+                if ret.state != error.SUCCEED:
+                    return ret
+                min_fee = ret.datas
+
+                overage = (amount_in - int(toamount * COINS) - int(min_fee * COINS)) / COINS
+                print(f"amount_in: {amount_in} toamount={toamount} COINS:{COINS} min fee: {min_fee} . output amount : {overage}")
+                if overage < 0:
+                    tran.cleaninputs()
+                    continue
+
+                #will send to block chain
+                if combine is not None:
+                    tran.updateoutput(combine, overage)
+                else:
+                    tran.updateoutput(fromaddress, overage)
+
+                ret = self.createrawtransaction(tran.inputs, tran.outputs)
+                if ret.state != error.SUCCEED:
+                    return ret
+                tran_data = ret.datas
+
+                ret = self.signrawtransactionwithkey(tran_data, fromprivkeys)
+                if ret.state != error.SUCCEED:
+                    return ret
+                signtran = ret.datas
+
+                #datas = self.sendrawtransaction(signtran.get("hex"))
+                return result(error.SUCCEED, "", signtran)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
     @property
     def satoshiperk(self):
         return self.__satoshi_per_k
 
     def getminfeerate(self, satoshiperk, size):
         try:
-            self._logger.debug(f"start getminfeerate(satoshiperk={satoshiperk}, size={size})")
+            self._logger.debug(f"start getminfeerate(satoshiperk={satoshiperk:.8f}, size={size})")
             datas = satoshiperk * size / 1000.0
             ret = result(error.SUCCEED, "", datas)
         except Exception as e:
@@ -205,7 +307,7 @@ class btcclient(baseobject):
         except Exception as e:
             ret = parse_except(e)
         return ret
-
+        
     def getblockcount(self):
         try:
             self._logger.debug(f"start getblockcount()")
@@ -526,6 +628,24 @@ class btcclient(baseobject):
         except Exception as e:
             ret = parse_except(e)
         return ret
+def test_sendtoaddress():
+        receiver_addr = "2N9gZbqRiLKAhYCBFu3PquZwmqCBEwu1ien"
+        combin_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
+        sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
+        pl = payload(name)
+        toaddress = "dcfa787ecb304c20ff24ed6b5519c2e5cae5f8464c564aabb684ecbcc19153e9"
+        sequence = 20200512001
+        module = "00000000000000000000000000000000e1be1ab8360a35a0259f1c93e3eac736"
+        ret = pl.create_ex_start(toaddress, sequence, module)
+        assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
+        data = ret.datas
+
+        client = btcclient(name, stmanage.get_btc_conn())
+        privkeys = ["cUrpMtcfh4s9CRdPEA2tx3hYQGb5yy7pkWQNzaMBZc8Sj42g8YA8"]
+        ret = client.sendtoaddress(sender_addr, receiver_addr, 0.0001, privkeys, data)
+        assert ret.state == error.SUCCEED, f"sendtoaddress failed.{ret.message}"
+        json_print(ret.to_json())
+
 def test_createrawtransaction():
         receiver_addr = "2N9gZbqRiLKAhYCBFu3PquZwmqCBEwu1ien"
         combin_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
@@ -566,8 +686,8 @@ def test_createrawtransaction():
         ret = client.signrawtransactionwithkey(ret.datas, privkeys)
         assert ret.state == error.SUCCEED, ret.message
         tran = ret.datas
-        print("*"*30)
         json_print(tran)
+        print("*"*30)
 
         estimatefee = client.estimatesmartfee(6).datas
         print(f"estimatefee:{estimatefee}")
@@ -592,5 +712,6 @@ def main():
 
 if __name__ == "__main__":
     #main()
-    test_createrawtransaction()
+    #test_createrawtransaction()
+    test_sendtoaddress()
 

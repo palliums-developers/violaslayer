@@ -140,69 +140,77 @@ __valid_mark	payload.py	/^    __valid_mark = "violas"$/;"	v	line:35	class:payloa
 __version_0	payload.py	/^    __version_0 = 0$/;"	v	line:36	class:payload
 __version_1	payload.py	/^    __version_1 = 1$/;"	v	line:37	class:payload
 _reset	payload.py	/^    def _reset(self, payload):$/;"	m	line:214	class:payload	access:public
-amount	payload.py	/^    amount = 100010$/;"	v	line:657
-amount	payload.py	/^    amount = 100010$/;"	v	line:704
-appendinput	transaction.py	/^    def appendinput(self, txid, n, sequence = None):$/;"	m	line:67	class:transaction	access:public
-appendoutput	transaction.py	/^    def appendoutput(self, address, amount): #amount is float BTC$/;"	m	line:90	class:transaction	access:public
-appendoutputdata	transaction.py	/^    def appendoutputdata(self, data): $/;"	m	line:116	class:transaction	access:public
+amount	payload.py	/^    amount = 100010$/;"	v	line:697
+amount	payload.py	/^    amount = 100010$/;"	v	line:744
+appendinput	transaction.py	/^    def appendinput(self, txid, n, amount = None, sequence = None):$/;"	m	line:71	class:transaction	access:public
+appendoutput	transaction.py	/^    def appendoutput(self, address, amount): #amount is float BTC$/;"	m	line:97	class:transaction	access:public
+appendoutputdata	transaction.py	/^    def appendoutputdata(self, data): $/;"	m	line:141	class:transaction	access:public
 btcclient	btcclient.py	/^class btcclient(baseobject):$/;"	c	line:34	inherits:baseobject
 btchelp	btctools.py	/^def btchelp():$/;"	f	line:35	access:public
-check	payload.py	/^def check(src, dest):$/;"	f	line:631	access:public
-checkaddressunspent	btctools.py	/^def checkaddressunspent(address, amount):$/;"	f	line:165	access:public
+check	payload.py	/^def check(src, dest):$/;"	f	line:671	access:public
+checkaddressunspent	btctools.py	/^def checkaddressunspent(address, amount):$/;"	f	line:164	access:public
+client	btcclient.py	/^        client = btcclient(name, stmanage.get_btc_conn())$/;"	v	line:588
 create_btc_mark	create_exchange.py	/^def create_btc_mark(toaddress, sequence, amount, name):$/;"	f	line:80	access:public
-create_btc_mark	payload.py	/^    def create_btc_mark(self, toaddress, sequence, amount, name):$/;"	m	line:609	class:payload	access:public
+create_btc_mark	payload.py	/^    def create_btc_mark(self, toaddress, sequence, amount, name):$/;"	m	line:651	class:payload	access:public
 create_ex_cancel	create_exchange.py	/^def create_ex_cancel(toaddress, sequence):$/;"	f	line:54	access:public
-create_ex_cancel	payload.py	/^    def create_ex_cancel(self, toaddress, sequence):$/;"	m	line:588	class:payload	access:public
+create_ex_cancel	payload.py	/^    def create_ex_cancel(self, toaddress, sequence):$/;"	m	line:630	class:payload	access:public
 create_ex_end	create_exchange.py	/^def create_ex_end(toaddress, sequence, amount, version):$/;"	f	line:41	access:public
-create_ex_end	payload.py	/^    def create_ex_end(self, toaddress, sequence, amount, version):$/;"	m	line:577	class:payload	access:public
+create_ex_end	payload.py	/^    def create_ex_end(self, toaddress, sequence, amount, version):$/;"	m	line:619	class:payload	access:public
 create_ex_mark	create_exchange.py	/^def create_ex_mark(toaddress, sequence, version, amount):$/;"	f	line:67	access:public
-create_ex_mark	payload.py	/^    def create_ex_mark(self, toaddress, sequence, version, amount):$/;"	m	line:599	class:payload	access:public
+create_ex_mark	payload.py	/^    def create_ex_mark(self, toaddress, sequence, version, amount):$/;"	m	line:641	class:payload	access:public
 create_ex_start	create_exchange.py	/^def create_ex_start(toaddress, sequence, module):$/;"	f	line:27	access:public
-create_ex_start	payload.py	/^    def create_ex_start(self, toaddress, sequence, module):$/;"	m	line:566	class:payload	access:public
-create_opt_buf	payload.py	/^    def create_opt_buf(self, size):$/;"	m	line:520	class:payload	access:public
-create_payload	payload.py	/^    def create_payload(self, txver, txtype, data):$/;"	m	line:547	class:payload	access:public
-createrawinputs	transaction.py	/^    def createrawinputs(self):$/;"	m	line:59	class:transaction	access:public
-createrawoutputs	transaction.py	/^    def createrawoutputs(self):$/;"	m	line:82	class:transaction	access:public
-createrawtransaction	btcclient.py	/^    def createrawtransaction(self, inputs, outputs, locktime = 0, replaceable = False):$/;"	m	line:157	class:btcclient	access:public
-decoderawtransaction	btcclient.py	/^    def decoderawtransaction(self, data, isswitness = True):$/;"	m	line:281	class:btcclient	access:public
+create_ex_start	payload.py	/^    def create_ex_start(self, toaddress, sequence, module):$/;"	m	line:608	class:payload	access:public
+create_opt_buf	payload.py	/^    def create_opt_buf(self, size):$/;"	m	line:553	class:payload	access:public
+create_payload	payload.py	/^    def create_payload(self, txver, txtype, data):$/;"	m	line:581	class:payload	access:public
+createrawinputs	transaction.py	/^    def createrawinputs(self):$/;"	m	line:63	class:transaction	access:public
+createrawoutputs	transaction.py	/^    def createrawoutputs(self):$/;"	m	line:89	class:transaction	access:public
+createrawtransaction	btcclient.py	/^    def createrawtransaction(self, inputs, outputs, locktime = 0, replaceable = False):$/;"	m	line:162	class:btcclient	access:public
+data	btcclient.py	/^        data = ret.datas$/;"	v	line:586
+decoderawtransaction	btcclient.py	/^    def decoderawtransaction(self, data, isswitness = True):$/;"	m	line:366	class:btcclient	access:public
 decoderawtransaction	btctools.py	/^def decoderawtransaction(data, isswitness):$/;"	f	line:84	access:public
 disconn_node	btcclient.py	/^    def disconn_node(self):$/;"	m	line:58	class:btcclient	access:public
-get_data_size_offer	payload.py	/^    def get_data_size_offer(self, bdata, fixsize):$/;"	m	line:417	class:payload	access:public
-getaddressunspent	btcclient.py	/^    def getaddressunspent(self, address, minconf = 0, maxconf = 99999999):$/;"	m	line:65	class:btcclient	access:public
-getaddressunspent	btctools.py	/^def getaddressunspent(address):$/;"	f	line:160	access:public
-getaddressunspentwithamount	btcclient.py	/^    def getaddressunspentwithamount(self, address, amount, minconf = 0, maxconf = 99999999):$/;"	m	line:130	class:btcclient	access:public
-getamountlist	btcclient.py	/^    def getamountlist(self, amount, amounts):$/;"	m	line:85	class:btcclient	access:public
-getblockcount	btcclient.py	/^    def getblockcount(self):$/;"	m	line:166	class:btcclient	access:public
+estimatefee	btcclient.py	/^        estimatefee = client.estimatesmartfee(6).datas$/;"	v	line:614
+estimatesmartfee	btcclient.py	/^    def estimatesmartfee(self, target, mode="CONSERVATIVE"):$/;"	m	line:180	class:btcclient	access:public
+get_bytes_compact_size	payload.py	/^    def get_bytes_compact_size(self, size):$/;"	m	line:541	class:payload	access:public
+get_data_size_offer	payload.py	/^    def get_data_size_offer(self, bdata, fixsize):$/;"	m	line:418	class:payload	access:public
+getaddressunspent	btcclient.py	/^    def getaddressunspent(self, address, minconf = 0, maxconf = 99999999):$/;"	m	line:72	class:btcclient	access:public
+getaddressunspent	btctools.py	/^def getaddressunspent(address):$/;"	f	line:159	access:public
+getaddressunspentwithamount	btcclient.py	/^    def getaddressunspentwithamount(self, address, amount, minconf = 0, maxconf = 99999999):$/;"	m	line:137	class:btcclient	access:public
+getamountlist	btcclient.py	/^    def getamountlist(self, amount, amounts):$/;"	m	line:92	class:btcclient	access:public
+getblockcount	btcclient.py	/^    def getblockcount(self):$/;"	m	line:251	class:btcclient	access:public
 getblockcount	btctools.py	/^def getblockcount():$/;"	f	line:41	access:public
-getblockhash	btcclient.py	/^    def getblockhash(self, index):$/;"	m	line:181	class:btcclient	access:public
+getblockhash	btcclient.py	/^    def getblockhash(self, index):$/;"	m	line:266	class:btcclient	access:public
 getblockhash	btctools.py	/^def getblockhash(index):$/;"	f	line:47	access:public
-getblocktxidswithhash	btcclient.py	/^    def getblocktxidswithhash(self, blockhash):$/;"	m	line:226	class:btcclient	access:public
+getblocktxidswithhash	btcclient.py	/^    def getblocktxidswithhash(self, blockhash):$/;"	m	line:311	class:btcclient	access:public
 getblocktxidswithhash	btctools.py	/^def getblocktxidswithhash(blockhash):$/;"	f	line:71	access:public
-getblocktxidswithindex	btcclient.py	/^    def getblocktxidswithindex(self, index):$/;"	m	line:242	class:btcclient	access:public
+getblocktxidswithindex	btcclient.py	/^    def getblocktxidswithindex(self, index):$/;"	m	line:327	class:btcclient	access:public
 getblocktxidswithindex	btctools.py	/^def getblocktxidswithindex(index):$/;"	f	line:65	access:public
-getblockwithhash	btcclient.py	/^    def getblockwithhash(self, blockhash):$/;"	m	line:197	class:btcclient	access:public
+getblockwithhash	btcclient.py	/^    def getblockwithhash(self, blockhash):$/;"	m	line:282	class:btcclient	access:public
 getblockwithhash	btctools.py	/^def getblockwithhash(blockhash):$/;"	f	line:53	access:public
-getblockwithindex	btcclient.py	/^    def getblockwithindex(self, index):$/;"	m	line:213	class:btcclient	access:public
+getblockwithindex	btcclient.py	/^    def getblockwithindex(self, index):$/;"	m	line:298	class:btcclient	access:public
 getblockwithindex	btctools.py	/^def getblockwithindex(index):$/;"	f	line:59	access:public
 getbtcclient	btctools.py	/^def getbtcclient():$/;"	f	line:32	access:public
-getopreturnfromdata	btcclient.py	/^    def getopreturnfromdata(self, tran):$/;"	m	line:430	class:btcclient	access:public
-getoutputamount	transaction.py	/^    def getoutputamount(self): #amount is float BTC$/;"	m	line:103	class:transaction	access:public
-getrawtransaction	btcclient.py	/^    def getrawtransaction(self, txid, verbose = True, blockhash = None):$/;"	m	line:258	class:btcclient	access:public
+getminfeerate	btcclient.py	/^    def getminfeerate(self, satoshiperk, size):$/;"	m	line:233	class:btcclient	access:public
+getopreturnfromdata	btcclient.py	/^    def getopreturnfromdata(self, tran):$/;"	m	line:516	class:btcclient	access:public
+getoutputamount	transaction.py	/^    def getoutputamount(self): #amount is float BTC$/;"	m	line:128	class:transaction	access:public
+getrawtransaction	btcclient.py	/^    def getrawtransaction(self, txid, verbose = True, blockhash = None):$/;"	m	line:343	class:btcclient	access:public
 getrawtransaction	btctools.py	/^def getrawtransaction(txid, verbose = True, blockhash = None):$/;"	f	line:77	access:public
-gettxin	btcclient.py	/^    def gettxin(self, txid):$/;"	m	line:336	class:btcclient	access:public
-gettxinfromdata	btcclient.py	/^    def gettxinfromdata(self, tran):$/;"	m	line:350	class:btcclient	access:public
-gettxinwithnfromdata	btcclient.py	/^    def gettxinwithnfromdata(self, tran, n):$/;"	m	line:368	class:btcclient	access:public
-gettxoutcountfromdata	btcclient.py	/^    def gettxoutcountfromdata(self, tran):$/;"	m	line:406	class:btcclient	access:public
-gettxoutin	btcclient.py	/^    def gettxoutin(self, txid):$/;"	m	line:299	class:btcclient	access:public
+gettxin	btcclient.py	/^    def gettxin(self, txid):$/;"	m	line:422	class:btcclient	access:public
+gettxinfromdata	btcclient.py	/^    def gettxinfromdata(self, tran):$/;"	m	line:436	class:btcclient	access:public
+gettxinwithnfromdata	btcclient.py	/^    def gettxinwithnfromdata(self, tran, n):$/;"	m	line:454	class:btcclient	access:public
+gettxoutcountfromdata	btcclient.py	/^    def gettxoutcountfromdata(self, tran):$/;"	m	line:492	class:btcclient	access:public
+gettxoutin	btcclient.py	/^    def gettxoutin(self, txid):$/;"	m	line:385	class:btcclient	access:public
 gettxoutin	btctools.py	/^def gettxoutin(txid):$/;"	f	line:91	access:public
-gettxoutinfromdata	btcclient.py	/^    def gettxoutinfromdata(self, tran):$/;"	m	line:317	class:btcclient	access:public
-gettxoutwithn	btcclient.py	/^    def gettxoutwithn(self, txid, n):$/;"	m	line:386	class:btcclient	access:public
+gettxoutinfromdata	btcclient.py	/^    def gettxoutinfromdata(self, tran):$/;"	m	line:403	class:btcclient	access:public
+gettxoutwithn	btcclient.py	/^    def gettxoutwithn(self, txid, n):$/;"	m	line:472	class:btcclient	access:public
 gettxoutwithn	btctools.py	/^def gettxoutwithn(txid, n):$/;"	f	line:97	access:public
-gettxoutwithnfromdata	btcclient.py	/^    def gettxoutwithnfromdata(self, tran, n):$/;"	m	line:414	class:btcclient	access:public
-help	btcclient.py	/^    def help(self):$/;"	m	line:477	class:btcclient	access:public
-init_args	btctools.py	/^def init_args(pargs):$/;"	f	line:170	access:public
+gettxoutwithnfromdata	btcclient.py	/^    def gettxoutwithnfromdata(self, tran, n):$/;"	m	line:500	class:btcclient	access:public
+getunspentsamount	btcclient.py	/^    def getunspentsamount(self, unspents):$/;"	m	line:64	class:btcclient	access:public
+help	btcclient.py	/^    def help(self):$/;"	m	line:563	class:btcclient	access:public
+init_args	btctools.py	/^def init_args(pargs):$/;"	f	line:169	access:public
 inputs	transaction.py	/^    def inputs(self):$/;"	m	line:44	class:transaction	access:public
 inputs	transaction.py	/^    def inputs(self, value):$/;"	m	line:48	class:transaction	access:public
+inputsamount	transaction.py	/^    def inputsamount(self):$/;"	m	line:60	class:transaction	access:public
 is_allow_mark	payload.py	/^    def is_allow_mark(self, mark):$/;"	m	line:368	class:payload	access:public
 is_allow_opreturn	payload.py	/^    def is_allow_opreturn(self, txtype, version, block = None):$/;"	m	line:375	class:payload	access:public
 is_allow_txtype	payload.py	/^    def is_allow_txtype(self, txtype):$/;"	m	line:371	class:payload	access:public
@@ -211,7 +219,7 @@ is_valid	payload.py	/^    def is_valid(self):$/;"	m	line:226	class:payload	acces
 is_valid	payload.py	/^    def is_valid(self, value):$/;"	m	line:230	class:payload	access:public
 is_valid_violas	payload.py	/^    def is_valid_violas(self, payload):$/;"	m	line:404	class:payload	access:public
 logger	btctools.py	/^logger = log.logger.getLogger(name) $/;"	v	line:30
-main	btcclient.py	/^def main():$/;"	f	line:506	access:public
+main	btcclient.py	/^def main():$/;"	f	line:623	access:public
 name	btcclient.py	/^name="bclient"$/;"	v	line:29
 name	btctools.py	/^name="btctools"$/;"	v	line:27
 name	create_exchange.py	/^name="createex"$/;"	v	line:26
@@ -226,56 +234,72 @@ op_mark	payload.py	/^    def op_mark(self):$/;"	m	line:343	class:payload	access:
 op_mark	payload.py	/^    def op_mark(self, mark):$/;"	m	line:347	class:payload	access:public
 op_size	payload.py	/^    def op_size(self):$/;"	m	line:335	class:payload	access:public
 op_size	payload.py	/^    def op_size(self, size):$/;"	m	line:339	class:payload	access:public
-opstr	payload.py	/^opstr = "6a4c5276696f6c617300003000f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2"$/;"	v	line:624
+opstr	payload.py	/^opstr = "6a4c5276696f6c617300003000f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2"$/;"	v	line:665
 optcodetype	payload.py	/^    class optcodetype(Enum):$/;"	c	line:39	class:payload	inherits:Enum
 outputs	transaction.py	/^    def outputs(self):$/;"	m	line:52	class:transaction	access:public
 outputs	transaction.py	/^    def outputs(self, value):$/;"	m	line:56	class:transaction	access:public
-parse	payload.py	/^    def parse(self, payload):$/;"	m	line:441	class:payload	access:public
+parse	payload.py	/^    def parse(self, payload):$/;"	m	line:442	class:payload	access:public
 parse_btc_mark	parse_exchange.py	/^def parse_btc_mark(data):$/;"	f	line:116	access:public
 parse_data	payload.py	/^    def parse_data(self):$/;"	m	line:388	class:payload	access:public
 parse_ex_cancel	parse_exchange.py	/^def parse_ex_cancel(data):$/;"	f	line:72	access:public
 parse_ex_end	parse_exchange.py	/^def parse_ex_end(data):$/;"	f	line:49	access:public
 parse_ex_mark	parse_exchange.py	/^def parse_ex_mark(data):$/;"	f	line:94	access:public
 parse_ex_start	parse_exchange.py	/^def parse_ex_start(data):$/;"	f	line:26	access:public
-parsepayload	btctools.py	/^def parsepayload(data):$/;"	f	line:154	access:public
+parse_opt_data	payload.py	/^    def parse_opt_data(self, bdata):$/;"	m	line:483	class:payload	access:public
+parse_opt_datahex	payload.py	/^    def parse_opt_datahex(self, data):$/;"	m	line:473	class:payload	access:public
+parsepayload	btctools.py	/^def parsepayload(data):$/;"	f	line:153	access:public
 parserawtranpayload	btctools.py	/^def parserawtranpayload(data):$/;"	f	line:130	access:public
 parsetranpayload	btctools.py	/^def parsetranpayload(txid):$/;"	f	line:103	access:public
-parsevin	btcclient.py	/^    def parsevin(self, vin):$/;"	m	line:466	class:btcclient	access:public
-parsevout	btcclient.py	/^    def parsevout(self, vout):$/;"	m	line:448	class:btcclient	access:public
+parsevin	btcclient.py	/^    def parsevin(self, vin):$/;"	m	line:552	class:btcclient	access:public
+parsevout	btcclient.py	/^    def parsevout(self, vout):$/;"	m	line:534	class:btcclient	access:public
 payload	payload.py	/^class payload(baseobject):$/;"	c	line:34	inherits:baseobject
 payload_hex	payload.py	/^    def payload_hex(self):$/;"	m	line:319	class:payload	access:public
 payload_hex	payload.py	/^    def payload_hex(self, payload):$/;"	m	line:323	class:payload	access:public
+privkeys	btcclient.py	/^        privkeys = ["cUrpMtcfh4s9CRdPEA2tx3hYQGb5yy7pkWQNzaMBZc8Sj42g8YA8"]$/;"	v	line:607
 proof_data	payload.py	/^    def proof_data(self):$/;"	m	line:351	class:payload	access:public
 proof_data	payload.py	/^    def proof_data(self, data):$/;"	m	line:355	class:payload	access:public
-proofname	payload.py	/^    proofname = "btcmark"$/;"	v	line:677
-proofname	payload.py	/^    proofname = "btcmark"$/;"	v	line:727
+proofname	payload.py	/^    proofname = "btcmark"$/;"	v	line:717
+proofname	payload.py	/^    proofname = "btcmark"$/;"	v	line:767
 reset	payload.py	/^    def reset(self):$/;"	m	line:358	class:payload	access:public
-reset	transaction.py	/^    def reset(self):$/;"	m	line:39	class:transaction	access:public
-ret	payload.py	/^    ret = create_exchange.create_btc_mark(toaddress, sequence, amount, proofname)$/;"	v	line:684
-ret	payload.py	/^    ret = create_exchange.create_ex_cancel(toaddress, sequence)$/;"	v	line:673
-ret	payload.py	/^    ret = create_exchange.create_ex_end(toaddress, sequence, amount, version)$/;"	v	line:665
-ret	payload.py	/^    ret = create_exchange.create_ex_start(toaddress, sequence, module)$/;"	v	line:652
-ret	payload.py	/^    ret = parse.parse(ret.datas.hex())$/;"	v	line:700
-ret	payload.py	/^    ret = parse.parse(ret.datas.hex())$/;"	v	line:714
-ret	payload.py	/^    ret = parse.parse(ret.datas.hex())$/;"	v	line:724
-ret	payload.py	/^    ret = parse_exchange.parse_btc_mark(ret.datas)$/;"	v	line:685
-ret	payload.py	/^    ret = parse_exchange.parse_ex_cancel(ret.datas)$/;"	v	line:674
-ret	payload.py	/^    ret = parse_exchange.parse_ex_end(ret.datas)$/;"	v	line:666
-ret	payload.py	/^    ret = parse_exchange.parse_ex_start(ret.datas)$/;"	v	line:653
-ret	payload.py	/^    ret = pl.create_btc_mark(toaddress, sequence, amount, proofname)$/;"	v	line:734
-ret	payload.py	/^    ret = pl.create_ex_cancel(toaddress, sequence)$/;"	v	line:722
-ret	payload.py	/^    ret = pl.create_ex_end(toaddress, sequence, amount, version)$/;"	v	line:712
-ret	payload.py	/^    ret = pl.create_ex_start(toaddress, sequence, module)$/;"	v	line:698
-ret	payload.py	/^    ret = pl.parse(ret.datas.hex())$/;"	v	line:736
-run	btctools.py	/^def run(argc, argv):$/;"	f	line:188	access:public
+reset	transaction.py	/^    def reset(self):$/;"	m	line:38	class:transaction	access:public
+ret	btcclient.py	/^        ret = client.createrawtransaction(tran.inputs, tran.outputs)$/;"	v	line:604
+ret	btcclient.py	/^        ret = client.decoderawtransaction(tran.get("hex"))$/;"	v	line:617
+ret	btcclient.py	/^        ret = client.getaddressunspentwithamount(sender_addr, ret.datas * COINS)$/;"	v	line:597
+ret	btcclient.py	/^        ret = client.getminfeerate(estimatefee, weight)$/;"	v	line:619
+ret	btcclient.py	/^        ret = client.signrawtransactionwithkey(ret.datas, privkeys)$/;"	v	line:608
+ret	btcclient.py	/^        ret = pl.create_ex_start(toaddress, sequence, module)$/;"	v	line:584
+ret	btcclient.py	/^        ret = tran.getoutputamount()$/;"	v	line:594
+ret	payload.py	/^    ret = create_exchange.create_btc_mark(toaddress, sequence, amount, proofname)$/;"	v	line:724
+ret	payload.py	/^    ret = create_exchange.create_ex_cancel(toaddress, sequence)$/;"	v	line:713
+ret	payload.py	/^    ret = create_exchange.create_ex_end(toaddress, sequence, amount, version)$/;"	v	line:705
+ret	payload.py	/^    ret = create_exchange.create_ex_start(toaddress, sequence, module)$/;"	v	line:692
+ret	payload.py	/^    ret = parse_exchange.parse_btc_mark(ret.datas)$/;"	v	line:725
+ret	payload.py	/^    ret = parse_exchange.parse_ex_cancel(ret.datas)$/;"	v	line:714
+ret	payload.py	/^    ret = parse_exchange.parse_ex_end(ret.datas)$/;"	v	line:706
+ret	payload.py	/^    ret = parse_exchange.parse_ex_start(ret.datas)$/;"	v	line:693
+ret	payload.py	/^    ret = pl.create_btc_mark(toaddress, sequence, amount, proofname)$/;"	v	line:774
+ret	payload.py	/^    ret = pl.create_ex_cancel(toaddress, sequence)$/;"	v	line:762
+ret	payload.py	/^    ret = pl.create_ex_end(toaddress, sequence, amount, version)$/;"	v	line:752
+ret	payload.py	/^    ret = pl.create_ex_start(toaddress, sequence, module)$/;"	v	line:738
+ret	payload.py	/^    ret = pl.parse_opt_datahex(ret.datas)$/;"	v	line:740
+ret	payload.py	/^    ret = pl.parse_opt_datahex(ret.datas)$/;"	v	line:754
+ret	payload.py	/^    ret = pl.parse_opt_datahex(ret.datas)$/;"	v	line:764
+ret	payload.py	/^    ret = pl.parse_opt_datahex(ret.datas)$/;"	v	line:776
+run	btctools.py	/^def run(argc, argv):$/;"	f	line:187	access:public
+satoshiperk	btcclient.py	/^    def satoshiperk(self):$/;"	m	line:230	class:btcclient	access:public
+sendrawtransaction	btcclient.py	/^    def sendrawtransaction(self, hexstring, maxfeerate=0.010):$/;"	m	line:242	class:btcclient	access:public
+sendtoaddress	btcclient.py	/^    def sendtoaddress(self, fromaddress, toaddress, toamount, fromprivkeys, data = None, combine = None): #toamount is BTC$/;"	m	line:192	class:btcclient	access:public
+signrawtransactionwithkey	btcclient.py	/^    def signrawtransactionwithkey(self, hexstring, privkeys, prevtxs=None, sighashtype="ALL"):$/;"	m	line:171	class:btcclient	access:public
 state_name_to_value	payload.py	/^    def state_name_to_value(self, state):$/;"	m	line:260	class:payload	access:public
 state_value_to_name	payload.py	/^    def state_value_to_name(self, state):$/;"	m	line:245	class:payload	access:public
 state_value_to_txtype	payload.py	/^    def state_value_to_txtype(self, value):$/;"	m	line:275	class:payload	access:public
-stop	btcclient.py	/^    def stop(self):$/;"	m	line:62	class:btcclient	access:public
-test_createrawtransaction	btcclient.py	/^def test_createrawtransaction():$/;"	f	line:485	access:public
-test_exchange	payload.py	/^def test_exchange():$/;"	f	line:643	access:public
-test_np	payload.py	/^def test_np():$/;"	f	line:634	access:public
-test_payload	payload.py	/^def test_payload():$/;"	f	line:688	access:public
+stop	btcclient.py	/^    def stop(self):$/;"	m	line:61	class:btcclient	access:public
+test_createrawtransaction	btcclient.py	/^def test_createrawtransaction():$/;"	f	line:571	access:public
+test_exchange	payload.py	/^def test_exchange():$/;"	f	line:683	access:public
+test_np	payload.py	/^def test_np():$/;"	f	line:674	access:public
+test_payload	payload.py	/^def test_payload():$/;"	f	line:728	access:public
+tran	btcclient.py	/^        tran = ret.datas$/;"	v	line:610
+tran	btcclient.py	/^        tran = transaction(name)$/;"	v	line:589
 transaction	transaction.py	/^class transaction(baseobject):$/;"	c	line:33	inherits:baseobject
 tx_type	payload.py	/^    def tx_type(self):$/;"	m	line:311	class:payload	access:public
 tx_type	payload.py	/^    def tx_type(self, txtype):$/;"	m	line:315	class:payload	access:public
@@ -284,8 +308,11 @@ tx_version	payload.py	/^    def tx_version(self, txversion):$/;"	m	line:307	clas
 txtype	payload.py	/^    class txtype(Enum):$/;"	c	line:179	class:payload	inherits:Enum
 txtype_map_proof_type	payload.py	/^    def txtype_map_proof_type(self, txtype):$/;"	m	line:233	class:payload	access:public
 type_version	payload.py	/^    def type_version(self):$/;"	m	line:211	class:payload	access:public
+unspents	btcclient.py	/^        unspents = ret.datas$/;"	v	line:598
+updateoutput	transaction.py	/^    def updateoutput(self, address, amount): #amount is float BTC$/;"	m	line:113	class:transaction	access:public
 valid_mark	payload.py	/^    def valid_mark(self):$/;"	m	line:291	class:payload	access:public
-version	payload.py	/^    version = 123456$/;"	v	line:658
-version	payload.py	/^    version = 123456$/;"	v	line:705
+version	payload.py	/^    version = 123456$/;"	v	line:698
+version	payload.py	/^    version = 123456$/;"	v	line:745
 version_0	payload.py	/^    def version_0(self):$/;"	m	line:204	class:payload	access:public
 version_1	payload.py	/^    def version_1(self):$/;"	m	line:208	class:payload	access:public
+weight	btcclient.py	/^        weight = ret.datas.get("weight")$/;"	v	line:618

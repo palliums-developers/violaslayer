@@ -34,11 +34,11 @@ class transaction(baseobject):
     def __init__(self, name):
         baseobject.__init__(self, name)
         self.reset()
-
     
     def reset(self):
         self.inputs = None
         self.outputs = None
+        self._inputsamount = 0
 
     @property
     def inputs(self):
@@ -56,6 +56,10 @@ class transaction(baseobject):
     def outputs(self, value):
         self.__outputs = value
 
+    @property
+    def inputsamount(self):
+        return self._inputsamount
+
     def createrawinputs(self):
         try:
             self._logger.debug(f"start createrawinputs()")
@@ -64,13 +68,23 @@ class transaction(baseobject):
             ret = parse_except(e)
         return ret
 
-    def appendinput(self, txid, n, sequence = None):
+    def cleaninputs(self):
+        self._inputsamount = 0
+        self.inputs = self.createrawinputs().datas
+
+    def cleanoutputs(self):
+        self.outputs = self.createrawoutputs().datas
+
+    def appendinput(self, txid, n, amount = None, sequence = None):
         try:
             if self.inputs is None:
                 self.inputs = self.createrawinputs().datas
             input = {"txid": txid, "vout": n}
             if sequence is not None:
                 input["sequence"] = sequence
+
+            if amount is not None:
+                self._inputsamount += amount
 
             self.inputs.append(input)
 
@@ -89,6 +103,9 @@ class transaction(baseobject):
 
     def appendoutput(self, address, amount): #amount is float BTC
         try:
+            if address is None:
+                return result(error.ARG_INVALID)
+
             if self.outputs is None:
                 self.outputs = self.createrawoutputs().datas
             output = {address:amount}
@@ -96,6 +113,21 @@ class transaction(baseobject):
             self.outputs.append(output)
 
             ret = result(error.SUCCEED, "", self.outputs)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def updateoutput(self, address, amount): #amount is float BTC
+        try:
+            if self.outputs is None:
+                self.outputs = self.createrawoutputs().datas
+            
+            update = {address:amount}
+            for output in self.outputs:
+                if address in output.keys():
+                    output.update(update)
+
+            ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
         return ret
