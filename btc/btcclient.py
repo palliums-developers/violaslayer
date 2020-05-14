@@ -6,7 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 import log
 import log.logger
 import traceback
-import datetime
+import datetime, time
 import stmanage
 import sqlalchemy
 import requests
@@ -689,7 +689,7 @@ def test_sendtoaddress():
         sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
         pl = payload(name)
         toaddress = "dcfa787ecb304c20ff24ed6b5519c2e5cae5f8464c564aabb684ecbcc19153e9"
-        sequence = 20200512001
+        sequence = int(time.time())
         module = "00000000000000000000000000000000e1be1ab8360a35a0259f1c93e3eac736"
         ret = pl.create_ex_start(toaddress, sequence, module)
         assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"

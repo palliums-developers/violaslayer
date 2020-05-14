@@ -36,9 +36,9 @@ def parse_ex_start(data):
         data_offer = data_offer + 8
 
         datas = {
-                "to_address": data[:32].hex(),
+                "address": data[:32].hex(),
                 "sequence" : sequence,
-                "token" : data[data_offer:].hex()
+                "vtoken" : data[data_offer:].hex()
                 }
 
         ret = result(error.SUCCEED, datas = datas)
@@ -58,10 +58,10 @@ def parse_ex_end(data):
         [sequence, amount, version] = struct.unpack_from(">QQQ", data, data_offer)
 
         datas = {
-                "to_address": data[:32].hex(),
+                "address": data[:32].hex(),
                 "sequence" : sequence,
                 "amount" : amount,
-                "version" : version
+                "vheight" : version
                 }
 
         ret = result(error.SUCCEED, datas = datas)
@@ -82,7 +82,7 @@ def parse_ex_cancel(data):
         data_offer = data_offer + 8
 
         datas = {
-                "to_address": data[:32].hex(),
+                "address": data[:32].hex(),
                 "sequence" : sequence,
                 }
 
@@ -103,9 +103,9 @@ def parse_ex_mark(data):
         [sequence, version, amount] = struct.unpack_from(">QQQ", data, data_offer)
 
         datas = {
-                "to_address": data[:32].hex(),
+                "address": data[:32].hex(),
                 "sequence" : sequence,
-                "version" : version,
+                "vheight" : version,
                 "amount" : amount,
                 }
 
@@ -128,7 +128,7 @@ def parse_btc_mark(data):
         bname = struct.unpack_from(f"{len(data) - data_offer}s", data, data_offer)
         name = "".join([v.decode() for v in bname])
         datas = {
-                "to_address": data[:32].hex(),
+                "address": data[:32].hex(),
                 "sequence" : sequence,
                 "amount": amount,
                 "name": name

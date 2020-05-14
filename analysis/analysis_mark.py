@@ -41,6 +41,36 @@ class amarkproof(abase):
 
     def save_proof_info(tran_info):
         pass
+        try:
+            self._logger.debug(f"start save_proof_info tran info: {tran_info}")
+
+            tran_id = None
+            proofstate = tran_info.get("state", "")
+            self._dbclient.use_collection_datas()
+            tran_id = self.create_tran_id(tran_info["address"], tran_info["sequence"])
+            if proofstate == payload.txtype.EX_MARK:
+                ret  = self._dbclient.key_is_exists({"_id": tran_id})
+                if ret.state != error.SUCCEED:
+                    return ret
+
+                #found key = index info, db has old datas , must be flush db?
+                if ret.datas == True:
+                    return result(error.TRAN_INFO_INVALID, f"key{tran_id} is exists, db datas is old, flushdb ?. violas tran info : {tran_info}")
+
+                #create tran id
+
+                tran_info["tran_id"] = tran_id
+                tran_info["state"] = self.proofstate_value_to_name(tran_info["state"])
+                ret = self._dbclient.set_proof(tran_id, tran_info)
+                if ret.state != error.SUCCEED:
+                    return ret
+                self._logger.info(f"saved new proof succeed. index = {tran_info.get('index')} tran_id = {tran_id} state={tran_info['state']}")
+
+            ret = result(error.SUCCEED, "", "tran_id":tran_id})
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
 
     def start(self):
         try:
