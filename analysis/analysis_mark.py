@@ -28,7 +28,7 @@ from btc.btcclient import btcclient
 name="aproof"
 
 COINS = comm.values.COINS
-class amarkproof(abase):
+class amarkproof(aproofbase):
 
     def __init__(self, name = "amarkproof", dbconf = None, fdbconf = None, nodes = None, chain = "btc"):
         super().__init__(name, dbconf, fdbconf, nodes, chain)
@@ -39,7 +39,7 @@ class amarkproof(abase):
     def stop(self):
         super().stop()
 
-    def save_proof_info(tran_info):
+    def save_proof_info(self, tran_info):
         pass
         try:
             self._logger.debug(f"start save_proof_info tran info: {tran_info}")
@@ -48,7 +48,7 @@ class amarkproof(abase):
             proofstate = tran_info.get("state", "")
             self._dbclient.use_collection_datas()
             tran_id = self.create_tran_id(tran_info["address"], tran_info["sequence"])
-            if proofstate == payload.txtype.EX_MARK:
+            if proofstate in (payload.txtype.EX_MARK, payload.txtype.BTC_MARK):
                 ret  = self._dbclient.key_is_exists({"_id": tran_id})
                 if ret.state != error.SUCCEED:
                     return ret
@@ -66,11 +66,10 @@ class amarkproof(abase):
                     return ret
                 self._logger.info(f"saved new proof succeed. index = {tran_info.get('index')} tran_id = {tran_id} state={tran_info['state']}")
 
-            ret = result(error.SUCCEED, "", "tran_id":tran_id})
+            ret = result(error.SUCCEED, "", {"tran_id":tran_id})
         except Exception as e:
             ret = parse_except(e)
         return ret
-
 
     def start(self):
         try:
@@ -95,7 +94,6 @@ class amarkproof(abase):
                 return result(error.SUCCEED)
 
             version  = start_version
-            count = 0
             self._logger.debug(f"proof latest_saved_ver={self._dbclient.get_latest_saved_ver().datas} start version = {start_version}  \
                     step = {self.get_step()} valid transaction latest_saved_ver = {latest_saved_ver} ")
 
@@ -140,10 +138,8 @@ class amarkproof(abase):
 
                     #mark it, watch only, True: new False: update
                     # maybe btc not save when state == end, because start - > end some minue time
-                    if ret.datas.get("new_proof") == True:  
-                        self._dbclient.set_latest_saved_ver(version)
+                    self._dbclient.set_latest_saved_ver(version)
                     
-                    count += 1
                 except Exception as e:
                     ret = parse_except(e)
                 finally:
@@ -171,7 +167,9 @@ def works():
                 fdbconf=stmanage.get_db(basedata), \
                 nodes = stmanage.get_btc_conn() \
                 )
-        obj.set_step(stmanage.get_db(dtype).get("step", 100))
+        obj.append_valid_txtype(payload.txtype.BTC_MARK)
+        obj.append_valid_txtype(payload.txtype.EX_MARK)
+        obj.set_step(1)
         ret = obj.start()
 
         if ret.state != error.SUCCEED:

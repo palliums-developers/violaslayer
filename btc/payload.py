@@ -252,7 +252,7 @@ class payload(baseobject):
         elif state == self.txtype.BTC_MARK:
             return "btcmark"
         elif state == self.txtype.EX_MARK:
-            return "exmark"
+            return "mark"
         else:
             return "unkown"
 
@@ -266,7 +266,7 @@ class payload(baseobject):
             return self.txtype.EX_END
         elif state == "btcmark":
             return self.txtype.BTC_MARK
-        elif state == "exmark":
+        elif state == "mark":
             return self.txtype.EX_MARK
         else:
             return self.txtype.UNKNOWN

@@ -105,7 +105,7 @@ class works:
                 try:
                     basedata = "base"
                     dtype = "markproof"
-                    obj = analysis_proof.aproof(name="markproof", \
+                    obj = analysis_proof.amarkproof(name="markproof", \
                             dbconf=stmanage.get_db(dtype), \
                             fdbconf=stmanage.get_db(basedata), \
                             nodes = stmanage.get_btc_conn() \

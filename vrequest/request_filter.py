@@ -20,18 +20,11 @@ from baseobject import baseobject
 from enum import Enum
 
 #module name
-name="requestproof"
+name="requestfilter"
 
 #load logging
 
-class requestproof(baseobject):
-    class proofstate(Enum):
-        START   = 0,
-        END     = 1,
-        CANCEL  = 2,
-        BTCMARK = 3,
-        MARK    = 4,
-
+class requestfilter(baseobject):
     def __init__(self, name, dbconf):
         baseobject.__init__(self, name)
         self._dbclient = None
@@ -52,49 +45,15 @@ class requestproof(baseobject):
                     rsname=rconf.get("rsname"))
         return self._dbclient
     
-    def __list_exproof_state(self, receiver, state, start = 0, limit = 10):
+    def list_opreturn_txids(self, start = 0, limit = 10):
         try:
-            self._dbclient.use_collection_datas()
-            ret = self._dbclient.find({"$and": [{"receiver" : receiver}, {"state": state}, {"_id":{"$type":"int"}}, {"_id":{"$gte":start}}]}, limit = limit)
+            self._dbclient.use_collection("optransaction")
+            ret = self._dbclient.find({"$and": [{"_id":{"$type":"int"}}, {"_id":{"$gte":start}}]}, limit = limit)
             if ret.state != error.SUCCEED:
                 return ret
 
             datas = ret.datas.sort("_id", pymongo.ASCENDING)
             ret = result(error.SUCCEED, "", [data for data in datas])
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-    def list_exproof_start(self, receiver, start = 0, limit = 10):
-        try:
-            ret = self.__list_exproof_state(receiver, self.proofstate.START.name.lower(), start, limit)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def list_exproof_end(self, receiver, start = 0, limit = 10):
-        try:
-            ret = self.__list_exproof_state(receiver, self.proofstate.END.name.lower(), start, limit)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def list_exproof_cancel(self, receiver, start = 0, limit = 10):
-        try:
-            ret = self.__list_exproof_state(receiver, self.proofstate.CANCEL.name.lower(), start, limit)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def list_proof_btcmark(self, receiver, start = 0, limit = 10):
-        try:
-            ret = self.__list_exproof_state(receiver, self.proofstate.BTCMARK.name.lower(), start, limit)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def list_proof_mark(self, receiver, start = 0, limit = 10):
-        try:
-            ret = self.__list_exproof_state(receiver, self.proofstate.MARK.name.lower(), start, limit)
         except Exception as e:
             ret = parse_except(e)
         return ret
