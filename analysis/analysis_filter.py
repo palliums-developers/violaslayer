@@ -358,8 +358,11 @@ class afilter(abase):
                             assert ret.state == error.SUCCEED, f"update latest saved txid failed.txid = {txid}"
                             #proof
                             self._logger.debug(f"transaction parse is succeed. height:{version} txid:{txid}")
+                else:
+                    self._dbclient.set_latest_saved_ver(version)
 
-                latest_filter_state = self._dbclient.filterstate.COMPLETE
+                # change 
+                latest_filter_state = self._dbclient.filterstate.COMPLETE 
                 ret = self._dbclient.set_latest_filter_state(self._dbclient.filterstate.COMPLETE)
                 #reset state for COMPLETE -- must be
                 if ret.state != error.SUCCEED:

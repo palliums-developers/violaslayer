@@ -15,16 +15,19 @@ import json
 from comm.error import error
 from comm.result import result, parse_except
 from comm.functions import json_print
-from db.dbvbase import dbvbase
+from db.dbvproof import dbvproof
 from baseobject import baseobject
 from enum import Enum
+from vrequest.request_base import requestbase 
+from analysis.analysis_proof import aproof
+from btc.payload import payload
 
 #module name
 name="requestproof"
 
 #load logging
 
-class requestproof(baseobject):
+class requestproof(requestbase):
     class proofstate(Enum):
         START   = 0,
         END     = 1,
@@ -33,24 +36,23 @@ class requestproof(baseobject):
         MARK    = 4,
 
     def __init__(self, name, dbconf):
-        baseobject.__init__(self, name)
-        self._dbclient = None
-        self._connect_db(name, dbconf)
-
-    def __del__(self):
-        pass
+        requestbase.__init__(self, name, dbconf)
 
     def _connect_db(self, name, rconf):
         self._dbclient = None
         if rconf is not None:
-            self._dbclient = dbvbase(name, \
+            self._dbclient = dbvproof(name, \
                     rconf.get("host", "127.0.0.1:37017"), \
                     rconf.get("db"), rconf.get("user"), \
                     rconf.get("password"), \
                     rconf.get("authdb", "admin"), \
                     newdb = False, \
                     rsname=rconf.get("rsname"))
+            self._dbclient.use_collection_datas()
         return self._dbclient
+
+    def __del__(self):
+        pass
     
     def __list_exproof_state(self, receiver, state, start = 0, limit = 10):
         try:
@@ -64,6 +66,27 @@ class requestproof(baseobject):
         except Exception as e:
             ret = parse_except(e)
         return ret
+
+    def __list_exproof(self, start = 0, limit = 10):
+        try:
+            self._dbclient.use_collection_datas()
+            ret = self._dbclient.find({"$and": [{"_id":{"$type":"int"}}, {"_id":{"$gte":start}}]}, limit = limit)
+            if ret.state != error.SUCCEED:
+                return ret
+
+            datas = ret.datas.sort("_id", pymongo.ASCENDING)
+            ret = result(error.SUCCEED, "", [data for data in datas])
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def list_exproof(self, start = 0, limit = 10):
+        try:
+            ret = self.__list_exproof(start, limit)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
     def list_exproof_start(self, receiver, start = 0, limit = 10):
         try:
             ret = self.__list_exproof_state(receiver, self.proofstate.START.name.lower(), start, limit)
@@ -98,6 +121,24 @@ class requestproof(baseobject):
         except Exception as e:
             ret = parse_except(e)
         return ret
+
+    def check_proof_is_complete(self, address, sequence):
+        try:
+            tran_id = aproof.create_tran_id(address, sequence)
+            ret = self._dbclient.get_proof(tran_id)
+            if ret.state != error.SUCCEED:
+                #btc transaction is end , diff libra and violas
+                return ret
+
+            db_tran_info = ret.datas
+            state = payload.state_name_to_value(db_tran_info.get("state"))
+            
+            ret = result(error.SUCCEED, "", state in (payload.txtype.EX_END, payload.txtype.EX_CANCEL))
+
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
 def works():
     client = requestproof(name, stmanage.get_db("b2vproof"))
     ret = client.list_exproof_end("2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB")

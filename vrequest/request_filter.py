@@ -18,32 +18,20 @@ from comm.functions import json_print
 from db.dbvbase import dbvbase
 from baseobject import baseobject
 from enum import Enum
+from vrequest.request_base import requestbase
 
 #module name
 name="requestfilter"
 
 #load logging
 
-class requestfilter(baseobject):
+class requestfilter(requestbase):
     def __init__(self, name, dbconf):
-        baseobject.__init__(self, name)
-        self._dbclient = None
-        self._connect_db(name, dbconf)
+        requestbase.__init__(self, name, dbconf)
 
     def __del__(self):
         pass
 
-    def _connect_db(self, name, rconf):
-        self._dbclient = None
-        if rconf is not None:
-            self._dbclient = dbvbase(name, \
-                    rconf.get("host", "127.0.0.1:37017"), \
-                    rconf.get("db"), rconf.get("user"), \
-                    rconf.get("password"), \
-                    rconf.get("authdb", "admin"), \
-                    newdb = False, \
-                    rsname=rconf.get("rsname"))
-        return self._dbclient
     
     def list_opreturn_txids(self, start = 0, limit = 10):
         try:
@@ -58,16 +46,12 @@ class requestfilter(baseobject):
             ret = parse_except(e)
         return ret
 def works():
-    client = requestproof(name, stmanage.get_db("b2vproof"))
-    ret = client.list_exproof_end("2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB")
+    client = requestfilter(name, stmanage.get_db("base"))
+    ret = client.list_opreturn_txids(0, 10)
     
     print("*************************** state = end *********************************")
     for data in ret.datas:
         json_print(data)
 
-    ret = client.list_exproof_start("2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB")
-    print("*************************** state = start *********************************")
-    for data in ret.datas:
-        json_print(data)
 if __name__ == "__main__":
     works()

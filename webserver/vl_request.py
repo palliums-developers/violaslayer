@@ -33,31 +33,20 @@ logger = log.logger.getLogger(name)
 @app.route('/')
 def main():
     args    = request.args
+    print(f"args: {args}")
     opt     = args.get("opt")
     opttype = args.get("type")
+    datatype = args.get("datatype", "record")
 
     if opt is None:
         raise Exception("opt not found.")
-    if opt == "get":
-        cursor  = int(args.get("cursor", 0))
-        limit   = int(args.get("limit", 10))
-        receiver = args.get("address")
-
-        if opttype == "b2v":
-            state = args.get("state")
-            return list_exproof_state(receiver, state, cursor, limit)
-        elif opttype == "filter":
-            return list_opreturn_txids(cursor, limit)
-        elif opttype == "mark":
-            return list_proof_mark(receiver, cursor, limit)
-        elif opttype == "btcmark":
-            return list_proof_btcmark(receiver, cursor, limit)
-        elif opttype == "balance":
-            minconf = args.get("minconf", 1)
-            maxconf = args.get("maxconf", 99999999)
-            return btc_get_address_balance(receiver, minconf, maxconf)
-        else:
-            raise Exception(f"type:{type} not found.")
+    elif opt == "get":
+        if datatype == "record":
+            return get_record(args)
+        elif datatype == "version":
+            return get_version(args)
+    elif opt == "check":
+        return check_record(args)
     elif opt == "set":
         #btc transaction
         fromaddress     = args.get("fromaddress")
@@ -68,9 +57,12 @@ def main():
 
         #payload 
         vreceiver       = args.get("vreceiver")
-        sequence        = args.get("sequence")
+        sequence        = int(args.get("sequence"))
         module          = args.get("module")
-        version         = args.get("version")
+        version         = int(args.get("version"))
+        if fromprivkeys is not None:
+            fromprivkeys = json.loads(fromprivkeys)
+
         if opttype == "start":
             return btc_send_exproof_start(fromaddress, toaddress, toamount, fromprivkeys, combine, \
                     vreceiver, sequence, module)
@@ -85,15 +77,82 @@ def main():
     else:
         raise Exception(f"opt:{opt} not found.")
 
+def opttype_to_dbname(opttype):
+    dbname = ""
+    if opttype == "b2v":
+        return "b2vproof"
+    elif opttype == "filter":
+        return "base"
+    elif opttype in ("mark", "btcmark"):
+        return "markproof"
+    else:
+        return ""
+
+def list_dbname_for_get_latest_ver():
+    return ("b2v", "b2vproof", "filter", "mark", "btcmark")
+
+def get_version(args):
+    opttype = args.get("type")
+
+    if opttype not in list_dbname_for_get_latest_ver():
+        raise Exception(f"opttype:{opttype} not found.")
+
+    return get_proof_latest_saved_ver(opttype_to_dbname(opttype))
+
+def get_record(args):
+    cursor  = int(args.get("cursor", 0))
+    limit   = int(args.get("limit", 10))
+    receiver = args.get("address")
+    opttype = args.get("type")
+    client = get_request_client(opttype_to_dbname(opttype))
+
+    if opttype == "b2v":
+        state = args.get("state")
+        return list_exproof_state(client, receiver, state, cursor, limit)
+    elif opttype == "filter":
+        return list_opreturn_txids(client, cursor, limit)
+    elif opttype == "mark":
+        return list_proof_mark(client, receiver, cursor, limit)
+    elif opttype == "btcmark":
+        return list_proof_btcmark(client, receiver, cursor, limit)
+    elif opttype in ("balance", "listunspent"):
+        minconf = int(args.get("minconf", 1))
+        maxconf = int(args.get("maxconf", 99999999))
+        if opttype == "listunspent":
+            return btc_list_address_unspent(json.loads(receiver), minconf, maxconf)
+        else:
+            return btc_get_address_balance(receiver, minconf, maxconf)
+    else:
+        raise Exception(f"type:{type} not found.")
+
+def check_record(args):
+    opttype = args.get("type")
+    client = get_request_client(opttype_to_dbname(opttype))
+
+    if opttype == "b2v":
+        address = args.get("address")
+        sequence = args.get("sequence")
+        return check_proof_is_complete(client, address, sequence)
+    else:
+        raise Exception(f"type:{type} not found.")
+
 def get_btcclient():
     return btcclient(name, stmanage.get_btc_conn())
 
 def btc_get_address_balance(address, minconf = 0, maxconf = 99999999):
     try:
         bclient = get_btcclient()
-        ret = bclient.getaddressunspent(address, minconf, maxconf)
+        ret = bclient.getaddressbalance(address, minconf, maxconf)
+    except Exception as e:
+        ret = parse_except(e)
+    return ret.to_json()
+
+def btc_list_address_unspent(address, minconf = 0, maxconf = 99999999):
+    try:
+        bclient = get_btcclient()
+        ret = bclient.listaddressunspent(address, minconf, maxconf)
         if ret.state == error.SUCCEED:
-            ret = result(error.SUCCEED, "", ret.datas.get("amountsum"))
+            ret = result(error.SUCCEED, "", ret.datas)
     except Exception as e:
         ret = parse_except(e)
     return ret.to_json()
@@ -143,12 +202,25 @@ def btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combin
         ret = parse_except(e)
     return ret.to_json()
 
-def get_proof_client(db):
-    return requestproof(name, stmanage.get_db(db))
+def get_request_client(db):
+    if db in ("base"):
+        return requestfilter(name, stmanage.get_db(db))
+    else:
+        return requestproof(name, stmanage.get_db(db))
 
-def list_exproof_state(receiver, state_name, cursor = 0, limit = 10):
+def get_proof_latest_saved_ver(db):
     try:
-        client = get_proof_client("b2vproof")
+        client = get_request_client(db)
+        ret = client.get_proof_latest_saved_ver()
+    except Exception as e:
+        ret = parse_except(e)
+    return ret.to_json()
+
+def list_exproof_state(client, receiver, state_name, cursor = 0, limit = 10):
+    try:
+        if state_name is None and receiver is None:
+            return client.list_exproof(cursor, limit)
+
         state = client.proofstate[state_name.upper()]
 
         if state == client.proofstate.START:
@@ -162,33 +234,37 @@ def list_exproof_state(receiver, state_name, cursor = 0, limit = 10):
         ret = parse_except(e)
     return ret.to_json()
 
-def list_proof_mark(receiver, cursor = 0, limit = 10):
+def list_proof_mark(client, receiver, cursor = 0, limit = 10):
     try:
-        client = get_proof_client("markproof")
-
         ret = client.list_proof_mark(receiver, cursor, limit)
     except Exception as e:
         ret = parse_except(e)
     return ret.to_json()
 
-def list_proof_btcmark(receiver, cursor = 0, limit = 10):
+def list_proof_btcmark(client, receiver, cursor = 0, limit = 10):
     try:
-        client = get_proof_client("markproof")
-        ret = client.list_proof_mark(receiver, cursor, limit)
+        ret = client.list_proof_btcmark(receiver, cursor, limit)
     except Exception as e:
         ret = parse_except(e)
     return ret.to_json()
 
-def get_filter_client(db):
-    return requestfilter(name, stmanage.get_db(db))
-
-def list_opreturn_txids(cursor = 0, limit = 10):
+def list_opreturn_txids(client, cursor = 0, limit = 10):
     try:
-        client = get_filter_client("base")
         ret = client.list_opreturn_txids(cursor, limit)
     except Exception as e:
         ret = parse_except(e)
     return ret.to_json()
+
+'''
+***check record 
+'''
+def check_proof_is_complete(client, address, sequence):
+    try:
+        ret = client.check_proof_is_complete(address, sequence)
+    except Exception as e:
+        ret = parse_except(e)
+    return ret.to_json()
+
 '''
 with app.test_request_context():
     logger.debug(url_for('tranaddress', chain = "violas", cursor = 0, limit = 10))

@@ -88,6 +88,27 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
+    def getaddressbalance(self, address, minconf = 0, maxconf = 99999999):
+        try:
+            self._logger.debug(f"start getaddressbalance(address={address}, minconf = {minconf}, maxconf={maxconf})")
+            datas = self.__rpc_connection.listunspent(minconf, maxconf, [address])
+            amount_sum = 0.0
+            for data in datas:
+                amount_sum += float(data.get("amount"))
+
+            ret = result(error.SUCCEED, "", amount_sum)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+    def listaddressunspent(self, address, minconf = 0, maxconf = 99999999):
+        try:
+            self._logger.debug(f"start listaddressunspent(address={address}, minconf = {minconf}, maxconf={maxconf})")
+            datas = self.__rpc_connection.listunspent(minconf, maxconf, address)
+            ret = result(error.SUCCEED, "", datas)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
     @property
     def feerate(self):
         if self.__feerate <= 0:

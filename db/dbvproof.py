@@ -59,7 +59,7 @@ class dbvproof(dbvbase):
 
             version = ret.datas.get("index")
             if version is None or version < 0:
-                return result(error.DB_PROOF_INFO_INVALID, f"not fount transaction({tran_id}).")
+                return result(error.DB_PROOF_INFO_INVALID, f"not found transaction({tran_id}).")
 
             ret = self.update_with_id(version, value)
         except Exception as e:
@@ -75,7 +75,7 @@ class dbvproof(dbvbase):
 
             version = ret.datas.get("index")
             if version is None or version < 0:
-                return result(error.DB_PROOF_INFO_INVALID, f"not fount transaction({tran_id}).")
+                return result(error.DB_PROOF_INFO_INVALID, f"not found transaction({tran_id}).")
 
             ret = self.find_with_id(version)
         except Exception as e:

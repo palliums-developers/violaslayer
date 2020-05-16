@@ -96,6 +96,7 @@ class abase(baseobject):
     def get_step(self):
         return self._step
 
+    @classmethod
     def create_tran_id(self, address, sequence):
         return f"{address}_{sequence}"
 
