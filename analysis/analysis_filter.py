@@ -210,7 +210,7 @@ class afilter(abase):
             if ret.state != error.SUCCEED:
                 return ret
                 
-            chain_latest_ver = ret.datas - 1
+            chain_latest_ver = ret.datas
 
             ret = self._dbclient.get_latest_filter_state()
             assert ret.state == error.SUCCEED, f"get latest filter state failed.txid = {txid}"

@@ -29,7 +29,7 @@ from btc.payload import payload
 #module self.name
 name="webserver"
 logger = log.logger.getLogger(name)
-
+COINS = comm.values.COINS
 @app.route('/')
 def main():
     args    = request.args
@@ -51,27 +51,30 @@ def main():
         #btc transaction
         fromaddress     = args.get("fromaddress")
         toaddress       = args.get("toaddress")
-        toamount        = args.get("toamount")
+        toamount        = float(args.get("toamount"))
         fromprivkeys    = args.get("fromprivkeys")
+        print(f"fromprivkeys:{fromprivkeys}")
         combine         = args.get("combine")
 
         #payload 
         vreceiver       = args.get("vreceiver")
         sequence        = int(args.get("sequence"))
-        module          = args.get("module")
-        version         = int(args.get("version"))
         if fromprivkeys is not None:
             fromprivkeys = json.loads(fromprivkeys)
 
         if opttype == "start":
+            module          = args.get("module")
             return btc_send_exproof_start(fromaddress, toaddress, toamount, fromprivkeys, combine, \
                     vreceiver, sequence, module)
-        elif opttype == "end":
-            return btc_send_exproof_end(fromaddress, toaddress, toamount, fromprivkeys, combine, \
-                    vreceiver, sequence, amount, version)
-        elif opttype == "mark":
-            return btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combine, \
-                    vreceiver, sequence, amount, version)
+        elif opttype in ("end", "mark"):
+            version  = int(args.get("version"))
+            if opttype == "end":
+                amount   = float(args.get("amount"))
+                return btc_send_exproof_end(fromaddress, toaddress, toamount, fromprivkeys, combine, \
+                        vreceiver, sequence, amount, version)
+            else:
+                return btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combine, \
+                        vreceiver, sequence, toamount, version)
         else:
             raise Exception(f"type:{type} not found.")
     else:
@@ -131,7 +134,7 @@ def check_record(args):
 
     if opttype == "b2v":
         address = args.get("address")
-        sequence = args.get("sequence")
+        sequence = int(args.get("sequence"))
         return check_proof_is_complete(client, address, sequence)
     else:
         raise Exception(f"type:{type} not found.")
@@ -162,7 +165,7 @@ def btc_send_exproof_start(fromaddress, toaddress, toamount, fromprivkeys, combi
     try:
         bclient = get_btcclient()
         pl = payload(name)
-        ret = pl.create_ex_start(vreiceiver, sequence, module)
+        ret = pl.create_ex_start(vreceiver, sequence, module)
         assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
         data = ret.datas
 
@@ -177,7 +180,7 @@ def btc_send_exproof_end(fromaddress, toaddress, toamount, fromprivkeys, combine
     try:
         bclient = get_btcclient()
         pl = payload(name)
-        ret = pl.create_ex_end(vreiceiver, sequence, amount, version)
+        ret = pl.create_ex_end(vreceiver, sequence, int(amount * COINS), version)
         assert ret.state == error.SUCCEED, f"payload create_ex_end.{ret.message}"
         data = ret.datas
 
@@ -192,7 +195,7 @@ def btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combin
     try:
         bclient = get_btcclient()
         pl = payload(name)
-        ret = pl.create_ex_mark(vreiceiver, sequence, version, amount)
+        ret = pl.create_ex_mark(vreceiver, sequence, version, int(COINS * amount))
         assert ret.state == error.SUCCEED, f"payload create_ex_mark.{ret.message}"
         data = ret.datas
 
@@ -219,7 +222,7 @@ def get_proof_latest_saved_ver(db):
 def list_exproof_state(client, receiver, state_name, cursor = 0, limit = 10):
     try:
         if state_name is None and receiver is None:
-            return client.list_exproof(cursor, limit)
+            return client.list_exproof(cursor, limit).to_json()
 
         state = client.proofstate[state_name.upper()]
 

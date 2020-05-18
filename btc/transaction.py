@@ -108,7 +108,7 @@ class transaction(baseobject):
 
             if self.outputs is None:
                 self.outputs = self.createrawoutputs().datas
-            output = {address:amount}
+            output = {address:round(amount, 8)}
 
             self.outputs.append(output)
 
@@ -122,7 +122,7 @@ class transaction(baseobject):
             if self.outputs is None:
                 self.outputs = self.createrawoutputs().datas
             
-            update = {address:amount}
+            update = {address:round(amount, 8)}
             for output in self.outputs:
                 if address in output.keys():
                     output.update(update)
@@ -134,11 +134,12 @@ class transaction(baseobject):
 
     def getoutputamount(self): #amount is float BTC
         try:
-            amount_sum = 0
+            amount_sum = 0.0
             if self.outputs is not None:
                 for output in self.outputs:
                     if output.get("data") is not None:
                         continue
+                    print(output.values())
                     amount_sum += sum(output.values())
             ret = result(error.SUCCEED, "", amount_sum)
         except Exception as e:

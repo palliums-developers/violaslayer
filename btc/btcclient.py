@@ -69,7 +69,29 @@ class btcclient(baseobject):
             amount_sum += unspent.get("amount", 0) 
         return amount_sum
 
-    def getaddressunspent(self, address, minconf = 0, maxconf = 99999999):
+    def getdustthreshold(self, segwit, feerate = None):
+        if feerate is None:
+            fee_rate = self.feerate
+        else:
+            fee_rate = feerate
+
+        nSize = 0
+        if segwit:
+            nSize += (32 + 4 + 1 + (107 / 4) + 4)
+        else:
+            nSize += (32 + 4 + 1 + 107 + 4); # the 148 mentioned above  
+        ret = self.getminfeerate(fee_rate, nSize)
+        assert ret.state == error.SUCCEED, "get min feerate falid." 
+        return ret.datas
+
+    def iscanuse(self, desc, amount, dust_threshold_sw = 0, dust_threshold_nsw = 0):
+        #switness
+        if "sh(wpkh(" in desc or "sh(wsh)" in desc:
+            return amount > dust_threshold_sw
+        else:
+            return amount > dust_threshold_nsw
+
+    def getaddressunspent(self, address, minconf = 0, maxconf = 99999999, dust_threshold_sw = 0, dust_threshold_nsw = 0):
         try:
             self._logger.debug(f"start getaddressunspent(address={address}, minconf = {minconf}, maxconf={maxconf})")
             datas = self.__rpc_connection.listunspent(minconf, maxconf, [address])
@@ -77,6 +99,10 @@ class btcclient(baseobject):
             filter = []
             amount_sum = 0
             for data in datas:
+                #check amount is dust
+                if not self.iscanuse(data.get("desc"), data.get("amount"), dust_threshold_sw, dust_threshold_nsw):
+                    continue
+
                 amount_sum += int(data.get("amount") * COINS)
                 filter.append({"txid": data.get("txid"), \
                         "amount": int(data.get("amount") * COINS), \
@@ -161,10 +187,10 @@ class btcclient(baseobject):
 
         return use_amounts
 
-    def getaddressunspentwithamount(self, address, amount, minconf = 0, maxconf = 99999999): #amount is satoshi
+    def getaddressunspentwithamount(self, address, amount, minconf = 0, maxconf = 99999999, dust_threshold_sw = 0, dust_threshold_nsw = 0): #amount is satoshi
         try:
             self._logger.debug(f"start getaddressunspentwithamount(address={address}, amount={amount}, minconf = {minconf}, maxconf={maxconf})")
-            ret = self.getaddressunspent(address, minconf, maxconf)
+            ret = self.getaddressunspent(address, minconf, maxconf, dust_threshold_sw, dust_threshold_nsw)
             if ret.state != error.SUCCEED:
                 return ret
 
@@ -223,7 +249,11 @@ class btcclient(baseobject):
         try:
             self._logger.debug(f"sendtoaddress(fromaddress={fromaddress}, toaddress={toaddress}, toamount={toamount}, data={data}, combine={combine})")
             fee_rate = self.feerate
+            dust_threshold_sw = self.getdustthreshold(True, fee_rate)
+            dust_threshold_nsw = self.getdustthreshold(False, fee_rate)
             min_fee = 0
+            if toamount <= 0.0:
+                toamount = max(dust_threshold_sw, dust_threshold_nsw)
 
             tran = transaction(name)
             tran.appendoutputdata(data)

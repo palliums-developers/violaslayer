@@ -148,7 +148,7 @@ class abase(baseobject):
             receiver = None
             amount = 0
             payload_hex = None
-            issuser = ret.datas.get("address")
+            issuer = ret.datas.get("address")
             ret = self._vclient.gettxoutcountfromdata(tran)
             if ret.state != error.SUCCEED:
                 return ret
@@ -181,7 +181,7 @@ class abase(baseobject):
                         continue
 
                     address = vout.get("addresses")[0]
-                    if issuser == address:
+                    if issuer == address:
                         continue
                     amount = vout.get("value")
                     receiver = address
@@ -189,17 +189,18 @@ class abase(baseobject):
             if receiver is None or payload_hex is None:
                 return result(error.TRAN_INFO_INVALID, "transaction format is invalid.")
 
-            self._logger.debug(f"parse transaction payload:txid = {tran.get('txid')} issuser:{issuser}  receiver:{receiver}")
+            self._logger.debug(f"parse transaction payload:txid = {tran.get('txid')} issuer:{issuer}  receiver:{receiver}")
             payload_parse = payload(self.name())
             ret = payload_parse.parse(payload_hex)
             if ret.state != error.SUCCEED:
                 return ret
 
             datas = {\
-                    "create_block": tran.get("blockhash"), 
+                    "creation_block": tran.get("blockhash"), 
                     "update_block": tran.get("blockhash"),
                     "num_btc":amount,
-                    "issuser":issuser, 
+                    "amount":amount,
+                    "issuer":issuer, 
                     "receiver":receiver, 
                     "state":payload_parse.tx_type,
                     "valid": payload_parse.is_valid,

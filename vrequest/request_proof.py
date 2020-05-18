@@ -132,8 +132,10 @@ class requestproof(requestbase):
 
             db_tran_info = ret.datas
             state = payload.state_name_to_value(db_tran_info.get("state"))
+
+            datas = {"result": str(state in (payload.txtype.EX_END, payload.txtype.EX_CANCEL)).lower()}
             
-            ret = result(error.SUCCEED, "", state in (payload.txtype.EX_END, payload.txtype.EX_CANCEL))
+            ret = result(error.SUCCEED, "", datas)
 
         except Exception as e:
             ret = parse_except(e)

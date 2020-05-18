@@ -109,9 +109,9 @@ class aproof(aproofbase):
                             old state is {old_proofstate.name}. tran id: {tran_id}")
 
                 #only recevier can change state (start -> end/cancel)
-                if db_tran_info.get("receiver", "start state receiver") != tran_info.get("issuser", "to end address"):
-                    return result(error.TRAN_INFO_INVALID, f"change state error. issuser[state = end] != recever[state = start] \
-                            issuser: {tran_info.get('receiver')}  receiver : {db_tran_info.get('issuser')} tran_id = {tran_id}") 
+                if db_tran_info.get("receiver", "start state receiver") != tran_info.get("issuer", "to end address"):
+                    return result(error.TRAN_INFO_INVALID, f"change state error. issuer[state = end] != recever[state = start] \
+                            issuer: {tran_info.get('receiver')}  receiver : {db_tran_info.get('issuer')} tran_id = {tran_id}") 
 
                 
                 db_tran_info["state"] = self.proofstate_value_to_name(tran_info["state"])
