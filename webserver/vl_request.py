@@ -19,6 +19,7 @@ import comm.result
 import comm.values
 from comm.result import result, parse_except
 from comm.error import error
+from comm.functions import json_reset
 from enum import Enum
 from vrequest.request_proof import requestproof
 from vrequest.request_filter import requestfilter
@@ -142,13 +143,16 @@ def check_record(args):
 def get_btcclient():
     return btcclient(name, stmanage.get_btc_conn())
 
+def request_ret(datas):
+    return json_reset(datas.to_json())
+
 def btc_get_address_balance(address, minconf = 0, maxconf = 99999999):
     try:
         bclient = get_btcclient()
         ret = bclient.getaddressbalance(address, minconf, maxconf)
     except Exception as e:
         ret = parse_except(e)
-    return ret.to_json()
+    return request_ret(ret)
 
 def btc_list_address_unspent(address, minconf = 0, maxconf = 99999999):
     try:
@@ -158,7 +162,7 @@ def btc_list_address_unspent(address, minconf = 0, maxconf = 99999999):
             ret = result(error.SUCCEED, "", ret.datas)
     except Exception as e:
         ret = parse_except(e)
-    return ret.to_json()
+    return request_ret(ret)
 
 def btc_send_exproof_start(fromaddress, toaddress, toamount, fromprivkeys, combine, \
         vreceiver, sequence, module):
@@ -173,7 +177,7 @@ def btc_send_exproof_start(fromaddress, toaddress, toamount, fromprivkeys, combi
                 data = data, combine = combine)
     except Exception as e:
         ret = parse_except(e)
-    return ret.to_json()
+    return request_ret(ret)
     
 def btc_send_exproof_end(fromaddress, toaddress, toamount, fromprivkeys, combine, \
         vreceiver, sequence, amount, version):
@@ -188,7 +192,7 @@ def btc_send_exproof_end(fromaddress, toaddress, toamount, fromprivkeys, combine
                 data = data, combine = combine)
     except Exception as e:
         ret = parse_except(e)
-    return ret.to_json()
+    return request_ret(ret)
 
 def btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combine, \
         vreceiver, sequence, amount, version):
@@ -203,7 +207,7 @@ def btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combin
                 data = data, combine = combine)
     except Exception as e:
         ret = parse_except(e)
-    return ret.to_json()
+    return request_ret(ret)
 
 def get_request_client(db):
     if db in ("base"):
@@ -217,12 +221,13 @@ def get_proof_latest_saved_ver(db):
         ret = client.get_proof_latest_saved_ver()
     except Exception as e:
         ret = parse_except(e)
-    return ret.to_json()
+    return request_ret(ret)
 
 def list_exproof_state(client, receiver, state_name, cursor = 0, limit = 10):
     try:
         if state_name is None and receiver is None:
-            return client.list_exproof(cursor, limit).to_json()
+            ret = client.list_exproof(cursor, limit)
+            return request_ret(ret)
 
         state = client.proofstate[state_name.upper()]
 
@@ -235,28 +240,28 @@ def list_exproof_state(client, receiver, state_name, cursor = 0, limit = 10):
 
     except Exception as e:
         ret = parse_except(e)
-    return ret.to_json()
+    return request_ret(ret)
 
 def list_proof_mark(client, receiver, cursor = 0, limit = 10):
     try:
         ret = client.list_proof_mark(receiver, cursor, limit)
     except Exception as e:
         ret = parse_except(e)
-    return ret.to_json()
+    return request_ret(ret)
 
 def list_proof_btcmark(client, receiver, cursor = 0, limit = 10):
     try:
         ret = client.list_proof_btcmark(receiver, cursor, limit)
     except Exception as e:
         ret = parse_except(e)
-    return ret.to_json()
+    return request_ret(ret)
 
 def list_opreturn_txids(client, cursor = 0, limit = 10):
     try:
         ret = client.list_opreturn_txids(cursor, limit)
     except Exception as e:
         ret = parse_except(e)
-    return ret.to_json()
+    return request_ret(ret)
 
 '''
 ***check record 
@@ -266,7 +271,7 @@ def check_proof_is_complete(client, address, sequence):
         ret = client.check_proof_is_complete(address, sequence)
     except Exception as e:
         ret = parse_except(e)
-    return ret.to_json()
+    return request_ret(ret)
 
 '''
 with app.test_request_context():
