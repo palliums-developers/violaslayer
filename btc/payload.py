@@ -370,7 +370,7 @@ class payload(baseobject):
 
     def is_allow_txtype(self, txtype):
         #EnumUtils.isValidEnum(self.txtype.class, txtype)
-        return txtype.value in self.txtype._value2member_map_
+        return txtype.value in self.txtype._value2member_map_ and txtype != self.txtype.UNKNOWN
     
     def is_allow_opreturn(self, txtype, version, block = None):
         type_version = self.type_version.get(txtype)
