@@ -73,7 +73,7 @@ class amarkproof(aproofbase):
 
     def start(self):
         try:
-            self._logger.debug("start vproof work")
+            self._logger.debug("start markproof work")
 
             ret = self._dbclient.get_latest_filter_ver()
             if ret.state != error.SUCCEED:
@@ -124,7 +124,7 @@ class amarkproof(aproofbase):
 
                     tran_filter = ret.datas
                     if self.check_tran_is_valid(tran_filter) != True:
-                        self._logger.warning(f"transaction({txid}) is invalid.")
+                        self._logger.warning(f"transaction({txid}) is invalid. {tran_filter.get('state')} is not target type:{self.valid_txtype}")
                         continue
 
                     self._logger.debug(f"transaction parse: {tran_filter}")

@@ -339,11 +339,11 @@ class afilter(abase):
                                 assert ret.state == error.SUCCEED, f"update txout failed.txid = {txid}"
                             
                             if self.store_op_tran:
-                                #ret = self.get_opreturn(txoutin.get("vout"))
                                 ret = self._vclient.getopreturnfromdata(tran)
                                 if ret.state == error.SUCCEED and ret.datas is not None:
                                     ret = payload_parse.is_valid_violas(ret.datas)
                                     if ret.state == error.SUCCEED and ret.datas:
+
                                         ret = self.save_opreturn_txid(latest_opreturn_index, txid, session=session)
                                         assert ret.state == error.SUCCEED, f"save address map txout failed.txid = {txid}"
 
@@ -368,7 +368,7 @@ class afilter(abase):
                 if ret.state != error.SUCCEED:
                     return ret
                 #save to redis db
-                self._logger.info(f"parse transaction . height: {version}")
+                self._logger.info(f"parse transaction . height: {version}, chain latest height: {chain_latest_ver}")
                 version = version + 1
  
             ret = result(error.SUCCEED)

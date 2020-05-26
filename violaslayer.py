@@ -15,7 +15,7 @@ import stmanage
 from time import sleep, ctime
 import comm.functions as fn
 from comm.result import parse_except
-from analysis import analysis_filter, analysis_proof
+from analysis import analysis_filter, analysis_proof, analysis_mark
 from btc.payload import payload
 import subprocess
 from enum import Enum
@@ -99,13 +99,13 @@ class works:
 
     def work_markproof(self, nsec):
         try:
-            logger.critical("start: btc mark proof")
-            while (self.__work_looping.get(work_mod.B2VPROOF.name, False)):
+            logger.critical("start: mark proof")
+            while (self.__work_looping.get(work_mod.MARKPROOF.name, False)):
                 logger.debug("looping: markproof")
                 try:
                     basedata = "base"
                     dtype = "markproof"
-                    obj = analysis_proof.amarkproof(name="markproof", \
+                    obj = analysis_mark.amarkproof(name="markproof", \
                             dbconf=stmanage.get_db(dtype), \
                             fdbconf=stmanage.get_db(basedata), \
                             nodes = stmanage.get_btc_conn() \

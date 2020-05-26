@@ -355,6 +355,14 @@ class payload(baseobject):
     def proof_data(self, data):
         self.__proof_data  = data
 
+    @property
+    def parse_result(self):
+        return self.__parse_result
+
+    @parse_result.setter
+    def parse_result(self, value):
+        self.__parse_result = value
+
     def reset(self):
         self.op_code = None
         self.op_data = None
@@ -395,6 +403,8 @@ class payload(baseobject):
                 ret = parse_exchange.parse_ex_cancel(self.op_data)
             elif self.tx_type == self.txtype.BTC_MARK:
                 ret = parse_exchange.parse_btc_mark(self.op_data)
+            elif self.tx_type == self.txtype.EX_MARK:
+                ret = parse_exchange.parse_ex_mark(self.op_data)
             else:
                 ret = result(error.TRAN_INFO_INVALID, f"tx type({self.tx_type.value}) is invalid.")
         except Exception as e:
@@ -530,6 +540,7 @@ class payload(baseobject):
                     "proof": self.proof_data,
                     "valid": self.is_valid,
                     }
+            self.parse_result = datas
             ret = result(error.SUCCEED, datas = datas) 
             self._logger.debug(json_dumps(datas))
 
