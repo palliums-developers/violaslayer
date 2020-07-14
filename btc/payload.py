@@ -33,35 +33,39 @@ from ctypes import create_string_buffer
 name="payload"
 class payload(baseobject):
     __valid_mark = "violas"
-    __version_0 = 0
-    __version_1 = 1
+    
+    class versions(Enum):
+        VERSION_0 = 0
+        VERSION_1 = 1
+        VERSION_2 = 2
+        VERSION_3 = 3
 
     class optcodetype(Enum):
         # push value
-        OP_0 = 0x00
-        OP_FALSE = OP_0
+        OP_0        = 0x00
+        OP_FALSE    = OP_0
         OP_PUSHDATA1 = 0x4c
         OP_PUSHDATA2 = 0x4d
         OP_PUSHDATA4 = 0x4e
-        OP_1NEGATE = 0x4f
+        OP_1NEGATE  = 0x4f
         OP_RESERVED = 0x50
-        OP_1 = 0x51
-        OP_TRUE=0x51
-        OP_2 = 0x52
-        OP_3 = 0x53
-        OP_4 = 0x54
-        OP_5 = 0x55
-        OP_6 = 0x56
-        OP_7 = 0x57
-        OP_8 = 0x58
-        OP_9 = 0x59
-        OP_10 = 0x5a
-        OP_11 = 0x5b
-        OP_12 = 0x5c
-        OP_13 = 0x5d
-        OP_14 = 0x5e
-        OP_15 = 0x5f
-        OP_16 = 0x60
+        OP_1        = 0x51
+        OP_TRUE     =0x51
+        OP_2        = 0x52
+        OP_3        = 0x53
+        OP_4        = 0x54
+        OP_5        = 0x55
+        OP_6        = 0x56
+        OP_7        = 0x57
+        OP_8        = 0x58
+        OP_9        = 0x59
+        OP_10       = 0x5a
+        OP_11       = 0x5b
+        OP_12       = 0x5c
+        OP_13       = 0x5d
+        OP_14       = 0x5e
+        OP_15       = 0x5f
+        OP_16       = 0x60
 
         ## control
         OP_NOP      = 0x61
@@ -176,37 +180,80 @@ class payload(baseobject):
         OP_PUBKEY       = 0xfe
         OP_INVALIDOPCODE = 0xff
 
+    class txstate(Enum):
+        START   = "start"
+        CANCEL  = "cancel"
+        END     = "end"
+        STOP    = "stop"
+        BTCMARK = "btcmark"
+        MARK    = "mark"
+        UNKNOWN = "unknown"
+
     class txtype(Enum):
-        BTC_MARK    = 0x1030
-        EX_START    = 0x3000
-        EX_END      = 0x3001
-        EX_CANCEL   = 0x3002
-        EX_MARK     = 0x3010
+        BTCMARK_BTCMARK = 0x1030
+        V2BMARK_MARK    = 0x2000
+        #btc mapping violas btc
+        B2VMAP_START    = 0x3000
+        B2VMAP_CANCEL   = 0x3001
+        B2VMAP_END      = 0x3002
+        B2VMAP_STOP     = 0x3003
+        #btc swap violas stable token
+        B2VUSD_START    = 0x4000
+        B2VUSD_CANCEL   = 0x4001
+        B2VUSD_END      = 0x4002
+        B2VUSD_STOP     = 0x4003
+        B2VEUR_START    = 0x4010
+        B2VEUR_CANCEL   = 0x4012
+        B2VEUR_END      = 0x4013
+        B2VEUR_STOP     = 0x4014
+        B2VSGD_START    = 0x4020
+        B2VSGD_CANCEL   = 0x4021
+        B2VSGD_END      = 0x4022
+        B2VSGD_STOP     = 0x4023
+        B2VGBP_START    = 0x4030
+        B2VGBP_CANCEL   = 0x4031
+        B2VGBP_END      = 0x4032
+        B2VGBP_STOP     = 0x4033
+        #btc swap libra stable token
+        B2LUSD_START    = 0x5000
+        B2LUSD_CANCEL   = 0x5001
+        B2LUSD_END      = 0x5002
+        B2LUSD_STOP     = 0x5003
+        B2LEUR_START    = 0x5010
+        B2LEUR_CANCEL   = 0x5011
+        B2LEUR_END      = 0x5012
+        B2LEUR_STOP     = 0x5013
+        B2LSGD_START    = 0x5020
+        B2LSGD_CANCEL   = 0x5021
+        B2LSGD_END      = 0x5022
+        B2LSGD_STOP     = 0x5023
+        B2LGBP_START    = 0x5030
+        B2LGBP_CANCEL   = 0x5031
+        B2LGBP_END      = 0x5032
+        B2LGBP_STOP     = 0x5033
         UNKNOWN     = 0xFFFF
 
     def __init__(self, name):
         baseobject.__init__(self, name)
         self.bigendian_flag = self.is_bigendian()
-        self._type_version = {}
+        self.__init_version()
         self.__init_type_with_version()
         self._reset(None)
 
     def __init_type_with_version(self):
-        self._type_version = {
-                        self.txtype.BTC_MARK : {"version" : [self.version_1, self.version_0], "block": 0}, \
-                        self.txtype.EX_START : {"version" : [self.version_1], "block": 0}, \
-                        self.txtype.EX_END   : {"version" : [self.version_1], "block": 0}, \
-                        self.txtype.EX_CANCEL: {"version" : [self.version_1], "block": 0}, \
-                        self.txtype.EX_MARK  : {"version" : [self.version_1], "block": 0}, \
-                }
+        self._type_version = {}
+        for tv in self.txtype:
+            self.type_version.update({tv:{"version" : [self.version_3], "block": 0}})
 
-    @property
-    def version_0(self):
-        return self.__version_0
+        #reset 
+        self.type_version[self.txtype.BTCMARK_BTCMARK]["version"].extend( \
+                [self.version_0, self.version_1, self.version_2])
 
-    @property
-    def version_1(self):
-        return self.__version_1
+
+    def __init_version(self):
+        for item in self.versions:
+            setter(item.name.lower(), item.value)
+
     @property
     def type_version(self):
         return self._type_version
@@ -215,6 +262,7 @@ class payload(baseobject):
         self.payload_hex= payload
         self.tx_version = 0
         self.tx_type = self.txtype.UNKNOWN
+        self.tx_state = self.txstate.UNKNOWN
         self.op_code = self.optcodetype.OP_INVALIDOPCODE
         self.op_data = None
         self.op_size = 0
@@ -230,10 +278,10 @@ class payload(baseobject):
     def is_valid(self, value):
         self.__is_valid = value
 
+
     def txtype_map_proof_type(self, txtype):
-        if txtype == self.txtype.EX_START or \
-                txtype == self.txtype.EX_END or \
-                txtype == self.txtype.EX_CANCEL:
+        raise Exception("not support txtype_map_proof_type")
+        if txtype in []:
             return "b"
         elif txtype == self.txtype.EX_MARK:
             return "v"
@@ -243,36 +291,14 @@ class payload(baseobject):
     #state is txtype
     @classmethod 
     def state_value_to_name(self, state):
-        if state == self.txtype.EX_START:
-            return "start"
-        elif state == self.txtype.EX_CANCEL:
-            return "cancel"
-        elif state == self.txtype.EX_END:
-            return "end"
-        elif state == self.txtype.BTC_MARK:
-            return "btcmark"
-        elif state == self.txtype.EX_MARK:
-            return "mark"
-        else:
-            return "unkown"
+        return state.name.lower()
 
     @classmethod
     def state_name_to_value(self, state):
-        if state == "start":
-            return self.txtype.EX_START
-        elif state == "cancel":
-            return self.txtype.EX_CANCEL
-        elif state == "end":
-            return self.txtype.EX_END
-        elif state == "btcmark":
-            return self.txtype.BTC_MARK
-        elif state == "mark":
-            return self.txtype.EX_MARK
-        else:
-            return self.txtype.UNKNOWN
-
+        return self.txstate[state.upper()]
+       
     @classmethod
-    def state_value_to_txtype(self, value):
+    def type_value_to_txtype(self, value):
         try:
             return self.txtype(value)
         except Exception as e:
@@ -315,6 +341,14 @@ class payload(baseobject):
     def tx_type(self, txtype):
         self.__txtype = txtype
 
+    @property
+    def tx_state(self):
+        return self.__txstate
+
+    @tx_state.setter
+    def tx_state(self, txstate):
+        self.__txstate = txstate
+        
     @property
     def payload_hex(self):
         return self.__payload
@@ -372,6 +406,7 @@ class payload(baseobject):
         self.payload_hex = None
         self.tx_version = None
         self.tx_type = None
+        self.tx_state = None
 
     def is_allow_mark(self, mark):
         return self.valid_mark == mark
@@ -673,12 +708,19 @@ class payload(baseobject):
     #b2v
     #open_return + violas 
     
+#start
 opstr = "6a4c5276696f6c617300003000f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2"
+
     ###txid: f30a9f9497b97aa5f95a46f1bd6fceeb26241686526068c309dee8d8fafc0a97
     ###to_address:f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c6 
     ###sequence: 20200110006
     ###token:cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2
    
+#end (manual create, can't found txid)
+opstr_end = "6a4376696f6c617300003001f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b60000000000002710000000000000271A"
+
+#btc_mark (manual create, can't found txid)
+opstr_btc_mark = "6a4276696f6c617300001030f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6000000000000271076696f6c6173"
 def check(src, dest):
     return src == dest
 
@@ -691,6 +733,12 @@ def test_np():
     ret = pdata.parse(opstr)
     assert ret.state == error.SUCCEED, f"parse OP_RETURN failed.{ret.message}"
     
+    ret = pdata.parse(opstr_end)
+    assert ret.state == error.SUCCEED, f"parse OP_RETURN failed.{ret.message}"
+
+    ret = pdata.parse(opstr_btc_mark)
+    assert ret.state == error.SUCCEED, f"parse OP_RETURN failed.{ret.message}"
+
 def test_exchange():
     toaddress = "dcfa787ecb304c20ff24ed6b5519c2e5cae5f8464c564aabb684ecbcc19153e9"
     sequence = 20200511
@@ -789,6 +837,6 @@ def test_payload():
 
 
 if __name__ == "__main__":
-    #test_np()
+    test_np()
     #test_exchange()
-    test_payload()
+    #test_payload()
