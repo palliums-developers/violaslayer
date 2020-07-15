@@ -795,7 +795,7 @@ class payload(baseobject):
     #open_return + violas 
     
 #start
-opstr = "6a3276696f6c617300033000c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6524689a4f870c46d6a5d901b5ac1fdb2"
+opstr = "6a3c76696f6c617300033000c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6524689a4f870c46d6a5d901b5ac1fdb200000000000000000000"
 
     ###txid: f30a9f9497b97aa5f95a46f1bd6fceeb26241686526068c309dee8d8fafc0a97
     ###to_address:f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c6 
@@ -822,11 +822,20 @@ def test_np():
     ret = pdata.parse(opstr_end)
     assert ret.state == error.SUCCEED, f"parse OP_RETURN failed.{ret.message}"
 
+    opstr_b2v_stop = "6a2276696f6c617300033003c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6"
+    ret = pdata.parse(opstr_b2v_stop)
+    assert ret.state == error.SUCCEED, f"parse OP_RETURN failed.{ret.message}"
+
     ret = pdata.parse(opstr_btc_mark)
     assert ret.state == error.SUCCEED, f"parse OP_RETURN failed.{ret.message}"
 
+    opstr_b2veur_start = "6a3c76696f6c617300034010c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6524689a4f870c46d6a5d901b5ac1fdb200000000000027100000"
+    ret = pdata.parse(opstr_b2veur_start)
+    assert ret.state == error.SUCCEED, f"parse OP_RETURN failed.{ret.message}"
+
+
 def test_exchange():
-    toaddress = "5cae5f8464c564aabb684ecbcc19153e9"
+    toaddress = "c91806cabcd5b2b5fa25ae1c50bed3c6"
     sequence = 20200511
     module = "e1be1ab8360a35a0259f1c93e3eac736"
     print(f'''************************************************************************create ex start
@@ -834,11 +843,10 @@ def test_exchange():
     sequence: {sequence}
     module:{module}
 **********************************************************************************''')
-    ret = create_exchange.create_ex_start(toaddress, sequence, module)
+    ret = create_exchange.create_ex_start(toaddress, sequence, module, 100000, 123)
     ret = parse_exchange.parse_ex_start(ret.datas)
     json_print(ret.datas)
     
-
     amount = 100010
     version = 123456
     print(f'''************************************************************************create ex end
@@ -857,6 +865,15 @@ def test_exchange():
 **********************************************************************************''')
     ret = create_exchange.create_ex_cancel(toaddress, sequence)
     ret = parse_exchange.parse_ex_cancel(ret.datas)
+    json_print(ret.datas)
+
+    print(f'''************************************************************************create ex stop
+    toaddress:{toaddress}
+    sequence: {sequence}
+**********************************************************************************''')
+
+    ret = create_exchange.create_ex_stop(toaddress, sequence)
+    ret = parse_exchange.parse_ex_stop(ret.datas)
     json_print(ret.datas)
 
     proofname = "btcmark"
@@ -924,5 +941,5 @@ def test_payload():
 
 if __name__ == "__main__":
     test_np()
-    #test_exchange()
+    test_exchange()
     #test_payload()

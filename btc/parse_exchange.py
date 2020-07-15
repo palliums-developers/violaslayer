@@ -24,22 +24,26 @@ from enum import Enum
 #module name
 name="parseex"
 address_len = 16
+
 def parse_ex_start(data):
     try:
-        if len(data) != 40:
-            return result(error.ARG_INVALID, f"start data len {len(data)} ({data}) is too small.")
+        if len(data) != 50:
+            return result(error.ARG_INVALID, f"start swap data len {len(data)} ({data.hex()}) is too small.")
         data_offer = 0
 
         #receiver address  32 Hex
         data_offer = data_offer + address_len
 
         [sequence]= struct.unpack_from(">Q", data, data_offer)
-        data_offer = data_offer + 8
+        data_offer = data_offer + 8 + address_len
+        [out_amount, times]= struct.unpack_from(">QH", data, data_offer)
 
         datas = {
                 "address": data[:address_len].hex(),
                 "sequence" : sequence,
-                "vtoken" : data[data_offer:].hex()
+                "vtoken" : data[address_len + 8 : address_len + 8 + address_len].hex(),
+                "out_amount" : out_amount,
+                "times": times
                 }
 
         ret = result(error.SUCCEED, datas = datas)
