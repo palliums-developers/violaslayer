@@ -29,11 +29,12 @@ name="requestproof"
 
 class requestproof(requestbase):
     class proofstate(Enum):
-        START   = 0,
-        END     = 1,
-        CANCEL  = 2,
-        BTCMARK = 3,
-        MARK    = 4,
+        BTCMARK = 0,
+        MARK    = 1,
+        START   = 2,
+        CANCEL  = 3,
+        END     = 4,
+        STOP    = 5,
 
     def __init__(self, name, dbconf):
         requestbase.__init__(self, name, dbconf)
@@ -87,23 +88,9 @@ class requestproof(requestbase):
             ret = parse_except(e)
         return ret
 
-    def list_exproof_start(self, receiver, start = 0, limit = 10):
+    def list_exproof_with_state(self, receiver, state, start = 0, limit = 10):
         try:
-            ret = self.__list_exproof_state(receiver, self.proofstate.START.name.lower(), start, limit)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def list_exproof_end(self, receiver, start = 0, limit = 10):
-        try:
-            ret = self.__list_exproof_state(receiver, self.proofstate.END.name.lower(), start, limit)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-
-    def list_exproof_cancel(self, receiver, start = 0, limit = 10):
-        try:
-            ret = self.__list_exproof_state(receiver, self.proofstate.CANCEL.name.lower(), start, limit)
+            ret = self.__list_exproof_state(receiver, state,  start, limit)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -133,7 +120,7 @@ class requestproof(requestbase):
             db_tran_info = ret.datas
             state = payload.state_name_to_value(db_tran_info.get("state"))
 
-            datas = {"result": str(state in (payload.txtype.EX_END, payload.txtype.EX_CANCEL)).lower()}
+            datas = {"result": str(state in (payload.txstate.END, payload.txstate.STOP)).lower()}
             
             ret = result(error.SUCCEED, "", datas)
 
@@ -143,13 +130,13 @@ class requestproof(requestbase):
 
 def works():
     client = requestproof(name, stmanage.get_db("b2vproof"))
-    ret = client.list_exproof_end("2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB")
+    ret = client.list_exproof_with_state("2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB", requestproof.proofstate.END)
     
     print("*************************** state = end *********************************")
     for data in ret.datas:
         json_print(data)
 
-    ret = client.list_exproof_start("2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB")
+    ret = client.list_exproof_with_state("2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB", requestproof.proofstate.START)
     print("*************************** state = start *********************************")
     for data in ret.datas:
         json_print(data)

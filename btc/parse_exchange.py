@@ -23,20 +23,21 @@ from enum import Enum
 
 #module name
 name="parseex"
+address_len = 16
 def parse_ex_start(data):
     try:
-        if len(data) != 72:
-            return result(error.ARG_INVALID, f"data len(len(data)) is too small.")
+        if len(data) != 40:
+            return result(error.ARG_INVALID, f"start data len {len(data)} ({data}) is too small.")
         data_offer = 0
 
         #receiver address  32 Hex
-        data_offer = data_offer + 32
+        data_offer = data_offer + address_len
 
         [sequence]= struct.unpack_from(">Q", data, data_offer)
         data_offer = data_offer + 8
 
         datas = {
-                "address": data[:32].hex(),
+                "address": data[:address_len].hex(),
                 "sequence" : sequence,
                 "vtoken" : data[data_offer:].hex()
                 }
@@ -48,17 +49,17 @@ def parse_ex_start(data):
 
 def parse_ex_end(data):
     try:
-        if len(data) != 56:
-            return result(error.ARG_INVALID, f"data len{len(data)} is too small.")
+        if len(data) != 40:
+            return result(error.ARG_INVALID, f"end data len{len(data)} is too small.")
         data_offer = 0
 
         #receiver address  32 Hex
-        data_offer = data_offer + 32
+        data_offer = data_offer + address_len
 
         [sequence, amount, version] = struct.unpack_from(">QQQ", data, data_offer)
 
         datas = {
-                "address": data[:32].hex(),
+                "address": data[:address_len].hex(),
                 "sequence" : sequence,
                 "amount" : amount,
                 "vheight" : version
@@ -71,18 +72,40 @@ def parse_ex_end(data):
 
 def parse_ex_cancel(data):
     try:
-        if len(data) != 40:
-            return result(error.ARG_INVALID, f"data len(len(data)) is too small.")
+        if len(data) != 24:
+            return result(error.ARG_INVALID, f"cancel data len{len(data)} is too small.")
         data_offer = 0
 
         #receiver address  32 Hex
-        data_offer = data_offer + 32
+        data_offer = data_offer + address_len
 
         [sequence] = struct.unpack_from(">Q", data, data_offer)
         data_offer = data_offer + 8
 
         datas = {
-                "address": data[:32].hex(),
+                "address": data[:address_len].hex(),
+                "sequence" : sequence,
+                }
+
+        ret = result(error.SUCCEED, datas = datas)
+    except Exception as e:
+        ret = parse_except(e)
+    return ret
+
+def parse_ex_stop(data):
+    try:
+        if len(data) != 24:
+            return result(error.ARG_INVALID, f"stop data len{len(data)} is too small.")
+        data_offer = 0
+
+        #receiver address  32 Hex
+        data_offer = data_offer + address_len
+
+        [sequence] = struct.unpack_from(">Q", data, data_offer)
+        data_offer = data_offer + 8
+
+        datas = {
+                "address": data[:address_len].hex(),
                 "sequence" : sequence,
                 }
 
@@ -93,17 +116,17 @@ def parse_ex_cancel(data):
 
 def parse_ex_mark(data):
     try:
-        if len(data) != 56:
-            return result(error.ARG_INVALID, f"data len{len(data)} is too small.")
+        if len(data) != 40:
+            return result(error.ARG_INVALID, f"v2v mark data len{len(data)} is too small.")
         data_offer = 0
 
         #receiver address  32 Hex
-        data_offer = data_offer + 32
+        data_offer = data_offer + address_len
 
         [sequence, version, amount] = struct.unpack_from(">QQQ", data, data_offer)
 
         datas = {
-                "address": data[:32].hex(),
+                "address": data[:address_len].hex(),
                 "sequence" : sequence,
                 "vheight" : version,
                 "amount" : amount,
@@ -115,12 +138,12 @@ def parse_ex_mark(data):
     return ret
 def parse_btc_mark(data):
     try:
-        if len(data) < 40:
-            return result(error.ARG_INVALID, f"data len(len(data)) is too small.")
+        if len(data) < 24:
+            return result(error.ARG_INVALID, f"btc mark data len {len(data)} is too small.")
         data_offer = 0
 
         #receiver address  32 Hex
-        data_offer = data_offer + 32
+        data_offer = data_offer + address_len
 
         [sequence, amount]= struct.unpack_from(">QQ", data, data_offer)
         data_offer = data_offer + 16 
@@ -128,7 +151,7 @@ def parse_btc_mark(data):
         bname = struct.unpack_from(f"{len(data) - data_offer}s", data, data_offer)
         name = "".join([v.decode() for v in bname])
         datas = {
-                "address": data[:32].hex(),
+                "address": data[:address_len].hex(),
                 "sequence" : sequence,
                 "amount": amount,
                 "name": name

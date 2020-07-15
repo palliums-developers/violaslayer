@@ -181,15 +181,29 @@ class payload(baseobject):
         OP_INVALIDOPCODE = 0xff
 
     class txstate(Enum):
-        START   = "start"
-        CANCEL  = "cancel"
-        END     = "end"
-        STOP    = "stop"
-        BTCMARK = "btcmark"
-        MARK    = "mark"
-        UNKNOWN = "unknown"
+        START   = 0x0000
+        CANCEL  = 0x0001
+        END     = 0x0002
+        STOP    = 0x0003
+        BTCMARK = 0x0004
+        MARK    = 0x0005
+        UNKNOWN = 0xFFFF
 
     class txtype(Enum):
+        BTCMARK= 0x1030
+        MARK   = 0x2000
+        B2VMAP = 0x3000
+        B2VUSD = 0x4000
+        B2VEUR = 0x4010
+        B2VSGD = 0x4020
+        B2VGBP = 0x4030
+        B2LUSD = 0x5000
+        B2LEUR = 0x5010
+        B2LSGD = 0x5020
+        B2LGBP = 0x5030
+        UNKNOWN= 0xFFFF
+
+    class txcodetype(Enum):
         BTCMARK_BTCMARK = 0x1030
         V2BMARK_MARK    = 0x2000
         #btc mapping violas btc
@@ -238,30 +252,48 @@ class payload(baseobject):
         self.bigendian_flag = self.is_bigendian()
         self.__init_version()
         self.__init_type_with_version()
+        self.__init__type_datas_parse()
         self._reset(None)
+        setattr(self, "version", self.versions.VERSION_3)
 
     def __init_type_with_version(self):
         self._type_version = {}
-        for tv in self.txtype:
+        for tv in self.txcodetype:
             self.type_version.update({tv:{"version" : [self.version_3], "block": 0}})
 
         #reset 
-        self.type_version[self.txtype.BTCMARK_BTCMARK]["version"].extend( \
+        self.type_version[self.txcodetype.BTCMARK_BTCMARK]["version"].extend( \
                 [self.version_0, self.version_1, self.version_2])
 
+    def __init__type_datas_parse(self):
+        self._type_funcs = {}
+        for txcodetype in self.txcodetype:
+            if txcodetype != self.txcodetype.UNKNOWN:
+                state = self.get_state_from_txcodetype(txcodetype)
+                if state == self.txstate.START:
+                    self.type_funcs.update({txcodetype : parse_exchange.parse_ex_start})
+                elif state == self.txstate.CANCEL:
+                    self.type_funcs.update({txcodetype : parse_exchange.parse_ex_cancel})
+                elif state == self.txstate.END:
+                    self.type_funcs.update({txcodetype : parse_exchange.parse_ex_end})
+                elif state == self.txstate.STOP:
+                    self.type_funcs.update({txcodetype : parse_exchange.parse_ex_stop})
+                elif state == self.txstate.MARK:
+                    self.type_funcs.update({txcodetype : parse_exchange.parse_ex_mark})
+                elif state == self.txstate.BTCMARK:
+                    self.type_funcs.update({txcodetype : parse_exchange.parse_btc_mark})
+                else:
+                    raise Exception("not found state({state}) function.")
 
     def __init_version(self):
         for item in self.versions:
-            setter(item.name.lower(), item.value)
-
-    @property
-    def type_version(self):
-        return self._type_version
+            setattr(self, item.name.lower(), item.value)
 
     def _reset(self, payload):
         self.payload_hex= payload
         self.tx_version = 0
         self.tx_type = self.txtype.UNKNOWN
+        self.tx_codetype = self.txcodetype.UNKNOWN
         self.tx_state = self.txstate.UNKNOWN
         self.op_code = self.optcodetype.OP_INVALIDOPCODE
         self.op_data = None
@@ -271,6 +303,14 @@ class payload(baseobject):
         self.is_valid = False
 
     @property
+    def type_funcs(self):
+        return self._type_funcs
+
+    @property
+    def type_version(self):
+        return self._type_version
+
+    @property
     def is_valid(self):
         return self.__is_valid
 
@@ -278,17 +318,7 @@ class payload(baseobject):
     def is_valid(self, value):
         self.__is_valid = value
 
-
-    def txtype_map_proof_type(self, txtype):
-        raise Exception("not support txtype_map_proof_type")
-        if txtype in []:
-            return "b"
-        elif txtype == self.txtype.EX_MARK:
-            return "v"
-        else:
-            return None
-
-    #state is txtype
+    #state is txstate
     @classmethod 
     def state_value_to_name(self, state):
         return state.name.lower()
@@ -304,6 +334,18 @@ class payload(baseobject):
         except Exception as e:
             pass
         return self.txtype.UNKNOWN
+
+    @classmethod
+    def codetype_value_to_txcodetype(self, value):
+        try:
+            return self.txcodetype(value)
+        except Exception as e:
+            pass
+        return self.txcodetype.UNKNOWN
+
+    @classmethod
+    def compose_txcodetype(self, left, right):
+        return self.txcodetype[f"{left.upper()}_{right.upper()}"]
 
     @classmethod
     def is_bigendian(self):
@@ -340,6 +382,14 @@ class payload(baseobject):
     @tx_type.setter
     def tx_type(self, txtype):
         self.__txtype = txtype
+
+    @property
+    def tx_codetype(self):
+        return self.__txcodetype
+
+    @tx_codetype.setter
+    def tx_codetype(self, txcodetype):
+        self.__txcodetype = txcodetype
 
     @property
     def tx_state(self):
@@ -408,6 +458,25 @@ class payload(baseobject):
         self.tx_type = None
         self.tx_state = None
 
+
+    def get_state_from_txcodetype(self, txcodetype):
+        if txcodetype == self.txcodetype.UNKNOWN:
+            return self.txstate.UNKNOWN
+
+        type_state = txcodetype.name.lower().split("_")
+        assert len(type_state) == 2, f"txcodetype({txcodetype.name}) is invalid."
+        state = type_state[1]
+        return self.txstate[state.upper()]
+
+    def get_type_from_txcodetype(self, txcodetype):
+        if txcodetype == self.txcodetype.UNKNOWN:
+            return self.txstate.UNKNOWN
+
+        type_state= txcodetype.name.lower().split("_")
+        assert len(type_state) == 2, f"txcodetype({txcodetype.name}) is invalid."
+        txtype = type_state[0]
+        return self.txtype[txtype.upper()]
+
     def is_allow_mark(self, mark):
         return self.valid_mark == mark
 
@@ -415,9 +484,13 @@ class payload(baseobject):
         #EnumUtils.isValidEnum(self.txtype.class, txtype)
         return txtype.value in self.txtype._value2member_map_ and txtype != self.txtype.UNKNOWN
     
-    def is_allow_opreturn(self, txtype, version, block = None):
-        type_version = self.type_version.get(txtype)
-        if not self.is_allow_txtype(txtype):
+    def is_allow_txcodetype(self, txcodetype):
+        #EnumUtils.isValidEnum(self.txcodetype.class, txcodetype)
+        return txcodetype.value in self.txcodetype._value2member_map_ and txcodetype != self.txcodetype.UNKNOWN
+
+    def is_allow_opreturn(self, txcodetype, version, block = None):
+        type_version = self.type_version.get(txcodetype)
+        if not self.is_allow_txcodetype(txcodetype):
             return False
         if type_version is None:
             return False
@@ -430,18 +503,11 @@ class payload(baseobject):
 
     def parse_data(self):
         try:
-            if self.tx_type == self.txtype.EX_START:
-                ret = parse_exchange.parse_ex_start(self.op_data)
-            elif self.tx_type == self.txtype.EX_END:
-                ret = parse_exchange.parse_ex_end(self.op_data)
-            elif self.tx_type == self.txtype.EX_CANCEL:
-                ret = parse_exchange.parse_ex_cancel(self.op_data)
-            elif self.tx_type == self.txtype.BTC_MARK:
-                ret = parse_exchange.parse_btc_mark(self.op_data)
-            elif self.tx_type == self.txtype.EX_MARK:
-                ret = parse_exchange.parse_ex_mark(self.op_data)
+            if self.tx_codetype in self.type_funcs:
+                print(self.tx_codetype)
+                ret = self.type_funcs[self.tx_codetype](self.op_data)
             else:
-                ret = result(error.TRAN_INFO_INVALID, f"tx type({self.tx_type.value}) is invalid.")
+                ret = result(error.TRAN_INFO_INVALID, f"tx type({self.tx_codetype.value}) is invalid.")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -554,8 +620,10 @@ class payload(baseobject):
             if data_offer + 2 >= data_len:
                 return result(error.ARG_INVALID, "tx type not found.")
 
-            tx_type = struct.unpack_from('>H', bdata, data_offer)[0]
-            self.tx_type = self.state_value_to_txtype(tx_type)
+            tx_codetype = struct.unpack_from('>H', bdata, data_offer)[0]
+            self.tx_codetype = self.codetype_value_to_txcodetype(tx_codetype)
+            self.tx_state = self.get_state_from_txcodetype(self.tx_codetype)
+            self.tx_type = self.get_type_from_txcodetype(self.tx_codetype)
             data_offer = data_offer + 2
 
             self.op_data = bdata[data_offer:]
@@ -565,13 +633,14 @@ class payload(baseobject):
                 return ret
 
             self.proof_data = ret.datas
-            self.is_valid = self.is_allow_opreturn(self.tx_type, self.tx_version) and self.is_allow_mark(self.op_mark)
+            self.is_valid = self.is_allow_opreturn(self.tx_codetype, self.tx_version) and self.is_allow_mark(self.op_mark)
             datas = {
                     "opcode" : self.op_code.name,
                     "datasize": self.op_size,
                     "mark" : self.op_mark,
                     "version": self.tx_version,
                     "type": self.tx_type.name,
+                    "state": self.tx_state.name,
                     "proof": self.proof_data,
                     "valid": self.is_valid,
                     }
@@ -624,9 +693,9 @@ class payload(baseobject):
         except Exception as e:
             ret = parse_except(e)
         return ret
-    def create_payload(self, txver, txtype, data):
+    def create_payload(self, txver, txcodetype, data):
         try:
-            # mark.size + ver.size + txtype.sizde + data.size
+            # mark.size + ver.size + txcodetype.sizde + data.size
             size = len(self.valid_mark) + 2 + 2 + len(data)
             ret = self.create_opt_buf(size)
             if ret.state != error.SUCCEED:
@@ -637,7 +706,7 @@ class payload(baseobject):
             struct.pack_into(f">{len(self.valid_mark)}sHH", datas, offer, 
                     str.encode(self.valid_mark),
                     txver,
-                    txtype.value
+                    txcodetype.value
                     )
 
             index = offer + len(self.valid_mark) + 4
@@ -651,56 +720,73 @@ class payload(baseobject):
             ret = parse_except(e)
         return ret
 
-    def create_ex_start(self, toaddress, sequence, module):
+    def create_ex_start(self, swap_type, toaddress, sequence, module):
         try:
             ret = create_exchange.create_ex_start(toaddress, sequence, module)
             if ret.state != error.SUCCEED:
                 return ret
             
-            ret = self.create_payload(self.version_1, self.txtype.EX_START, ret.datas)
+            txcodetype = self.compose_txcodetype(swap_type, "start")
+            ret = self.create_payload(self.version, txcodetype, ret.datas)
         except Exception as e:
             ret = parse_except(e)
         return ret
     
-    def create_ex_end(self, toaddress, sequence, amount, version):
-        try:
-            ret = create_exchange.create_ex_end(toaddress, sequence, amount, version)
-            if ret.state != error.SUCCEED:
-                return ret
-            
-            ret = self.create_payload(self.version_1, self.txtype.EX_END, ret.datas)
-        except Exception as e:
-            ret = parse_except(e)
-        return ret
-    
-    def create_ex_cancel(self, toaddress, sequence):
+    def create_ex_cancel(self, swap_type, toaddress, sequence):
         try:
             ret = create_exchange.create_ex_cancel(toaddress, sequence)
             if ret.state != error.SUCCEED:
                 return ret
             
-            ret = self.create_payload(self.version_1, self.txtype.EX_CANCEL, ret.datas)
+            txcodetype = self.compose_txcodetype(swap_type, "cancel")
+            ret = self.create_payload(self.version, txcodetype, ret.datas)
         except Exception as e:
             ret = parse_except(e)
         return ret
     
-    def create_ex_mark(self, toaddress, sequence, version, amount):
+    def create_ex_end(self, swap_type, toaddress, sequence, amount, version):
+        try:
+            ret = create_exchange.create_ex_end(toaddress, sequence, amount, version)
+            if ret.state != error.SUCCEED:
+                return ret
+            
+            txcodetype = self.compose_txcodetype(swap_type, "end")
+            ret = self.create_payload(self.version, txcodetype, ret.datas)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+    
+    def create_ex_stop(self, swap_type, toaddress, sequence):
+        try:
+            ret = create_exchange.create_ex_stop(toaddress, sequence)
+            if ret.state != error.SUCCEED:
+                return ret
+            
+            txcodetype = self.compose_txcodetype(swap_type, "stop")
+            ret = self.create_payload(self.version, txcodetype, ret.datas)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+    
+    def create_ex_mark(self, swap_type, toaddress, sequence, version, amount):
         try:
             ret = create_exchange.create_ex_mark(toaddress, sequence, version, amount)
             if ret.state != error.SUCCEED:
                 return ret
             
-            ret = self.create_payload(self.version_1, self.txtype.EX_MARK, ret.datas)
+            txcodetype = self.compose_txcodetype(swap_type, "mark")
+            ret = self.create_payload(self.version, txcodetype, ret.datas)
         except Exception as e:
             ret = parse_except(e)
         return ret
-    def create_btc_mark(self, toaddress, sequence, amount, name):
+    def create_btc_mark(self, swap_type, toaddress, sequence, amount, name):
         try:
             ret = create_exchange.create_btc_mark(toaddress, sequence, amount, name)
             if ret.state != error.SUCCEED:
                 return ret
             
-            ret = self.create_payload(self.version_1, self.txtype.BTC_MARK, ret.datas)
+            txcodetype = self.compose_txcodetype(swap_type, "btcmark")
+            ret = self.create_payload(self.version, sequence, ret.datas)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -709,7 +795,7 @@ class payload(baseobject):
     #open_return + violas 
     
 #start
-opstr = "6a4c5276696f6c617300003000f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2"
+opstr = "6a3276696f6c617300033000c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6524689a4f870c46d6a5d901b5ac1fdb2"
 
     ###txid: f30a9f9497b97aa5f95a46f1bd6fceeb26241686526068c309dee8d8fafc0a97
     ###to_address:f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c6 
@@ -717,10 +803,10 @@ opstr = "6a4c5276696f6c617300003000f086b6a2348ac502c708ac41d06fe824c91806cabcd5b
     ###token:cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2
    
 #end (manual create, can't found txid)
-opstr_end = "6a4376696f6c617300003001f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b60000000000002710000000000000271A"
+opstr_end = "6a2276696f6c617300033003c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6"
 
 #btc_mark (manual create, can't found txid)
-opstr_btc_mark = "6a4276696f6c617300001030f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6000000000000271076696f6c6173"
+opstr_btc_mark = "6a3176696f6c617300031030c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6000000000000271076696f6c617300"
 def check(src, dest):
     return src == dest
 
@@ -740,9 +826,9 @@ def test_np():
     assert ret.state == error.SUCCEED, f"parse OP_RETURN failed.{ret.message}"
 
 def test_exchange():
-    toaddress = "dcfa787ecb304c20ff24ed6b5519c2e5cae5f8464c564aabb684ecbcc19153e9"
+    toaddress = "5cae5f8464c564aabb684ecbcc19153e9"
     sequence = 20200511
-    module = "00000000000000000000000000000000e1be1ab8360a35a0259f1c93e3eac736"
+    module = "e1be1ab8360a35a0259f1c93e3eac736"
     print(f'''************************************************************************create ex start
     toaddress:{toaddress}
     sequence: {sequence}
@@ -786,9 +872,9 @@ def test_exchange():
 
 def test_payload():
     pl = payload(name)
-    toaddress = "dcfa787ecb304c20ff24ed6b5519c2e5cae5f8464c564aabb684ecbcc19153e9"
+    toaddress = "cae5f8464c564aabb684ecbcc19153e9"
     sequence = 20200511
-    module = "00000000000000000000000000000000e1be1ab8360a35a0259f1c93e3eac736"
+    module = "e1be1ab8360a35a0259f1c93e3eac736"
     print(f'''************************************************************************create ex start
     toaddress:{toaddress}
     sequence: {sequence}

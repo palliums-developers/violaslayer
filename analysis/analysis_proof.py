@@ -40,16 +40,31 @@ class aproof(aproofbase):
         super().stop()
 
     def is_valid_proofstate_change(self, new_state, old_state):
-        if new_state == payload.txtype.UNKNOWN:
-            return False
-
-        if new_state == payload.txtype.EX_START:
+        if new_state == payload.txstate.START:
             return True
 
-        if new_state in (payload.txtype.EX_END, payload.txtype.EX_CANCEL) and old_state != payload.txtype.EX_START:
-            return False
-        return True
+        if new_state in (payload.txstate.END, payload.txstate.CANCEL, payload.txstate.STOP) and old_state == payload.txstate.START:
+            return True
 
+        if new_state in (payload.txstate.STOP) and old_state == payload.txstate.CANCEL:
+            return True
+
+        return False
+
+    def has_update_state_authority(self, state, old_tran_info, new_tran_info):
+        #only recevier can change state (start -> end/cancel)
+
+        old_sender = old_tran_info["issuer"]
+        old_receiver = old_tran_info["receiver"]
+        new_sender = new_tran_info["issuer"]
+        new_receiver = new_tran_info["receiver"]
+
+        if state in (payload.txstate.END, payload.txstate.STOP):
+            return old_receiver == new_sender
+        elif state == self.proofstate.CANCEL:
+            return old_sender == new_sender
+
+        return False
     def update_proof_info(self, tran_info):
         try:
             self._logger.debug(f"start update_proof_info tran info: {tran_info}")
@@ -57,7 +72,7 @@ class aproof(aproofbase):
             tran_id = None
             new_proof = False
             new_proofstate = tran_info.get("state", "")
-            if new_proofstate == payload.txtype.EX_START:
+            if new_proofstate == payload.txstate.START:
                 new_proof = True
 
             self._dbclient.use_collection_datas()
@@ -75,6 +90,7 @@ class aproof(aproofbase):
                 #create tran id
 
                 tran_info["tran_id"] = tran_id
+                tran_info["type"] = self.prooftype_value_to_name(tran_info["type"])
                 tran_info["state"] = self.proofstate_value_to_name(tran_info["state"])
                 ret = self._dbclient.set_proof(tran_id, tran_info)
                 if ret.state != error.SUCCEED:
@@ -108,11 +124,9 @@ class aproof(aproofbase):
                     return result(error.TRAN_INFO_INVALID, f"change state to {new_proofstate.name} is invalid. \
                             old state is {old_proofstate.name}. tran id: {tran_id}")
 
-                #only recevier can change state (start -> end/cancel)
-                if db_tran_info.get("receiver", "start state receiver") != tran_info.get("issuer", "to end address"):
-                    return result(error.TRAN_INFO_INVALID, f"change state error. issuer[state = end] != recever[state = start] \
-                            issuer: {tran_info.get('receiver')}  receiver : {db_tran_info.get('issuer')} tran_id = {tran_id}") 
-
+                #only recevier can change state
+                if not self.has_update_state_authority(new_proofstate, db_tran_info, tran_info):
+                    return result(error.TRAN_INFO_INVALID, f"change state error. check transaction's issuer is valid.") 
                 
                 db_tran_info["state"] = self.proofstate_value_to_name(tran_info["state"])
                 db_tran_info["vheight"] = tran_info["vheight"]

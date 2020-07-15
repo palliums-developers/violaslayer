@@ -52,10 +52,14 @@ class works:
     def work_bfilter(self, nsec):
         try:
             logger.critical("start: btc filter")
-            while (self.__work_looping.get(work_mod.BFILTER.name, False)):
+            nsec = kargs.get("nsec", 0)
+            mod = kargs.get("mod")
+            assert mod is not None, f"mod name is None"
+
+            dtype = self.get_dtype_from_mod(mod)
+            while (self.__work_looping.get(mod, False)):
                 logger.debug("looping: btc filter")
                 try:
-                    dtype = "bfilter"
                     obj = analysis_filter.afilter(name="bfilter",  \
                             dbconf=stmanage.get_db("base"), \
                             nodes=stmanage.get_btc_conn())
@@ -73,19 +77,22 @@ class works:
     def work_b2vproof(self, nsec):
         try:
             logger.critical("start: btc b2v proof")
-            while (self.__work_looping.get(work_mod.B2VPROOF.name, False)):
-                logger.debug("looping: b2vproof")
+            nsec = kargs.get("nsec", 0)
+            mod = kargs.get("mod")
+            assert mod is not None, f"mod name is None"
+
+            #libra transaction's data types 
+            dtype = self.get_dtype_from_mod(mod)
+            while (self.__work_looping.get(mod, False)):
+                logger.debug(f"looping: {mod}")
                 try:
                     basedata = "base"
-                    dtype = "b2vproof"
                     obj = analysis_proof.aproof(name="b2vproof", \
                             dbconf=stmanage.get_db(dtype), \
                             fdbconf=stmanage.get_db(basedata), \
                             nodes = stmanage.get_btc_conn() \
                             )
                     obj.append_valid_txtype(payload.txtype.EX_CANCEL)
-                    obj.append_valid_txtype(payload.txtype.EX_END)
-                    obj.append_valid_txtype(payload.txtype.EX_START)
                     obj.set_step(stmanage.get_db(dtype).get("step", 100))
                     self.set_work_obj(obj)
                     obj.start()
@@ -100,18 +107,23 @@ class works:
     def work_markproof(self, nsec):
         try:
             logger.critical("start: mark proof")
-            while (self.__work_looping.get(work_mod.MARKPROOF.name, False)):
+            nsec = kargs.get("nsec", 0)
+            mod = kargs.get("mod")
+            assert mod is not None, f"mod name is None"
+
+            #libra transaction's data types 
+            dtype = self.get_dtype_from_mod(mod)
+            while (self.__work_looping.get(mod, False)):
                 logger.debug("looping: markproof")
                 try:
                     basedata = "base"
-                    dtype = "markproof"
                     obj = analysis_mark.amarkproof(name="markproof", \
                             dbconf=stmanage.get_db(dtype), \
                             fdbconf=stmanage.get_db(basedata), \
                             nodes = stmanage.get_btc_conn() \
                             )
-                    obj.append_valid_txtype(payload.txtype.BTC_MARK)
-                    obj.append_valid_txtype(payload.txtype.EX_MARK)
+                    obj.append_valid_txtype(payload.txtype.BTCMARK_BTCMARK)
+                    obj.append_valid_txtype(payload.txtype.V2BMARK_MARK)
                     obj.set_step(stmanage.get_db(dtype).get("step", 100))
                     self.set_work_obj(obj)
                     obj.start()
@@ -126,7 +138,11 @@ class works:
     def work_comm(self, nsec):
         try:
             logger.critical("start: comm")
-            while(self.__work_looping.get(work_mod.COMM.name, False)):
+            nsec = kargs.get("nsec", 0)
+            mod = kargs.get("mod")
+            assert mod is not None, f"mod name is None"
+
+            while(self.__work_looping.get(mod, False)):
                 logger.debug("looping: comm")
                 sleep(nsec)
         except Exception as e:
@@ -139,27 +155,63 @@ class works:
         __threadId = 0
         __nsec = 1
         __work = ""
-        def __init__(self, work, threadId, name, nsec):
+        def __init__(self, work, threadId, name, **kwargs):
             logger.debug("work thread __init__: name = %s  nsec = %i" ,name, nsec)
             threading.Thread.__init__(self)
             self.__threadId = threadId
             self.__name = name
-            self.__nsec = nsec
+            self.__kwargs = kwargs
             self.__work = work
 
         def run(self):
-            logger.debug("work thread run")
-            self.__work(self.__nsec)
+            logger.debug(f"work thread run{self.__kwargs}")
+            self.__work(**self.__kwargs)
+
+    def get_dtype_from_mod(self, modname):
+        dtype = modname.lower()
+        if dtype[:3] in ["b2l", "b2v"]:
+            if dtype.endswith("proof"):
+                return dtype[:-5]
+        return dtype
 
     def thread_append(self, work, mod):
         try:
             #b2v = self.work_thread(work, threadId, name, nsec)
-            obj = self.work_thread(work, mod.value, mod.name.lower(), stmanage.get_looping_sleep(mod.name.lower()))
+            obj = self.work_thread(work, mod.value, mod.name.lower(), \
+                    stmanage.get_looping_sleep(mod.name.lower()), \
+                    mod = mod.name.lower())
             self.__threads.append(obj)
         except Exception as e:
             parse_except(e)
         finally:
             logger.debug("thread_append")
+
+    def create_func_dict(self, mod, func):
+        return {mod.name.lower() : func}
+
+    @property
+    def funcs_map(self):
+        return self.__funcs_map
+
+    def init_func_map(self):
+        self.__funcs_map = {}
+        #append proof
+        for item in work_mod:
+            name = item.name
+            if name == "BFILTER":
+                self.__funcs_map.update(self.create_func_dict(item, self.work_bfilter))
+            elif name == "B2VPROOF":
+                self.funcs_map.update(self.create_func_dict(item, self.work_b2vproof))
+            elif name.startswith("B2V") and len(name) == 8 and name.endswith("PROOF"):
+                self.__funcs_map.update(self.create_func_dict(item, self.work_b2vmapproof))
+            elif name.startswith("B2L") and len(name) == 11 and name.endswith("PROOF"):
+                self.__funcs_map.update(self.create_func_dict(item, self.work_b2vswapproof))
+            elif name.startswith("B2V") and len(name) == 11 and name.endswith("EX"):
+                self.__funcs_map.update(self.create_func_dict(item, self.work_b2lswapproof))
+            elif name == "COMM":
+                self.__funcs_map.update(self.create_func_dict(item, self.work_comm))
+            else:
+                logger.warning(f"not matched function:{item}")
 
     def start(self, work_mods):
         try:
@@ -167,16 +219,9 @@ class works:
 
             self.__work_looping = work_mods
 
-            self.thread_append(self.work_comm, work_mod.COMM)
-
-            if work_mods.get(work_mod.BFILTER.name, False):
-                self.thread_append(self.work_bfilter, work_mod.BFILTER)
-
-            if work_mods.get(work_mod.B2VPROOF.name, False):
-                self.thread_append(self.work_b2vproof, work_mod.B2VPROOF)
-
-            if work_mods.get(work_mod.MARKPROOF.name, False):
-                self.thread_append(self.work_markproof, work_mod.MARKPROOF)
+            for name, state in work_mods.items():
+                if state:
+                    self.thread_append(self.funcs_map[name.lower()], work_mod[name.upper()])
 
             for work in self.__threads:
                 work.start() #start work
@@ -210,8 +255,16 @@ class works:
 class work_mod(Enum):
     COMM        = 0
     BFILTER     = 1
-    B2VPROOF    = 2
-    MARKPROOF   = 3
+    MARKPROOF   = 2
+    B2VPROOF    = 4
+    B2VUSDPROOF    = 10
+    B2VEURPROOF    = 11
+    B2VSGDPROOF    = 12
+    B2VGBPPROOF    = 13
+    B2lUSDPROOF    = 20
+    B2lEURPROOF    = 21
+    B2lSGDPROOF    = 22
+    B2lGBPPROOF    = 23
 
 logger = log.logger.getLogger(name)
 work_manage = works()
@@ -232,6 +285,8 @@ def list_valid_mods():
     return valid_mods
 
 def run(mods):
+    stmanage.reset()
+
     valid_mods = list_valid_mods()
     for mod in mods:
         if mod is None or mod not in valid_mods:

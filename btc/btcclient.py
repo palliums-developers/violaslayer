@@ -688,15 +688,17 @@ def test_createrawtransaction():
         combin_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
         sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
         pl = payload(name)
-        toaddress = "dcfa787ecb304c20ff24ed6b5519c2e5cae5f8464c564aabb684ecbcc19153e9"
+        toaddress = "cae5f8464c564aabb684ecbcc19153e9"
         sequence = 20200512001
-        module = "00000000000000000000000000000000e1be1ab8360a35a0259f1c93e3eac736"
+        module = "e1be1ab8360a35a0259f1c93e3eac736"
+        swap_type = "b2vusd"
+
         print(f'''************************************************************************create ex start
         toaddress:{toaddress}
         sequence: {sequence}
         module:{module}
 **********************************************************************************''')
-        ret = pl.create_ex_start(toaddress, sequence, module)
+        ret = pl.create_ex_start(swap_type, toaddress, sequence, module)
         assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
         data = ret.datas
 
@@ -742,7 +744,7 @@ def test_sendtoaddress():
         toaddress = "dcfa787ecb304c20ff24ed6b5519c2e5cae5f8464c564aabb684ecbcc19153e9"
         sequence = int(time.time())
         module = "00000000000000000000000000000000e1be1ab8360a35a0259f1c93e3eac736"
-        ret = pl.create_ex_start(toaddress, sequence, module)
+        ret = pl.create_ex_start(swap_type, toaddress, sequence, module)
         assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
         data = ret.datas
 

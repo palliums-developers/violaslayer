@@ -64,6 +64,19 @@ def create_ex_cancel(toaddress, sequence):
         ret = parse_except(e)
     return ret
 
+def create_ex_stop(toaddress, sequence):
+    try:
+        btoaddress = bytes.fromhex(toaddress)
+        datas = create_string_buffer(len(btoaddress) + 8)
+
+        data_offer = 0
+        struct.pack_into(f">{len(btoaddress)}sQ", datas, data_offer, btoaddress, sequence)
+
+        ret = result(error.SUCCEED, datas = datas)
+    except Exception as e:
+        ret = parse_except(e)
+    return ret
+
 def create_ex_mark(toaddress, sequence, version, amount):
     try:
         btoaddress = bytes.fromhex(toaddress)

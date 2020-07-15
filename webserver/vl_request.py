@@ -37,6 +37,7 @@ def main():
     print(f"args: {args}")
     opt     = args.get("opt")
     opttype = args.get("type")
+    state = args.get("state")
     datatype = args.get("datatype", "record")
 
     if opt is None:
@@ -49,37 +50,59 @@ def main():
     elif opt == "check":
         return check_record(args)
     elif opt == "set":
-        #btc transaction
-        fromaddress     = args.get("fromaddress")
-        toaddress       = args.get("toaddress")
-        toamount        = float(args.get("toamount"))
-        fromprivkeys    = args.get("fromprivkeys")
-        print(f"fromprivkeys:{fromprivkeys}")
-        combine         = args.get("combine")
-
-        #payload 
-        vreceiver       = args.get("vreceiver")
-        sequence        = int(args.get("sequence"))
-        if fromprivkeys is not None:
-            fromprivkeys = json.loads(fromprivkeys)
-
-        if opttype == "start":
-            module          = args.get("module")
-            return btc_send_exproof_start(fromaddress, toaddress, toamount, fromprivkeys, combine, \
-                    vreceiver, sequence, module)
-        elif opttype in ("end", "mark"):
-            version  = int(args.get("version"))
-            if opttype == "end":
-                amount   = float(args.get("amount"))
-                return btc_send_exproof_end(fromaddress, toaddress, toamount, fromprivkeys, combine, \
-                        vreceiver, sequence, amount, version)
-            else:
-                return btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combine, \
-                        vreceiver, sequence, toamount, version)
-        else:
-            raise Exception(f"type:{type} not found.")
+        return execute_set(args)
     else:
         raise Exception(f"opt:{opt} not found.")
+
+def execute_set(args):
+    opt     = args.get("opt")
+    opttype = args.get("type")
+    state = args.get("state")
+    #btc transaction
+    fromaddress     = args.get("fromaddress")
+    toaddress       = args.get("toaddress")
+    toamount        = float(args.get("toamount"))
+    fromprivkeys    = args.get("fromprivkeys")
+    combine         = args.get("combine")
+
+    #payload 
+    vreceiver       = args.get("vreceiver")
+    sequence        = int(args.get("sequence"))
+    if fromprivkeys is not None:
+        fromprivkeys = json.loads(fromprivkeys)
+
+    if state == "start":
+        module          = args.get("module")
+        return btc_send_exproof_start(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
+                vreceiver, sequence, module)
+    elif state in ("end", "mark"):
+        version  = int(args.get("version"))
+        if state == "end":
+            amount   = float(args.get("amount"))
+            return btc_send_exproof_end(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
+                    vreceiver, sequence, amount, version)
+        else:
+            return btc_send_exproof_mark(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
+                    vreceiver, sequence, toamount, version)
+    elif state == "cancel":
+        return btc_send_exproof_cancel(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
+                vreceiver, sequence)
+    elif state == "stop":
+        return btc_send_exproof_stop(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
+                vreceiver, sequence)
+    else:
+        raise Exception(f"type:{type} not found.")
+
+def get_b2vswap_type():
+    return []
+
+def get_b2lswap_type():
+    return []
+
+def get_swap_type():
+    types = []
+    types.extend(get_b2vswap_type())
+    types.extend(get_b2lswap_type())
 
 def opttype_to_dbname(opttype):
     dbname = ""
@@ -89,11 +112,21 @@ def opttype_to_dbname(opttype):
         return "base"
     elif opttype in ("mark", "btcmark"):
         return "markproof"
+    elif opttype in get_swap_type():
+        return opttype
     else:
         return ""
 
+def list_dbname_for_swap():
+    dbnames = ["b2v"]
+    dbnames.extend(get_b2vswap_type())
+    dbnames.extend(get_b2lswap_type())
+    return dbnames
+
 def list_dbname_for_get_latest_ver():
-    return ("b2v", "b2vproof", "filter", "mark", "btcmark")
+    dbnames = ["b2vproof", "filter", "mark", "btcmark"}
+    dbnames.extend(list_dbname_for_swap())
+    return dbnames
 
 def get_version(args):
     opttype = args.get("type")
@@ -110,7 +143,7 @@ def get_record(args):
     opttype = args.get("type")
     client = get_request_client(opttype_to_dbname(opttype))
 
-    if opttype == "b2v":
+    if opttype == "b2v" or optype in get_b2vswap_type():
         state = args.get("state")
         return list_exproof_state(client, receiver, state, cursor, limit)
     elif opttype == "filter":
@@ -133,7 +166,7 @@ def check_record(args):
     opttype = args.get("type")
     client = get_request_client(opttype_to_dbname(opttype))
 
-    if opttype == "b2v":
+    if opttype in list_dbname_for_swap():
         address = args.get("address")
         sequence = int(args.get("sequence"))
         return check_proof_is_complete(client, address, sequence)
@@ -164,12 +197,12 @@ def btc_list_address_unspent(address, minconf = 0, maxconf = 99999999):
         ret = parse_except(e)
     return request_ret(ret)
 
-def btc_send_exproof_start(fromaddress, toaddress, toamount, fromprivkeys, combine, \
+def btc_send_exproof_start(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
         vreceiver, sequence, module):
     try:
         bclient = get_btcclient()
         pl = payload(name)
-        ret = pl.create_ex_start(vreceiver, sequence, module)
+        ret = pl.create_ex_start(opttype, vreceiver, sequence, module)
         assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
         data = ret.datas
 
@@ -179,12 +212,12 @@ def btc_send_exproof_start(fromaddress, toaddress, toamount, fromprivkeys, combi
         ret = parse_except(e)
     return request_ret(ret)
     
-def btc_send_exproof_end(fromaddress, toaddress, toamount, fromprivkeys, combine, \
+def btc_send_exproof_end(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
         vreceiver, sequence, amount, version):
     try:
         bclient = get_btcclient()
         pl = payload(name)
-        ret = pl.create_ex_end(vreceiver, sequence, int(amount * COINS), version)
+        ret = pl.create_ex_end(opttype, vreceiver, sequence, int(amount * COINS), version)
         assert ret.state == error.SUCCEED, f"payload create_ex_end.{ret.message}"
         data = ret.datas
 
@@ -194,12 +227,42 @@ def btc_send_exproof_end(fromaddress, toaddress, toamount, fromprivkeys, combine
         ret = parse_except(e)
     return request_ret(ret)
 
-def btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combine, \
+def btc_send_exproof_cancel(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
+        vreceiver, sequence):
+    try:
+        bclient = get_btcclient()
+        pl = payload(name)
+        ret = pl.create_ex_cancel(opttype, vreceiver, sequence)
+        assert ret.state == error.SUCCEED, f"payload create_ex_cancel.{ret.message}"
+        data = ret.datas
+
+        ret = bclient.sendtoaddress(fromaddress, toaddress, toamount, fromprivkeys, \
+                data = data, combine = combine)
+    except Exception as e:
+        ret = parse_except(e)
+    return request_ret(ret)
+
+def btc_send_exproof_stop(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
+        vreceiver, sequence):
+    try:
+        bclient = get_btcclient()
+        pl = payload(name)
+        ret = pl.create_ex_stop(opttype, vreceiver, sequence)
+        assert ret.state == error.SUCCEED, f"payload create_ex_stop.{ret.message}"
+        data = ret.datas
+
+        ret = bclient.sendtoaddress(fromaddress, toaddress, toamount, fromprivkeys, \
+                data = data, combine = combine)
+    except Exception as e:
+        ret = parse_except(e)
+    return request_ret(ret)
+
+def btc_send_exproof_mark(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
         vreceiver, sequence, amount, version):
     try:
         bclient = get_btcclient()
         pl = payload(name)
-        ret = pl.create_ex_mark(vreceiver, sequence, version, int(COINS * amount))
+        ret = pl.create_ex_mark(opttype, vreceiver, sequence, version, int(COINS * amount))
         assert ret.state == error.SUCCEED, f"payload create_ex_mark.{ret.message}"
         data = ret.datas
 
@@ -231,12 +294,7 @@ def list_exproof_state(client, receiver, state_name, cursor = 0, limit = 10):
 
         state = client.proofstate[state_name.upper()]
 
-        if state == client.proofstate.START:
-            ret = client.list_exproof_start(receiver, cursor, limit)
-        elif state == client.proofstate.END:
-            ret = client.list_exproof_end(receiver, cursor, limit)
-        else:
-            raise Exception(f"state{state} is invalid.")
+        ret = client.list_exproof_with_state(receiver, state, cursor, limit)
 
     except Exception as e:
         ret = parse_except(e)
