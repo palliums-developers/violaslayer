@@ -237,10 +237,11 @@ class btcclient(baseobject):
         try:
             self._logger.debug(f"estimatesmartfee(target={target}, mode={mode})")
             datas = self.__rpc_connection.estimatesmartfee(target, mode)
+            print(f"****{datas}")
             if datas.get("errors") is not None:
                 ret = result(error.FAILED, datas.get("errors"))
-
-            ret = result(error.SUCCEED, "", float(datas.get("feerate")))
+            else:
+                ret = result(error.SUCCEED, "", float(datas.get("feerate")))
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -692,26 +693,32 @@ def test_createrawtransaction():
         sequence = 20200512001
         module = "e1be1ab8360a35a0259f1c93e3eac736"
         swap_type = "b2vusd"
+        amount = 0.000002
+        outamount = int(amount * 100000000) 
+        times = 0
 
         print(f'''************************************************************************create ex start
         toaddress:{toaddress}
         sequence: {sequence}
         module:{module}
 **********************************************************************************''')
-        ret = pl.create_ex_start(swap_type, toaddress, sequence, module)
+        ret = pl.create_ex_start(swap_type, toaddress, sequence, module, outamount, times)
         assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
         data = ret.datas
 
         client = btcclient(name, stmanage.get_btc_conn())
         tran = transaction(name)
         tran.appendoutput(receiver_addr, 0.000001)
-        tran.appendoutput(combin_addr, 0.000002)
+        tran.appendoutput(combin_addr, amount)
         tran.appendoutputdata(data)
         
         ret = tran.getoutputamount()
+        assert ret.state == error.SUCCEED, ret.message
         print("output amount sum: {ret.datas * COINS}")
 
         ret = client.getaddressunspentwithamount(sender_addr, ret.datas * COINS)
+        assert ret.state == error.SUCCEED, ret.message
+
         unspents = ret.datas
         for unspent in unspents:
             tran.appendinput(unspent.get("txid"), unspent.get("vout"))
@@ -728,10 +735,14 @@ def test_createrawtransaction():
         json_print(tran)
         print("*"*30)
 
-        estimatefee = client.estimatesmartfee(6).datas
+        ret = client.estimatesmartfee(1)
+        assert ret.state == error.SUCCEED, ret.message
+        estimatefee = ret.datas
+
         print(f"estimatefee:{estimatefee}")
 
         ret = client.decoderawtransaction(tran.get("hex"))
+        assert ret.state == error.SUCCEED, ret.message
         weight = ret.datas.get("weight")
         ret = client.getminfeerate(estimatefee, weight)
         print(f"transaction minfeerate:{ret.datas:.8f}")
@@ -740,11 +751,15 @@ def test_sendtoaddress():
         receiver_addr = "2N9gZbqRiLKAhYCBFu3PquZwmqCBEwu1ien"
         combin_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
         sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
+        swap_type = payload.txtype.B2VUSD.name.lower()
         pl = payload(name)
-        toaddress = "dcfa787ecb304c20ff24ed6b5519c2e5cae5f8464c564aabb684ecbcc19153e9"
+        toaddress = "cae5f8464c564aabb684ecbcc19153e9"
         sequence = int(time.time())
-        module = "00000000000000000000000000000000e1be1ab8360a35a0259f1c93e3eac736"
-        ret = pl.create_ex_start(swap_type, toaddress, sequence, module)
+        module = "e1be1ab8360a35a0259f1c93e3eac736"
+        amount = 0.0001
+        outamount = amount * 10000
+        times = 0
+        ret = pl.create_ex_start(swap_type, toaddress, sequence, module, outamount, times)
         assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
         data = ret.datas
 
@@ -767,7 +782,8 @@ def main():
         print("end main")
 
 if __name__ == "__main__":
+    stmanage.set_conf_env("../violaslayer.toml")
     #main()
-    #test_createrawtransaction()
-    test_sendtoaddress()
+    test_createrawtransaction()
+    #test_sendtoaddress()
 

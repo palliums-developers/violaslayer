@@ -94,6 +94,7 @@ def execute_set(args):
         raise Exception(f"type:{type} not found.")
 
 def get_b2vswap_type():
+    
     return []
 
 def get_b2lswap_type():
@@ -124,7 +125,7 @@ def list_dbname_for_swap():
     return dbnames
 
 def list_dbname_for_get_latest_ver():
-    dbnames = ["b2vproof", "filter", "mark", "btcmark"}
+    dbnames = ["b2vproof", "filter", "mark", "btcmark"]
     dbnames.extend(list_dbname_for_swap())
     return dbnames
 

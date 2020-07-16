@@ -31,7 +31,12 @@ def create_ex_start(toaddress, sequence, module, outamount, times):
         datas = create_string_buffer(len(btoaddress) + 8 + len(bmodule) + 8 + 2)
 
         data_offer = 0
-        struct.pack_into(f">{len(btoaddress)}sQ{len(bmodule)}sQH", datas, data_offer, btoaddress, sequence, bmodule, outamount, times)
+        struct.pack_into(f">{len(btoaddress)}sQ{len(bmodule)}sQH", datas, data_offer, 
+                btoaddress, 
+                sequence, 
+                bmodule, 
+                outamount, 
+                times)
 
         ret = result(error.SUCCEED, datas = datas)
     except Exception as e:

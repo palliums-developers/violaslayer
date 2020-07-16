@@ -168,6 +168,7 @@ def checkaddressunspent(address, amount):
 
 def init_args(pargs):
     pargs.append("help", "show arg list")
+    pargs.append("conf", "config file path name. default:violaslayer.toml, find from . ", True, "toml file")
     pargs.append("getblockcount", "get block count.")
     pargs.append("getblockhash", "get block hash.", True, ["index"])
     pargs.append("getblockwithhash", "get block info with blockhash.", True, ["blockhash"])
@@ -204,6 +205,14 @@ def run(argc, argv):
 
     names = [opt for opt, arg in opts]
     pargs.check_unique(names)
+
+    #--conf must be first
+    for opt, arg in opts:
+        if pargs.is_matched(opt, ["conf"]):
+            stmanage.set_conf_env(arg)
+            break
+    if stmanage.get_conf_env() is None:
+        stmanage.set_conf_env_default() 
 
     for opt, arg in opts:
         if len(arg) > 0:

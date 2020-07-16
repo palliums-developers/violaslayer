@@ -9,6 +9,20 @@ from comm.functions import json_print
 def check_setting():
     pass
 
+def set_conf_env_default():
+    setting.set_conf_env_default()
+    setting.reset()
+
+def set_conf_env(conffile):
+    setting.set_conf_env(conffile)
+    setting.reset()
+
+def reset():
+    setting.reset()
+
+def get_conf_env():
+    return setting.get_conf_env()
+
 def get_looping_sleep(mtype):
     try:
         sleep = setting.looping_sleep.get(mtype, 1)
@@ -62,6 +76,9 @@ def get_conf():
     return infos
 
 def main():
+    set_conf_env("violaslayer.toml")
+    reset()
+    
     datas = get_conf()
     json_print(datas)
 
