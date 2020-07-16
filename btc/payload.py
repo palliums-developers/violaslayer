@@ -191,7 +191,7 @@ class payload(baseobject):
 
     class txtype(Enum):
         BTCMARK= 0x1030
-        MARK   = 0x2000
+        V2BMARK= 0x2000
         B2VMAP = 0x3000
         B2VUSD = 0x4000
         B2VEUR = 0x4010
@@ -504,7 +504,6 @@ class payload(baseobject):
     def parse_data(self):
         try:
             if self.tx_codetype in self.type_funcs:
-                print(self.tx_codetype)
                 ret = self.type_funcs[self.tx_codetype](self.op_data)
             else:
                 ret = result(error.TRAN_INFO_INVALID, f"tx type({self.tx_codetype.value}) is invalid.")
@@ -720,13 +719,14 @@ class payload(baseobject):
             ret = parse_except(e)
         return ret
 
-    def create_ex_start(self, swap_type, toaddress, sequence, module):
+    def create_ex_start(self, swap_type, toaddress, sequence, module, outamount, times):
         try:
-            ret = create_exchange.create_ex_start(toaddress, sequence, module)
+            ret = create_exchange.create_ex_start(toaddress, sequence, module, outamount, times)
             if ret.state != error.SUCCEED:
                 return ret
             
             txcodetype = self.compose_txcodetype(swap_type, "start")
+            print(txcodetype.value)
             ret = self.create_payload(self.version, txcodetype, ret.datas)
         except Exception as e:
             ret = parse_except(e)
@@ -786,7 +786,7 @@ class payload(baseobject):
                 return ret
             
             txcodetype = self.compose_txcodetype(swap_type, "btcmark")
-            ret = self.create_payload(self.version, sequence, ret.datas)
+            ret = self.create_payload(self.version, txcodetype, ret.datas)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -838,12 +838,16 @@ def test_exchange():
     toaddress = "c91806cabcd5b2b5fa25ae1c50bed3c6"
     sequence = 20200511
     module = "e1be1ab8360a35a0259f1c93e3eac736"
+    outamount = 100000
+    times = 123
     print(f'''************************************************************************create ex start
     toaddress:{toaddress}
     sequence: {sequence}
     module:{module}
+    outammount:{outamount}
+    times:{times}
 **********************************************************************************''')
-    ret = create_exchange.create_ex_start(toaddress, sequence, module, 100000, 123)
+    ret = create_exchange.create_ex_start(toaddress, sequence, module, outamount, times)
     ret = parse_exchange.parse_ex_start(ret.datas)
     json_print(ret.datas)
     
@@ -892,12 +896,16 @@ def test_payload():
     toaddress = "cae5f8464c564aabb684ecbcc19153e9"
     sequence = 20200511
     module = "e1be1ab8360a35a0259f1c93e3eac736"
+    outamount = 100000
+    times = 123
     print(f'''************************************************************************create ex start
     toaddress:{toaddress}
     sequence: {sequence}
     module:{module}
+    outammount:{outamount}
+    times:{times}
 **********************************************************************************''')
-    ret = pl.create_ex_start(toaddress, sequence, module)
+    ret = pl.create_ex_start(payload.txtype.B2VUSD.name.lower(), toaddress, sequence, module, outamount, times)
     assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
     ret = pl.parse_opt_datahex(ret.datas)
     assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
@@ -911,7 +919,7 @@ def test_payload():
     amount: {amount}
     version: {version}
 **********************************************************************************''')
-    ret = pl.create_ex_end(toaddress, sequence, amount, version)
+    ret = pl.create_ex_end(payload.txtype.B2VUSD.name.lower(), toaddress, sequence, amount, version)
     assert ret.state == error.SUCCEED, f"payload create_ex_end."
     ret = pl.parse_opt_datahex(ret.datas)
     assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
@@ -921,7 +929,7 @@ def test_payload():
     toaddress:{toaddress}
     sequence: {sequence}
 **********************************************************************************''')
-    ret = pl.create_ex_cancel(toaddress, sequence)
+    ret = pl.create_ex_cancel(payload.txtype.B2VUSD.name.lower(), toaddress, sequence)
     assert ret.state == error.SUCCEED, f"payload create_ex_cancel."
     ret = pl.parse_opt_datahex(ret.datas)
     assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
@@ -933,7 +941,7 @@ def test_payload():
     amount:{amount}
     name: {proofname}
 **********************************************************************************''')
-    ret = pl.create_btc_mark(toaddress, sequence, amount, proofname)
+    ret = pl.create_btc_mark(payload.txtype.B2VUSD.name.lower(), toaddress, sequence, amount, proofname)
     assert ret.state == error.SUCCEED, f"payload create_btc_mark."
     ret = pl.parse_opt_datahex(ret.datas)
     assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
@@ -942,4 +950,4 @@ def test_payload():
 if __name__ == "__main__":
     test_np()
     test_exchange()
-    #test_payload()
+    test_payload()
