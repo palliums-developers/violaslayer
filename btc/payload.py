@@ -254,12 +254,11 @@ class payload(baseobject):
         self.__init_type_with_version()
         self.__init__type_datas_parse()
         self._reset(None)
-        setattr(self, "version", self.versions.VERSION_3)
 
     def __init_type_with_version(self):
         self._type_version = {}
         for tv in self.txcodetype:
-            self.type_version.update({tv:{"version" : [self.version_3], "block": 0}})
+            self.type_version.update({tv:{"version" : [self.version], "block": 0}})
 
         #reset 
         self.type_version[self.txcodetype.BTCMARK_BTCMARK]["version"].extend( \
@@ -288,6 +287,8 @@ class payload(baseobject):
     def __init_version(self):
         for item in self.versions:
             setattr(self, item.name.lower(), item.value)
+            setattr(self, "version", item.value)
+
 
     def _reset(self, payload):
         self.payload_hex= payload
@@ -726,7 +727,6 @@ class payload(baseobject):
                 return ret
             
             txcodetype = self.compose_txcodetype(swap_type, "start")
-            print(txcodetype.value)
             ret = self.create_payload(self.version, txcodetype, ret.datas)
         except Exception as e:
             ret = parse_except(e)
@@ -774,7 +774,8 @@ class payload(baseobject):
             if ret.state != error.SUCCEED:
                 return ret
             
-            txcodetype = self.compose_txcodetype(swap_type, "mark")
+            txcodetype = self.txcodetype.V2BMARK_MARK
+            #txcodetype = self.compose_txcodetype(swap_type, "mark")
             ret = self.create_payload(self.version, txcodetype, ret.datas)
         except Exception as e:
             ret = parse_except(e)
@@ -785,7 +786,8 @@ class payload(baseobject):
             if ret.state != error.SUCCEED:
                 return ret
             
-            txcodetype = self.compose_txcodetype(swap_type, "btcmark")
+            txcodetype = self.txcodetype.BTCMARK_BTCMARK
+            #txcodetype = self.compose_txcodetype(swap_type, "btcmark")
             ret = self.create_payload(self.version, txcodetype, ret.datas)
         except Exception as e:
             ret = parse_except(e)
