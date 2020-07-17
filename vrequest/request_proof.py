@@ -28,13 +28,7 @@ name="requestproof"
 #load logging
 
 class requestproof(requestbase):
-    class proofstate(Enum):
-        BTCMARK = 0,
-        MARK    = 1,
-        START   = 2,
-        CANCEL  = 3,
-        END     = 4,
-        STOP    = 5,
+    proofstate = payload.txstate
 
     def __init__(self, name, dbconf):
         requestbase.__init__(self, name, dbconf)

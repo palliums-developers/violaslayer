@@ -2,10 +2,12 @@
 import sys, getopt, os
 import log 
 import json
+import stmanage
 import log.logger
-from comm.parseargs import parseargs
-#from tools import show_workenv
 import violaslayer
+from comm.parseargs import parseargs
+
+#from tools import show_workenv
 
 name = "vliolaslayer"
 logger = log.logger.getLogger(name)
@@ -13,6 +15,7 @@ logger = log.logger.getLogger(name)
 
 def init_args(pargs):
     pargs.append("help", "show args info")
+    pargs.append("conf", "config file path name. default:violaslayer.toml", True, "toml file")
     pargs.append("mod", "run mod", True, violaslayer.list_valid_mods())
     #pargs.append("info", "show info", True, show_workenv.list_valid_mods())
 
@@ -35,6 +38,15 @@ def main(argc, argv):
 
     names = [opt for opt, arg in opts]
     pargs.check_unique(names)
+
+    #--conf must be first
+    for opt, arg in opts:
+        if pargs.is_matched(opt, ["conf"]):
+            stmanage.set_conf_env(arg)
+            break
+    if stmanage.get_conf_env() is None:
+        stmanage.set_conf_env_default() 
+
     for opt, arg in opts:
         count, arg_list = pargs.split_arg(arg)
         if pargs.is_matched(opt, ["mod"]) :

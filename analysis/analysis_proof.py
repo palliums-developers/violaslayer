@@ -30,8 +30,13 @@ name="aproof"
 COINS = comm.values.COINS
 class aproof(aproofbase):
 
-    def __init__(self, name = "vproof", dbconf = None, fdbconf = None, nodes = None, chain = "btc"):
-        super().__init__(name, dbconf, fdbconf, nodes, chain)
+    def __init__(self, name = "vproof", dbconf = None, fdbconf = None, nodes = None):
+        '''transaction proof filter and save
+            @dbconf : save proof db conf
+            @fdbconf : resource datas's db conf
+            @nodes : btc nodes conf
+        '''
+        super().__init__(name, dbconf, fdbconf, nodes, chain = "btc")
 
     def __del__(self):
         super().__del__()
@@ -229,6 +234,7 @@ class aproof(aproofbase):
 
 def works():
     try:
+        stmanage.set_conf_env_default()
         #load logging
         logger = log.logger.getLogger(name) 
 
@@ -239,7 +245,8 @@ def works():
                 fdbconf=stmanage.get_db(basedata), \
                 nodes = stmanage.get_btc_conn() \
                 )
-        obj.set_step(stmanage.get_db(dtype).get("step", 100))
+        obj.append_valid_txtype(payload.txtype.B2VUSD)
+        obj.set_step(stmanage.get_db(dtype).get("step", 1))
         ret = obj.start()
 
         if ret.state != error.SUCCEED:

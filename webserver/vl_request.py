@@ -94,11 +94,12 @@ def execute_set(args):
         raise Exception(f"type:{type} not found.")
 
 def get_b2vswap_type():
-    
-    return []
+    return [item.name.lower() for item in payload.txtype \
+            if item.name.lower().startswith("b2v") and item != payload.txtype.B2VMAP]
 
 def get_b2lswap_type():
-    return []
+    return [item.name.lower() for item in payload.txtype \
+            if item.name.lower().startswith("b2l")]
 
 def get_swap_type():
     types = []
@@ -107,25 +108,25 @@ def get_swap_type():
 
 def opttype_to_dbname(opttype):
     dbname = ""
-    if opttype == "b2v":
-        return "b2vproof"
+    if opttype == "b2vmap":
+        return "b2vmap"
     elif opttype == "filter":
         return "base"
     elif opttype in ("mark", "btcmark"):
-        return "markproof"
+        return opttype
     elif opttype in get_swap_type():
         return opttype
     else:
-        return ""
+        raise Exception(f"opttype({opttype}) is invalid.")
 
 def list_dbname_for_swap():
-    dbnames = ["b2v"]
+    dbnames = ["b2vmap"]
     dbnames.extend(get_b2vswap_type())
     dbnames.extend(get_b2lswap_type())
     return dbnames
 
 def list_dbname_for_get_latest_ver():
-    dbnames = ["b2vproof", "filter", "mark", "btcmark"]
+    dbnames = ["b2vmap", "filter", "mark", "btcmark"]
     dbnames.extend(list_dbname_for_swap())
     return dbnames
 
@@ -144,7 +145,7 @@ def get_record(args):
     opttype = args.get("type")
     client = get_request_client(opttype_to_dbname(opttype))
 
-    if opttype == "b2v" or optype in get_b2vswap_type():
+    if opttype == "b2vmap" or optype in get_b2vswap_type():
         state = args.get("state")
         return list_exproof_state(client, receiver, state, cursor, limit)
     elif opttype == "filter":

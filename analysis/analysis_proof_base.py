@@ -77,7 +77,7 @@ class aproofbase(abase):
         if self.valid_txtype is None or len(self.valid_txtype) == 0:
             return True
 
-        return state in self.valid_txtype:
+        return txtype in self.valid_txtype
 
     def proofstate_name_to_value(self, name):
         return payload.state_name_to_value(name)

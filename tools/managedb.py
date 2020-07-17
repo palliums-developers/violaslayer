@@ -156,4 +156,5 @@ def run(argc, argv):
     logger.debug("end managedb.main")
 
 if __name__ == "__main__":
+    stmanage.set_conf_env_default()
     run(len(sys.argv) - 1, sys.argv[1:])
