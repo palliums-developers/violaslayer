@@ -4,7 +4,7 @@ btc exchange vtoken db
 '''
 import operator
 from functools import reduce
-import sys,os
+import sys,os, time
 sys.path.append(os.getcwd())
 sys.path.append("..")
 import log
@@ -101,6 +101,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
             raise Exception(f"not found collection({collection}).")
         self.__collection_name = collection
         self._collection = self._client[collection]
+        self.update_with_id("login", {"datatime": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())})
 
     @property
     def collection(self):

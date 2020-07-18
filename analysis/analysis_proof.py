@@ -239,8 +239,8 @@ def works():
         logger = log.logger.getLogger(name) 
 
         basedata = "base"
-        dtype = "b2vproof"
-        obj = aproof(name="b2vproof", \
+        dtype = "b2vusd"
+        obj = aproof(name="b2vusd", \
                 dbconf=stmanage.get_db(dtype), \
                 fdbconf=stmanage.get_db(basedata), \
                 nodes = stmanage.get_btc_conn() \

@@ -31,6 +31,7 @@ from btc.payload import payload
 name="webserver"
 logger = log.logger.getLogger(name)
 COINS = comm.values.COINS
+stmanage.set_conf_env_default()
 @app.route('/')
 def main():
     args    = request.args
@@ -105,6 +106,7 @@ def get_swap_type():
     types = []
     types.extend(get_b2vswap_type())
     types.extend(get_b2lswap_type())
+    return types
 
 def opttype_to_dbname(opttype):
     dbname = ""
@@ -117,7 +119,7 @@ def opttype_to_dbname(opttype):
     elif opttype in get_swap_type():
         return opttype
     else:
-        raise Exception(f"opttype({opttype}) is invalid.")
+        return None 
 
 def list_dbname_for_swap():
     dbnames = ["b2vmap"]
@@ -145,7 +147,7 @@ def get_record(args):
     opttype = args.get("type")
     client = get_request_client(opttype_to_dbname(opttype))
 
-    if opttype == "b2vmap" or optype in get_b2vswap_type():
+    if opttype == "b2vmap" or opttype in get_b2vswap_type():
         state = args.get("state")
         return list_exproof_state(client, receiver, state, cursor, limit)
     elif opttype == "filter":
@@ -275,6 +277,9 @@ def btc_send_exproof_mark(opttype, fromaddress, toaddress, toamount, fromprivkey
     return request_ret(ret)
 
 def get_request_client(db):
+    if db is None or db == "":
+        return None
+
     if db in ("base"):
         return requestfilter(name, stmanage.get_db(db))
     else:
@@ -294,9 +299,8 @@ def list_exproof_state(client, receiver, state_name, cursor = 0, limit = 10):
             ret = client.list_exproof(cursor, limit)
             return request_ret(ret)
 
-        state = client.proofstate[state_name.upper()]
 
-        ret = client.list_exproof_with_state(receiver, state, cursor, limit)
+        ret = client.list_exproof_with_state(receiver, state_name.lower(), cursor, limit)
 
     except Exception as e:
         ret = parse_except(e)

@@ -84,9 +84,9 @@ class btcclient(baseobject):
         assert ret.state == error.SUCCEED, "get min feerate falid." 
         return ret.datas
 
-    def iscanuse(self, desc, amount, dust_threshold_sw = 0, dust_threshold_nsw = 0):
+    def iscanuse(self, sw, amount, dust_threshold_sw = 0, dust_threshold_nsw = 0):
         #switness
-        if "sh(wpkh(" in desc or "sh(wsh)" in desc:
+        if sw is not None:
             return amount > dust_threshold_sw
         else:
             return amount > dust_threshold_nsw
@@ -100,7 +100,7 @@ class btcclient(baseobject):
             amount_sum = 0
             for data in datas:
                 #check amount is dust
-                if not self.iscanuse(data.get("desc"), data.get("amount"), dust_threshold_sw, dust_threshold_nsw):
+                if not self.iscanuse(data.get("witnessScript"), data.get("amount"), dust_threshold_sw, dust_threshold_nsw):
                     continue
 
                 amount_sum += int(data.get("amount") * COINS)
@@ -114,6 +114,14 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
+    def importaddress(self, address):
+        try:
+            self._logger.debug(f"start importaddress(address={address}")
+            datas = self.__rpc_connection.importaddress(address)
+            ret = result(error.SUCCEED, "", datas)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
     def getaddressbalance(self, address, minconf = 0, maxconf = 99999999):
         try:
             self._logger.debug(f"start getaddressbalance(address={address}, minconf = {minconf}, maxconf={maxconf})")
@@ -748,16 +756,16 @@ def test_createrawtransaction():
         print(f"transaction minfeerate:{ret.datas:.8f}")
 
 def test_sendtoaddress():
-        receiver_addr = "2N9gZbqRiLKAhYCBFu3PquZwmqCBEwu1ien"
-        combin_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
         sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
+        receiver_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
+        combin_addr = "2N9gZbqRiLKAhYCBFu3PquZwmqCBEwu1ien"
         swap_type = payload.txtype.B2VUSD.name.lower()
         pl = payload(name)
-        toaddress = "cae5f8464c564aabb684ecbcc19153e9"
+        toaddress = "5862a9e3e23737459299638e54b2ada3"
         sequence = int(time.time())
-        module = "e1be1ab8360a35a0259f1c93e3eac736"
+        module = "10dfbe77f8a09e9dfcb77bb3d44a14fc"
         amount = 0.0001
-        outamount = amount * 10000
+        outamount = int(amount * 10000 * 1000000) 
         times = 0
         ret = pl.create_ex_start(swap_type, toaddress, sequence, module, outamount, times)
         assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
@@ -784,6 +792,6 @@ def main():
 if __name__ == "__main__":
     stmanage.set_conf_env("../violaslayer.toml")
     #main()
-    test_createrawtransaction()
-    #test_sendtoaddress()
+    #test_createrawtransaction()
+    test_sendtoaddress()
 

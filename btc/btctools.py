@@ -88,6 +88,12 @@ def decoderawtransaction(data, isswitness):
     print(f"size: {ret.datas.get('vinsize') + ret.datas.get('voutsize')}")
     json_print(ret.datas)
 
+def importaddress(address):
+    client = getbtcclient()
+    ret = client.importaddress(address)
+    assert ret.state == error.SUCCEED, f"importaddress({address}) failed"
+    json_print(ret.datas)
+
 def gettxoutin(txid):
     client = getbtcclient()
     ret = client.gettxoutin(txid)
@@ -184,6 +190,7 @@ def init_args(pargs):
     pargs.append("parsepayload", "parse raw payload", True, ["data-hex"])
     pargs.append("getaddressunspent", "get unspent txout of address", True, ["address"])
     pargs.append("checkaddressunspent", "get unspent txout of address with amount(satoshi)", True, ["address", "amount"])
+    pargs.append("importaddress", "import address to btc wallet", True, ["address"])
 
 def run(argc, argv):
     try:
@@ -295,6 +302,11 @@ def run(argc, argv):
             if len(arg_list) != 2:
                 pargs.exit_error_opt(opt)
             ret = checkaddressunspent(arg_list[0], int(arg_list[1]))
+        elif pargs.is_matched(opt, ["importaddress"]):
+            if len(arg_list) != 1:
+                pargs.exit_error_opt(opt)
+            ret = importaddress(arg_list[0])
+
 
     logger.debug("end manage.main")
 

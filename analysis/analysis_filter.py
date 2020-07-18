@@ -382,7 +382,7 @@ class afilter(abase):
 def works():
     stmanage.set_conf_env("../violaslayer.toml")
     filter = afilter(name, stmanage.get_db("base"),  stmanage.get_btc_conn())
-    filter.set_min_valid_version(1780832)
+    filter.set_min_valid_version(1781051)
     filter.set_step(1)
     def signal_stop(signal, frame):        
         filter.stop()

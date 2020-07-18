@@ -329,6 +329,14 @@ class payload(baseobject):
         return self.txstate[state.upper()]
        
     @classmethod
+    def type_value_to_name(self, value):
+        return value.name.lower()
+
+    @classmethod
+    def type_name_to_name(self, value):
+        return self.txtype[value.upper()]
+
+    @classmethod
     def type_value_to_txtype(self, value):
         try:
             return self.txtype(value)
