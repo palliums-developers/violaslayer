@@ -759,7 +759,7 @@ def test_sendtoaddress():
         sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
         receiver_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
         combin_addr = "2N9gZbqRiLKAhYCBFu3PquZwmqCBEwu1ien"
-        swap_type = payload.txtype.B2VUSD.name.lower()
+        swap_type = payload.txtype.B2VEUR.name.lower()
         pl = payload(name)
         toaddress = "5862a9e3e23737459299638e54b2ada3"
         sequence = int(time.time())

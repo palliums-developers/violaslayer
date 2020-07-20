@@ -102,34 +102,29 @@ def get_b2lswap_type():
     return [item.name.lower() for item in payload.txtype \
             if item.name.lower().startswith("b2l")]
 
-def get_swap_type():
-    types = []
+def get_bvmap_type():
+    return [payload.txtype.B2VMAP.name.lower()]
+
+def get_proof_type():
+    types = ["proof"] #get all
     types.extend(get_b2vswap_type())
     types.extend(get_b2lswap_type())
+    types.extend(get_bvmap_type())
     return types
 
 def opttype_to_dbname(opttype):
     dbname = ""
-    if opttype == "b2vmap":
-        return "b2vmap"
-    elif opttype == "filter":
-        return "base"
+    if opttype == "filter":
+        return "filter"
     elif opttype in ("mark", "btcmark"):
-        return opttype
-    elif opttype in get_swap_type():
-        return opttype
+        return "markproof"
+    elif opttype in get_proof_type():
+        return "proof"
     else:
         return None 
 
-def list_dbname_for_swap():
-    dbnames = ["b2vmap"]
-    dbnames.extend(get_b2vswap_type())
-    dbnames.extend(get_b2lswap_type())
-    return dbnames
-
 def list_dbname_for_get_latest_ver():
-    dbnames = ["b2vmap", "filter", "mark", "btcmark"]
-    dbnames.extend(list_dbname_for_swap())
+    dbnames = ["proof", "filter", "mark", "btcmark"]
     return dbnames
 
 def get_version(args):
@@ -147,9 +142,10 @@ def get_record(args):
     opttype = args.get("type")
     client = get_request_client(opttype_to_dbname(opttype))
 
-    if opttype == "b2vmap" or opttype in get_b2vswap_type():
+    print(f"***{opttype}")
+    if opttype in get_proof_type():
         state = args.get("state")
-        return list_exproof_state(client, receiver, state, cursor, limit)
+        return list_exproof(client, receiver, opttype, state, cursor, limit)
     elif opttype == "filter":
         return list_opreturn_txids(client, cursor, limit)
     elif opttype == "mark":
@@ -170,10 +166,11 @@ def check_record(args):
     opttype = args.get("type")
     client = get_request_client(opttype_to_dbname(opttype))
 
-    if opttype in list_dbname_for_swap():
+    if opttype in get_proof_type():
         address = args.get("address")
         sequence = int(args.get("sequence"))
-        return check_proof_is_complete(client, address, sequence)
+        state = int(args.get("state"))
+        return client.check_proof_is_target_state(address, sequence, state)
     else:
         raise Exception(f"type:{type} not found.")
 
@@ -293,15 +290,12 @@ def get_proof_latest_saved_ver(db):
         ret = parse_except(e)
     return request_ret(ret)
 
-def list_exproof_state(client, receiver, state_name, cursor = 0, limit = 10):
+def list_exproof(client, receiver, opttype, state_name, cursor = 0, limit = 10):
     try:
         if state_name is None and receiver is None:
-            ret = client.list_exproof(cursor, limit)
-            return request_ret(ret)
+            opttype = None
 
-
-        ret = client.list_exproof_with_state(receiver, state_name.lower(), cursor, limit)
-
+        ret = client.list_exproof(receiver, opttype, state_name, cursor, limit)
     except Exception as e:
         ret = parse_except(e)
     return request_ret(ret)
@@ -323,16 +317,6 @@ def list_proof_btcmark(client, receiver, cursor = 0, limit = 10):
 def list_opreturn_txids(client, cursor = 0, limit = 10):
     try:
         ret = client.list_opreturn_txids(cursor, limit)
-    except Exception as e:
-        ret = parse_except(e)
-    return request_ret(ret)
-
-'''
-***check record 
-'''
-def check_proof_is_complete(client, address, sequence):
-    try:
-        ret = client.check_proof_is_complete(address, sequence)
     except Exception as e:
         ret = parse_except(e)
     return request_ret(ret)

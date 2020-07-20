@@ -58,7 +58,16 @@ class aproofbase(abase):
 
     def check_tran_is_valid(self, tran_info):
         prooftype = tran_info.get("type", "")
-        return self.is_valid_prooftype(prooftype) and tran_info.get("valid")
+
+        if not self.is_valid_prooftype(prooftype):
+            self._logger.warning(f"type({prooftype}) is not in ({self.valid_txtype})")
+            return False
+        if not tran_info.get("valid"):
+            self._logger.warning(f"tran state({tran_info.get('valid')}) is not True)")
+            return False
+
+        return True
+            
 
     def get_opreturn_txids(self, index, limit = 10, sort = pymongo.ASCENDING):
         self._logger.debug("get_opreturn_txids(index={index})")
@@ -71,7 +80,10 @@ class aproofbase(abase):
         return self.__valid_txtype
 
     def append_valid_txtype(self, txtype):
-        self.__valid_txtype.append(txtype)
+        if isinstance(txtype, list) or isinstance(txtype, set):
+            self.valid_txtype.extend(txtype)
+        else:
+            self.valid_txtype.append(txtype)
 
     def is_valid_prooftype(self, txtype):
         if self.valid_txtype is None or len(self.valid_txtype) == 0:

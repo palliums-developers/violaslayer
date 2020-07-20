@@ -28,7 +28,7 @@ class works:
     __work_looping = {}
     __work_obj = {}
 
-    __btc_min_valid_version     = 161_2270
+    __btc_min_valid_version     = 178_1051
     def __init__(self):
         logger.debug("works __init__")
         self.__funcs_map = {}
@@ -40,6 +40,10 @@ class works:
 
     def __del__(self):
         del self.__threads
+
+    @property
+    def filter_data(self):
+        return "filter"
 
     def set_work_obj(self, obj):
         old_obj = self.__work_obj.get(obj.name())
@@ -58,12 +62,11 @@ class works:
             assert mod is not None, f"mod name is None"
             logger.critical(f"start: {mod}")
 
-            dtype = self.get_dtype_from_mod(mod)
             while (self.__work_looping.get(mod, False)):
                 logger.debug(f"looping: {mod}")
                 try:
                     obj = analysis_filter.afilter(name=mod,  \
-                            dbconf=stmanage.get_db("base"), \
+                            dbconf=stmanage.get_db(mod), \
                             nodes=stmanage.get_btc_conn())
                     obj.set_min_valid_version(self.__btc_min_valid_version - 1)
                     self.set_work_obj(obj)
@@ -89,10 +92,9 @@ class works:
             while (self.__work_looping.get(mod, False)):
                 logger.debug(f"looping: {mod} : {dtype}")
                 try:
-                    basedata = "base"
                     obj = analysis_proof.aproof(name=mod, \
                             dbconf=stmanage.get_db(dtype), \
-                            fdbconf=stmanage.get_db(basedata), \
+                            fdbconf=stmanage.get_db(self.filter_data), \
                             nodes = stmanage.get_btc_conn() \
                             )
                     obj.append_valid_txtype(payload.txtype[dtype.upper()])
@@ -110,8 +112,8 @@ class works:
 
     def work_b2lproof(self, **kwargs):
         try:
-            nsec = kargs.get("nsec", 0)
-            mod = kargs.get("mod")
+            nsec = kwargs.get("nsec", 0)
+            mod = kwargs.get("mod")
             assert mod is not None, f"mod name is None"
             logger.critical(f"start: {mod}")
 
@@ -120,10 +122,9 @@ class works:
             while (self.__work_looping.get(mod, False)):
                 logger.debug(f"looping: {mod}")
                 try:
-                    basedata = "base"
                     obj = analysis_proof.aproof(name=mod, \
                             dbconf=stmanage.get_db(dtype), \
-                            fdbconf=stmanage.get_db(basedata), \
+                            fdbconf=stmanage.get_db(self.filter_data), \
                             nodes = stmanage.get_btc_conn() \
                             )
                     obj.append_valid_txtype(payload.txtype[dtype.upper()])
@@ -138,10 +139,16 @@ class works:
         finally:
             logger.critical(f"stop: {mod}")
 
-    def work_markproof(self, **kwargs):
+    
+    def proof_txtype(self):
+        return [item for item in payload.txtype \
+                if item.name.startswith("B2V") or \
+                item.name.startswith("B2L") and not item.name.endswith("MARK")]
+
+    def work_proof(self, **kwargs):
         try:
-            nsec = kargs.get("nsec", 0)
-            mod = kargs.get("mod")
+            nsec = kwargs.get("nsec", 0)
+            mod = kwargs.get("mod")
             assert mod is not None, f"mod name is None"
             logger.critical(f"start: {mod}")
 
@@ -150,10 +157,38 @@ class works:
             while (self.__work_looping.get(mod, False)):
                 logger.debug(f"looping: {mod}")
                 try:
-                    basedata = "base"
+                    obj = analysis_proof.aproof(name=mod, \
+                            dbconf=stmanage.get_db(dtype), \
+                            fdbconf=stmanage.get_db(self.filter_data), \
+                            nodes = stmanage.get_btc_conn() \
+                            )
+                    obj.append_valid_txtype(self.proof_txtype())
+                    obj.set_step(stmanage.get_db(dtype).get("step", 100))
+                    self.set_work_obj(obj)
+                    obj.start()
+                except Exception as e:
+                    parse_except(e)
+                sleep(nsec)
+        except Exception as e:
+            parse_except(e)
+        finally:
+            logger.critical(f"stop: {mod}")
+
+    def work_markproof(self, **kwargs):
+        try:
+            nsec = kwargs.get("nsec", 0)
+            mod = kwargs.get("mod")
+            assert mod is not None, f"mod name is None"
+            logger.critical(f"start: {mod}")
+
+            #libra transaction's data types 
+            dtype = self.get_dtype_from_mod(mod)
+            while (self.__work_looping.get(mod, False)):
+                logger.debug(f"looping: {mod}")
+                try:
                     obj = analysis_mark.amarkproof(name=mod, \
                             dbconf=stmanage.get_db(dtype), \
-                            fdbconf=stmanage.get_db(basedata), \
+                            fdbconf=stmanage.get_db(filter), \
                             nodes = stmanage.get_btc_conn() \
                             )
                     obj.append_valid_txtype(payload.txtype.BTCMARK_BTCMARK)
@@ -169,11 +204,11 @@ class works:
         finally:
             logger.critical(f"stop: {mod}")
 
-    def work_comm(self, nsec):
+    def work_comm(self, **kwargs):
         try:
             logger.critical("start: comm")
-            nsec = kargs.get("nsec", 0)
-            mod = kargs.get("mod")
+            nsec = kwargs.get("nsec", 0)
+            mod = kwargs.get("mod")
             assert mod is not None, f"mod name is None"
 
             while(self.__work_looping.get(mod, False)):
@@ -202,11 +237,7 @@ class works:
             self.__work(**self.__kwargs)
 
     def get_dtype_from_mod(self, modname):
-        dtype = modname.lower()
-        if dtype[:3] in ["b2l", "b2v"]:
-            if dtype.endswith("proof"):
-                return dtype[:-5]
-        return dtype
+        return modname
 
     def thread_append(self, work, mod):
         try:
@@ -232,16 +263,12 @@ class works:
         #append proof
         for item in work_mod:
             name = item.name
-            if name == "BFILTER":
+            if name == "FILTER":
                 self.funcs_map.update(self.create_func_dict(item, self.work_bfilter))
             elif name == "MARKPROOF":
                 self.funcs_map.update(self.create_func_dict(item, self.work_markproof))
-            elif name == "COMM":
-                self.funcs_map.update(self.create_func_dict(item, self.work_comm))
-            elif name.startswith("B2L") and name.endswith("PROOF"):
-                self.funcs_map.update(self.create_func_dict(item, self.work_b2lproof))
-            elif name.startswith("B2V") and name.endswith("PROOF"):
-                self.funcs_map.update(self.create_func_dict(item, self.work_b2vproof))
+            elif name == "PROOF":
+                self.funcs_map.update(self.create_func_dict(item, self.work_proof))
             elif name == "COMM":
                 self.funcs_map.update(self.create_func_dict(item, self.work_comm))
             else:

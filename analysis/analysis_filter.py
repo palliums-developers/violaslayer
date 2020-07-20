@@ -173,11 +173,11 @@ class afilter(abase):
             ret = parse_except(e)
         return ret
 
-    def save_opreturn_txid(self, index, txid, session=None):
+    def save_opreturn_txid(self, index, txid, opttype, session=None):
         try:
             self._logger.debug("save_opreturn_txid(index={index}, txid={txid} session={session})")
             coll = self._dbclient.get_collection(self.collection.OPTRANSACTION.name.lower(), create = True)
-            coll.insert_one({"_id":index, "txid":txid}, session=session)
+            coll.insert_one({"_id":index, "txid":txid, "opttype":opttype}, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -344,7 +344,7 @@ class afilter(abase):
                                     ret = payload_parse.is_valid_violas(ret.datas)
                                     if ret.state == error.SUCCEED and ret.datas:
 
-                                        ret = self.save_opreturn_txid(latest_opreturn_index, txid, session=session)
+                                        ret = self.save_opreturn_txid(latest_opreturn_index, txid, payload_parse.tx_type.name.lower(), session=session)
                                         assert ret.state == error.SUCCEED, f"save address map txout failed.txid = {txid}"
 
                                         ret = self._dbclient.set_latest_opreturn_index(latest_opreturn_index, session = session)

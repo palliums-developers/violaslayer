@@ -145,6 +145,7 @@ class aproof(aproofbase):
             ret = parse_except(e)
         return ret
 
+
     def start(self):
         try:
             self._logger.debug("start vproof work")
@@ -178,14 +179,12 @@ class aproof(aproofbase):
                 try:
                     version = data.get("_id")
                     txid = data.get("txid")
+                    latest_filter_ver = version
                     if self.work() == False:
                         break
                     #record last version(parse), maybe version is not exists
                     self._logger.debug(f"parse transaction:txid = {txid} index={version}")
 
-                    latest_filter_ver = version
-
-                    print(txid)
                     ret = self.get_transaction(txid)
                     if ret.state != error.SUCCEED:
                         self._logger.error(ret.message)

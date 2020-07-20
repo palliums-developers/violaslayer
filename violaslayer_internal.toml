@@ -20,7 +20,7 @@ traceback_limit = 4
 #       ]
 [[db_list]]
     host=["127.0.0.1:37017"]
-    db="base"
+    db="filter"
     user="violas"
     password="violas@palliums"
     authdb="admin"
@@ -28,7 +28,7 @@ traceback_limit = 4
         
 [[db_list]]
     host=["127.0.0.1:37017"]
-    db="b2vmap"
+    db="proof"
     user="violas"
     password="violas@palliums"
     authdb="admin"
@@ -36,71 +36,7 @@ traceback_limit = 4
 
 [[db_list]]
     host=["127.0.0.1:37017"]
-    db="b2vusd"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="b2veur"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="b2vsgd"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="b2vgbp"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="b2lusd"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="b2leur"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="b2lsgd"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="b2lgbp"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="mark"
+    db="markproof"
     user="violas"
     password="violas@palliums"
     authdb="admin"
