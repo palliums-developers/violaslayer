@@ -102,6 +102,15 @@ class requestproof(requestbase):
             ret = parse_except(e)
         return ret
 
+    def get_transaction(self, tran_id):
+        try:
+            ret = self._dbclient.get_proof(tran_id)
+            if ret.state != error.SUCCEED:
+                return ret
+
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
 def works():
     client = requestproof(name, stmanage.get_db("proof"))
     ret = client.list_exproof(receiver, "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB", state = requestproof.proofstate.END.name)

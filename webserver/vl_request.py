@@ -120,6 +120,8 @@ def opttype_to_dbname(opttype):
         return "markproof"
     elif opttype in get_proof_type():
         return "proof"
+    elif opttype == "fixtran":
+        return "proof"
     else:
         return None 
 
@@ -142,10 +144,12 @@ def get_record(args):
     opttype = args.get("type")
     client = get_request_client(opttype_to_dbname(opttype))
 
-    print(f"***{opttype}")
     if opttype in get_proof_type():
         state = args.get("state")
         return list_exproof(client, receiver, opttype, state, cursor, limit)
+    elif opttype == "fixtran":
+        tran_id= args.get("tranid")
+        return get_transaction(client, tran_id)
     elif opttype == "filter":
         return list_opreturn_txids(client, cursor, limit)
     elif opttype == "mark":
@@ -296,6 +300,14 @@ def list_exproof(client, receiver, opttype, state_name, cursor = 0, limit = 10):
             opttype = None
 
         ret = client.list_exproof(receiver, opttype, state_name, cursor, limit)
+    except Exception as e:
+        ret = parse_except(e)
+    return request_ret(ret)
+
+def get_transaction(client, tran_id):
+    try:
+        ret = client.get_transaction(tran_id)
+        print(ret)
     except Exception as e:
         ret = parse_except(e)
     return request_ret(ret)
