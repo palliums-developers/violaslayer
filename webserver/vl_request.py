@@ -96,14 +96,14 @@ def execute_set(args):
 
 def get_b2vswap_type():
     return [item.name.lower() for item in payload.txtype \
-            if item.name.lower().startswith("b2v") and item != payload.txtype.B2VMAP]
+            if item.name.lower().startswith("b2v") and item != payload.txtype.B2V]
 
 def get_b2lswap_type():
     return [item.name.lower() for item in payload.txtype \
             if item.name.lower().startswith("b2l")]
 
 def get_bvmap_type():
-    return [payload.txtype.B2VMAP.name.lower()]
+    return [payload.txtype.B2V.name.lower()]
 
 def get_proof_type():
     types = ["proof"] #get all

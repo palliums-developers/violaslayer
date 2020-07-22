@@ -205,6 +205,7 @@ class aproof(aproofbase):
 
                     #this is target transaction, todo work here
                     tran_filter["index"] = version
+                    tran_filter["version"] = version
                     ret = self.update_proof_info(tran_filter)
                     if ret.state != error.SUCCEED:
                         self._logger.error(ret.message)
