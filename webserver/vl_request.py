@@ -77,7 +77,7 @@ def execute_set(args):
         return btc_send_exproof_start(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
                 vreceiver, sequence, module)
     elif state in ("end", "mark"):
-        version  = int(args.get("version"))
+        version  = int(args.get("version", 0))
         if state == "end":
             amount   = float(args.get("amount"))
             return btc_send_exproof_end(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \

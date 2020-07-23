@@ -759,13 +759,13 @@ def test_sendtoaddress():
         sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
         receiver_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
         combin_addr = "2N9gZbqRiLKAhYCBFu3PquZwmqCBEwu1ien"
-        swap_type = payload.txtype.B2VEUR.name.lower()
+        swap_type = payload.txtype.B2VUSD.name.lower()
         pl = payload(name)
         toaddress = "5862a9e3e23737459299638e54b2ada3"
         sequence = int(time.time())
         module = "10dfbe77f8a09e9dfcb77bb3d44a14fc"
         amount = 0.0001
-        outamount = int(amount * 10000 * 1000000) 
+        outamount = int(amount * 30 * 1000000) 
         times = 0
         ret = pl.create_ex_start(swap_type, toaddress, sequence, module, outamount, times)
         assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
