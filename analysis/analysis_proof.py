@@ -51,7 +51,7 @@ class aproof(aproofbase):
         if new_state in (payload.txstate.END, payload.txstate.CANCEL, payload.txstate.STOP) and old_state == payload.txstate.START:
             return True
 
-        if new_state in (payload.txstate.STOP) and old_state == payload.txstate.CANCEL:
+        if new_state in [payload.txstate.STOP] and old_state == payload.txstate.CANCEL:
             return True
 
         return False

@@ -80,10 +80,10 @@ def execute_set(args):
         version  = int(args.get("version", 0))
         if state == "end":
             amount   = float(args.get("amount"))
-            return btc_send_exproof_end(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
+            return btc_send_exproof_end(fromaddress, toaddress, toamount, fromprivkeys, combine, \
                     vreceiver, sequence, amount, version)
         else:
-            return btc_send_exproof_mark(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
+            return btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combine, \
                     vreceiver, sequence, toamount, version)
     elif state == "cancel":
         return btc_send_exproof_cancel(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
@@ -262,12 +262,12 @@ def btc_send_exproof_stop(opttype, fromaddress, toaddress, toamount, fromprivkey
         ret = parse_except(e)
     return request_ret(ret)
 
-def btc_send_exproof_mark(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
+def btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combine, \
         vreceiver, sequence, amount, version):
     try:
         bclient = get_btcclient()
         pl = payload(name)
-        ret = pl.create_ex_mark(opttype, vreceiver, sequence, version, int(COINS * amount))
+        ret = pl.create_ex_mark(vreceiver, sequence, version, int(COINS * amount))
         assert ret.state == error.SUCCEED, f"payload create_ex_mark.{ret.message}"
         data = ret.datas
 

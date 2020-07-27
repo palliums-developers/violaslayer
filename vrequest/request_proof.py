@@ -79,7 +79,7 @@ class requestproof(requestbase):
                     self.proofstate.BTCMARK.name.lower(), start, limit)
 
     def list_proof_mark(self, receiver, start = 0, limit = 10):
-        return self.list_exproof(receiver, self.prooftype.V2BMARK.name.lower(),\
+        return self.list_exproof(receiver, self.prooftype.MARK.name.lower(),\
                     self.proofstate.MARK.name.lower(), start, limit)
 
     def check_proof_is_target_state(self, address, sequence, txstate):

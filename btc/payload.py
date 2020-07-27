@@ -191,7 +191,7 @@ class payload(baseobject):
 
     class txtype(Enum):
         BTCMARK= 0x1030
-        V2BMARK= 0x2000
+        MARK   = 0x2000
         B2V    = 0x3000
         B2VUSD = 0x4000
         B2VEUR = 0x4010
@@ -205,7 +205,7 @@ class payload(baseobject):
 
     class txcodetype(Enum):
         BTCMARK_BTCMARK = 0x1030
-        V2BMARK_MARK    = 0x2000
+        MARK_MARK       = 0x2000
         #btc mapping violas btc
         B2V_START       = 0x3000
         B2V_CANCEL      = 0x3001
@@ -776,14 +776,13 @@ class payload(baseobject):
             ret = parse_except(e)
         return ret
     
-    def create_ex_mark(self, swap_type, toaddress, sequence, version, amount):
+    def create_ex_mark(self, toaddress, sequence, version, amount):
         try:
             ret = create_exchange.create_ex_mark(toaddress, sequence, version, amount)
             if ret.state != error.SUCCEED:
                 return ret
             
-            txcodetype = self.txcodetype.V2BMARK_MARK
-            #txcodetype = self.compose_txcodetype(swap_type, "mark")
+            txcodetype = self.txcodetype.MARK_MARK
             ret = self.create_payload(self.version, txcodetype, ret.datas)
         except Exception as e:
             ret = parse_except(e)
