@@ -73,6 +73,20 @@ class requestproof(requestbase):
             ret = parse_except(e)
         return ret
 
+    def list_exproof_from_bak(self, start = 0, limit = 10):
+        try:
+            self._dbclient.use_collection_bak()
+            filters = [{"_id":{"$type":"int"}}, {"_id":{"$gte":start}}]
+
+            ret = self._dbclient.find({"$and": filters}, limit = limit)
+            if ret.state != error.SUCCEED:
+                return ret
+
+            datas = ret.datas.sort("_id", pymongo.ASCENDING)
+            ret = result(error.SUCCEED, "", [data for data in datas])
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
 
     def list_proof_btcmark(self, receiver, start = 0, limit = 10):
         return self.list_exproof(receiver, self.prooftype.BTCMARK.name.lower(),\

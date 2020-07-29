@@ -142,8 +142,8 @@ class works:
     
     def proof_txtype(self):
         return [item for item in payload.txtype \
-                if item.name.startswith("B2V") or \
-                item.name.startswith("B2L") and not item.name.endswith("MARK")]
+                if (item.name.startswith("B2V") or \
+                item.name.startswith("B2L")) and not item.name.endswith("MARK")]
 
     def work_proof(self, **kwargs):
         try:

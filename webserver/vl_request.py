@@ -106,7 +106,7 @@ def get_bvmap_type():
     return [payload.txtype.B2V.name.lower()]
 
 def get_proof_type():
-    types = ["proof"] #get all
+    types = ["proof", "proofbase"] #get all
     types.extend(get_b2vswap_type())
     types.extend(get_b2lswap_type())
     types.extend(get_bvmap_type())
@@ -144,9 +144,8 @@ def get_record(args):
     opttype = args.get("type")
     client = get_request_client(opttype_to_dbname(opttype))
 
-    if opttype in get_proof_type():
-        state = args.get("state")
-        return list_exproof(client, receiver, opttype, state, cursor, limit)
+    if opttype == "proofbase":
+        return list_exproof_from_bak(client, cursor, limit)
     elif opttype == "fixtran":
         tran_id= args.get("tranid")
         return get_transaction(client, tran_id)
@@ -163,8 +162,11 @@ def get_record(args):
             return btc_list_address_unspent(json.loads(receiver), minconf, maxconf)
         else:
             return btc_get_address_balance(receiver, minconf, maxconf)
+    elif opttype in get_proof_type(): #must be end, maybe it include previous opttype, ex proofbase
+        state = args.get("state")
+        return list_exproof(client, receiver, opttype, state, cursor, limit)
     else:
-        raise Exception(f"type:{type} not found.")
+        raise Exception(f"type:{opttype} not found. {get_proof_type()}")
 
 def check_record(args):
     opttype = args.get("type")
@@ -281,7 +283,7 @@ def get_request_client(db):
     if db is None or db == "":
         return None
 
-    if db in ("base"):
+    if db in ("filter"):
         return requestfilter(name, stmanage.get_db(db))
     else:
         return requestproof(name, stmanage.get_db(db))
@@ -300,6 +302,13 @@ def list_exproof(client, receiver, opttype, state_name, cursor = 0, limit = 10):
             opttype = None
 
         ret = client.list_exproof(receiver, opttype, state_name, cursor, limit)
+    except Exception as e:
+        ret = parse_except(e)
+    return request_ret(ret)
+
+def list_exproof_from_bak(client, cursor = 0, limit = 10):
+    try:
+        ret = client.list_exproof_from_bak(cursor, limit)
     except Exception as e:
         ret = parse_except(e)
     return request_ret(ret)

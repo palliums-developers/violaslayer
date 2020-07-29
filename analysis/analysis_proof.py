@@ -146,6 +146,38 @@ class aproof(aproofbase):
         return ret
 
 
+    def update_proof_bak_info(self, version, tran_info):
+        try:
+            self._logger.debug(f"start update_proof_bak_info tran info: {tran_info}")
+
+            tran_id = None
+
+            self._dbclient.use_collection_bak()
+            tran_id = self.create_tran_id(tran_info["address"], tran_info["sequence"])
+
+            ret  = self._dbclient.key_is_exists({"_id": tran_id})
+            if ret.state != error.SUCCEED:
+                return ret
+
+            #found key = index info, db has old datas , must be flush db?
+            if ret.datas == True:
+                return result(error.TRAN_INFO_INVALID, f"key{tran_id} is exists, db datas is old, flushdb ?. violas tran info : {tran_info}")
+
+            #create tran id
+            tran_info["tran_id"] = tran_id
+            tran_info["type"] = self.prooftype_value_to_name(tran_info["type"])
+            tran_info["state"] = self.proofstate_value_to_name(tran_info["state"])
+            ret = self._dbclient.set_proof_with_id(version, tran_info)
+            if ret.state != error.SUCCEED:
+                return ret
+            self._logger.info(f"saved new proof base succeed. index = {tran_info.get('index')} tran_id = {tran_id} state={tran_info['state']}")
+
+
+            ret = result(error.SUCCEED)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
     def start(self):
         try:
             self._logger.debug("start vproof work")
@@ -197,7 +229,7 @@ class aproof(aproofbase):
                         continue
 
                     tran_filter = ret.datas
-                    if self.check_tran_is_valid(tran_filter) != True:
+                    if not self.check_tran_is_valid(tran_filter):
                         self._logger.warning(f"transaction({txid}) is invalid.")
                         continue
 
@@ -206,6 +238,9 @@ class aproof(aproofbase):
                     #this is target transaction, todo work here
                     tran_filter["index"] = version
                     tran_filter["version"] = version
+                    #storage tran info for client query all transaction
+                    self.update_proof_bak_info(version, dict(tran_filter))
+
                     ret = self.update_proof_info(tran_filter)
                     if ret.state != error.SUCCEED:
                         self._logger.error(ret.message)

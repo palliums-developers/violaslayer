@@ -68,6 +68,9 @@ class dbvbase(baseobject, pymongo.MongoClient):
     def use_collection_datas(self):
         return self.use_collection("datas", True)
 
+    def use_collection_bak(self):
+        return self.use_collection("bak", True)
+
     def use_default_collections(self):
         if self.collection_name != self.__name_datainfo:
             self.use_collection(self.__name_datainfo, True)

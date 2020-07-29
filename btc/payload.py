@@ -678,24 +678,6 @@ class payload(baseobject):
             datas = None
             data_offer = 0
             datas = create_string_buffer(size)
-            '''
-            if size < self.optcodetype.OP_PUSHDATA1.value:
-                datas = create_string_buffer(size + 1)
-                struct.pack_into('>B', datas, 0, size)
-                data_offer = 1
-            elif size < 0xff:
-                datas = create_string_buffer(size + 1 + 1)
-                struct.pack_into('>BB', datas, 0, self.optcodetype.OP_PUSHDATA1.value, size)
-                data_offer = 2
-            elif size < 0xffff:
-                datas = create_string_buffer(size + 1 + 2)
-                struct.pack_into('>BH', datas, 0, self.optcodetype.OP_PUSHDATA2.value, size)
-                data_offer = 3
-            else:
-                datas = create_string_buffer(size + 1 + 4)
-                struct.pack_into('>BQ', datas, 0, self.optcodetype.OP_PUSHDATA4.value, size)
-                data_offer = 5
-            '''
 
             ret = result(error.SUCCEED, "", (data_offer, datas))
         except Exception as e:

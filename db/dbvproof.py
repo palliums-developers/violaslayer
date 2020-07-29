@@ -38,6 +38,18 @@ class dbvproof(dbvbase):
     def __del__(self):
         dbvbase.__del__(self)
 
+    def set_proof_with_id(self, version, value):
+        try:
+            if version is None or version < 0:
+                return result(error.ARG_INVALID, "version is invalid.")
+
+            value["_id"] = version
+            ret = self.insert_one(value)
+           
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
     def set_proof(self, tran_id, value):
         try:
             version = value.get("index", None)
