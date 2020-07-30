@@ -188,11 +188,11 @@ class works:
                 try:
                     obj = analysis_mark.amarkproof(name=mod, \
                             dbconf=stmanage.get_db(dtype), \
-                            fdbconf=stmanage.get_db(filter), \
+                            fdbconf=stmanage.get_db("filter"), \
                             nodes = stmanage.get_btc_conn() \
                             )
-                    obj.append_valid_txtype(payload.txtype.BTCMARK_BTCMARK)
-                    obj.append_valid_txtype(payload.txtype.V2BMARK_MARK)
+                    obj.append_valid_txtype(payload.txtype.BTCMARK)
+                    obj.append_valid_txtype(payload.txtype.MARK)
                     obj.set_step(stmanage.get_db(dtype).get("step", 100))
                     self.set_work_obj(obj)
                     obj.start()
