@@ -51,6 +51,13 @@ class requestbase(baseobject):
         except Exception as e:
             ret = parse_except(e)
         return ret
+
+    def get_proof_latest_filter_ver(self):
+        try:
+            ret = self._dbclient.get_latest_filter_ver()
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
 def works():
     client = requestbase(name, stmanage.get_db("b2vproof"))
     pass

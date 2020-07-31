@@ -126,16 +126,17 @@ def opttype_to_dbname(opttype):
         return None 
 
 def list_dbname_for_get_latest_ver():
-    dbnames = ["proof", "filter", "mark", "btcmark"]
+    dbnames = ["proof", "filter", "mark", "btcmark", "proofbase"]
     return dbnames
 
 def get_version(args):
     opttype = args.get("type")
 
-    if opttype not in list_dbname_for_get_latest_ver():
-        raise Exception(f"opttype:{opttype} not found.")
+    dbname = opttype_to_dbname(opttype)
+    assert dbname is not None, f"opttype:{opttype} not found."
 
-    return get_proof_latest_saved_ver(opttype_to_dbname(opttype))
+    #return get_proof_latest_saved_ver(opttype_to_dbname(opttype))
+    return get_proof_latest_filter_ver(opttype_to_dbname(opttype))
 
 def get_record(args):
     cursor  = int(args.get("cursor", 0))
@@ -292,6 +293,14 @@ def get_proof_latest_saved_ver(db):
     try:
         client = get_request_client(db)
         ret = client.get_proof_latest_saved_ver()
+    except Exception as e:
+        ret = parse_except(e)
+    return request_ret(ret)
+
+def get_proof_latest_filter_ver(db):
+    try:
+        client = get_request_client(db)
+        ret = client.get_proof_latest_filter_ver()
     except Exception as e:
         ret = parse_except(e)
     return request_ret(ret)
