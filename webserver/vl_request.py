@@ -80,7 +80,7 @@ def execute_set(args):
         version  = int(args.get("version", 0))
         if state == "end":
             amount   = float(args.get("amount"))
-            return btc_send_exproof_end(fromaddress, toaddress, toamount, fromprivkeys, combine, \
+            return btc_send_exproof_end(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
                     vreceiver, sequence, amount, version)
         else:
             return btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combine, \
