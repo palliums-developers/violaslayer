@@ -110,6 +110,7 @@ class btcclient(baseobject):
 
             unspent = {"amountsum": amount_sum, "unspents": filter}
             ret = result(error.SUCCEED, "", unspent)
+            self._logger.debug(f"{ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -119,6 +120,7 @@ class btcclient(baseobject):
             self._logger.debug(f"start importaddress(address={address}")
             datas = self.__rpc_connection.importaddress(address)
             ret = result(error.SUCCEED, "", datas)
+            self._logger.debug(f"{ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -131,6 +133,7 @@ class btcclient(baseobject):
                 amount_sum += float(data.get("amount"))
 
             ret = result(error.SUCCEED, "", amount_sum)
+            self._logger.debug(f"result:{self.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -216,6 +219,7 @@ class btcclient(baseobject):
                     use_amounts.remove(unspent.get("amount"))
 
             ret = result(error.SUCCEED, "", datas)
+            self._logger.debug(f"{ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -225,6 +229,7 @@ class btcclient(baseobject):
             self._logger.debug(f"start createrawtransaction(inputs={inputs}, outputs = {outputs}, locktime={locktime}, replaceable={replaceable})")
             datas = self.__rpc_connection.createrawtransaction(inputs, outputs, locktime, replaceable)
             ret = result(error.SUCCEED, "", datas)
+            self._logger.debug(f"{ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -237,6 +242,7 @@ class btcclient(baseobject):
                 ret = result(error.ARG_INVALID, datas.get("errors"))
             else:
                 ret = result(error.SUCCEED, "", datas)
+            self._logger.debug(f"{ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -250,6 +256,7 @@ class btcclient(baseobject):
                 ret = result(error.FAILED, datas.get("errors"))
             else:
                 ret = result(error.SUCCEED, "", float(datas.get("feerate")))
+            self._logger.debug(f"{ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -345,6 +352,7 @@ class btcclient(baseobject):
 
                 ret = self.sendrawtransaction(signtran.get("hex"))
                 break
+            self._logger.debug(f"{ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -358,6 +366,7 @@ class btcclient(baseobject):
             self._logger.debug(f"start getminfeerate(satoshiperk={satoshiperk:.8f}, size={size})")
             datas = satoshiperk * size / 1000.0
             ret = result(error.SUCCEED, "", datas)
+            self._logger.debug(f"{ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -367,6 +376,7 @@ class btcclient(baseobject):
             self._logger.debug(f"start sendrawtransaction(hexstring={hexstring[:20]}, maxfeerate={maxfeerate})")
             datas = self.__rpc_connection.sendrawtransaction(hexstring, maxfeerate)
             ret = result(error.SUCCEED, "", datas)
+            self._logger.debug(f"{result : ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -427,6 +437,7 @@ class btcclient(baseobject):
                 return ret
 
             ret = self.getblockwithhash(ret.datas)
+            self._logger.info(f"result: {ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
