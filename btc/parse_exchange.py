@@ -65,7 +65,7 @@ def parse_ex_end(data):
         datas = {
                 "address": data[:address_len].hex(),
                 "sequence" : sequence,
-                "amount" : amount,
+                "out_amount_real" : amount,
                 "vheight" : version
                 }
 
@@ -133,7 +133,7 @@ def parse_ex_mark(data):
                 "address": data[:address_len].hex(),
                 "sequence" : sequence,
                 "vheight" : version,
-                "amount" : amount,
+                "amount_real" : amount,
                 }
 
         ret = result(error.SUCCEED, datas = datas)
@@ -157,7 +157,7 @@ def parse_btc_mark(data):
         datas = {
                 "address": data[:address_len].hex(),
                 "sequence" : sequence,
-                "amount": amount,
+                "amount_real": amount,
                 "name": name
                 }
 

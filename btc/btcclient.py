@@ -775,8 +775,8 @@ def test_sendtoaddress():
         toaddress = "5862a9e3e23737459299638e54b2ada3"
         sequence = int(time.time())
         module = "10dfbe77f8a09e9dfcb77bb3d44a14fc"
-        amount = 0.0001
-        outamount = int(amount * 30 * 1000000) 
+        amount = 0.00011
+        outamount = int(amount * 7 * 100_0000) 
         times = 0
         ret = pl.create_ex_start(swap_type, toaddress, sequence, module, outamount, times)
         assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
@@ -784,7 +784,7 @@ def test_sendtoaddress():
 
         client = btcclient(name, stmanage.get_btc_conn())
         privkeys = ["cUrpMtcfh4s9CRdPEA2tx3hYQGb5yy7pkWQNzaMBZc8Sj42g8YA8"]
-        ret = client.sendtoaddress(sender_addr, receiver_addr, 0.0001, privkeys, data)
+        ret = client.sendtoaddress(sender_addr, receiver_addr, amount, privkeys, data)
         assert ret.state == error.SUCCEED, f"sendtoaddress failed.{ret.message}"
         logger.info(json_dumps(ret.to_json()))
 

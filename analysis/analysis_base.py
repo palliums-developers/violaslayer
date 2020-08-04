@@ -207,6 +207,7 @@ class abase(baseobject):
                     "valid": payload_parse.is_valid,
                     "txid": tran.get("txid"),
                     "update_txid": tran.get("txid"),
+                    "codetype": payload_parse.tx_codetype.value,
                     "txver": payload_parse.tx_version,
                     }
             #merge proof data

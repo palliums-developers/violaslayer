@@ -137,6 +137,7 @@ class aproof(aproofbase):
                 db_tran_info["vheight"] = tran_info["vheight"]
                 db_tran_info["update_txid"] = tran_info["update_txid"]
                 db_tran_info["update_block"] = tran_info["update_block"]
+                db_tran_info["out_amount_real"] = tran_info.get("out_amount_real", db_tran_info.get("out_amount", 0))
                 self._dbclient.update_proof(tran_id, db_tran_info)
                 self._logger.info(f"change state succeed. tran_id = {db_tran_id} state={db_tran_info['state']}")
 

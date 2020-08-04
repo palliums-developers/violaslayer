@@ -651,6 +651,7 @@ class payload(baseobject):
                     "state": self.tx_state.name,
                     "proof": self.proof_data,
                     "valid": self.is_valid,
+                    "codetype": self.tx_codetype.value,
                     }
             self.parse_result = datas
             ret = result(error.SUCCEED, datas = datas) 

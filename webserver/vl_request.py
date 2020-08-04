@@ -79,7 +79,7 @@ def execute_set(args):
     elif state in ("end", "mark"):
         version  = int(args.get("version", 0))
         if state == "end":
-            amount   = float(args.get("amount"))
+            amount   = int(args.get("amount"))
             return btc_send_exproof_end(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
                     vreceiver, sequence, amount, version)
         else:
@@ -226,7 +226,7 @@ def btc_send_exproof_end(opttype, fromaddress, toaddress, toamount, fromprivkeys
     try:
         bclient = get_btcclient()
         pl = payload(name)
-        ret = pl.create_ex_end(opttype, vreceiver, sequence, int(amount * COINS), version)
+        ret = pl.create_ex_end(opttype, vreceiver, sequence, amount, version)
         assert ret.state == error.SUCCEED, f"payload create_ex_end.{ret.message}"
         data = ret.datas
 
