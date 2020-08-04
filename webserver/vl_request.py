@@ -19,7 +19,7 @@ import comm.result
 import comm.values
 from comm.result import result, parse_except
 from comm.error import error
-from comm.functions import json_reset
+from comm.functions import json_reset, json_print
 from enum import Enum
 from vrequest.request_proof import requestproof
 from vrequest.request_filter import requestfilter
@@ -185,6 +185,7 @@ def get_btcclient():
     return btcclient(name, stmanage.get_btc_conn())
 
 def request_ret(datas):
+    json_print(datas.to_json())
     return json_reset(datas.to_json())
 
 def btc_get_address_balance(address, minconf = 0, maxconf = 99999999):

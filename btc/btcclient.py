@@ -229,7 +229,7 @@ class btcclient(baseobject):
             self._logger.debug(f"start createrawtransaction(inputs={inputs}, outputs = {outputs}, locktime={locktime}, replaceable={replaceable})")
             datas = self.__rpc_connection.createrawtransaction(inputs, outputs, locktime, replaceable)
             ret = result(error.SUCCEED, "", datas)
-            self._logger.debug(f"{ret.datas}")
+            self._logger.debug(f"result :{ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -376,7 +376,7 @@ class btcclient(baseobject):
             self._logger.debug(f"start sendrawtransaction(hexstring={hexstring[:20]}, maxfeerate={maxfeerate})")
             datas = self.__rpc_connection.sendrawtransaction(hexstring, maxfeerate)
             ret = result(error.SUCCEED, "", datas)
-            self._logger.debug(f"{result : ret.datas}")
+            self._logger.debug(f"result : {ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
