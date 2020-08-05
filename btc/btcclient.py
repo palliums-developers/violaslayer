@@ -775,7 +775,7 @@ def test_sendtoaddress():
         toaddress = "5862a9e3e23737459299638e54b2ada3"
         sequence = int(time.time())
         module = "10dfbe77f8a09e9dfcb77bb3d44a14fc"
-        amount = 0.00011
+        amount = 0.00022
         outamount = int(amount * 7 * 100_0000) 
         times = 0
         ret = pl.create_ex_start(swap_type, toaddress, sequence, module, outamount, times)
