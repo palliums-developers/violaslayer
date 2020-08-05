@@ -76,15 +76,15 @@ def execute_set(args):
         module          = args.get("module")
         return btc_send_exproof_start(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
                 vreceiver, sequence, module)
-    elif state in ("end", "mark"):
+    elif state == "end":
         version  = int(args.get("version", 0))
-        if state == "end":
-            amount   = int(args.get("amount"))
-            return btc_send_exproof_end(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
-                    vreceiver, sequence, amount, version)
-        else:
-            return btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combine, \
-                    vreceiver, sequence, toamount, version)
+        amount   = int(args.get("amount"))
+        return btc_send_exproof_end(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
+                vreceiver, sequence, amount, version)
+    elif state == "mark":
+        version  = int(args.get("version", 0))
+        return btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combine, \
+                vreceiver, sequence, toamount, version)
     elif state == "cancel":
         return btc_send_exproof_cancel(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
                 vreceiver, sequence)
