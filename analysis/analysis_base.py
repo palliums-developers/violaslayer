@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import operator
-import sys, os
+import sys, os, time
 import json
 sys.path.append("..")
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
@@ -209,6 +209,7 @@ class abase(baseobject):
                     "update_txid": tran.get("txid"),
                     "codetype": payload_parse.tx_codetype.value,
                     "txver": payload_parse.tx_version,
+                    "expiration_time": (time.time())
                     }
             #merge proof data
             datas.update(payload_parse.proof_data)
