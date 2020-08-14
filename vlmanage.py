@@ -9,7 +9,7 @@ from comm.parseargs import parseargs
 
 #from tools import show_workenv
 
-name = "vliolaslayer"
+name = "violaslayer"
 logger = log.logger.getLogger(name)
 
 

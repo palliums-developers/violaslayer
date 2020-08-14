@@ -192,7 +192,7 @@ class payload(baseobject):
     class txtype(Enum):
         BTCMARK= 0x1030
         MARK   = 0x2000
-        B2V    = 0x3000
+        B2VM    = 0x3000
         B2VUSD = 0x4000
         B2VEUR = 0x4010
         B2VSGD = 0x4020
@@ -207,10 +207,10 @@ class payload(baseobject):
         BTCMARK_BTCMARK = 0x1030
         MARK_MARK       = 0x2000
         #btc mapping violas btc
-        B2V_START       = 0x3000
-        B2V_CANCEL      = 0x3001
-        B2V_END         = 0x3002
-        B2V_STOP        = 0x3003
+        B2VM_START       = 0x3000
+        B2VM_CANCEL      = 0x3001
+        B2VM_END         = 0x3002
+        B2VM_STOP        = 0x3003
         #btc swap violas stable token
         B2VUSD_START    = 0x4000
         B2VUSD_CANCEL   = 0x4001

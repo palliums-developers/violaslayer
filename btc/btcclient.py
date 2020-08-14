@@ -133,7 +133,7 @@ class btcclient(baseobject):
                 amount_sum += float(data.get("amount"))
 
             ret = result(error.SUCCEED, "", amount_sum)
-            self._logger.debug(f"result:{self.datas}")
+            self._logger.debug(f"result:{ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -265,22 +265,33 @@ class btcclient(baseobject):
         try:
             self._logger.debug(f"sendtoaddress(fromaddress={fromaddress}, toaddress={toaddress}, toamount={toamount}, data={data}, combine={combine})")
             fee_rate = self.feerate
-            dust_threshold_sw = self.getdustthreshold(True, fee_rate)
-            dust_threshold_nsw = self.getdustthreshold(False, fee_rate)
             min_fee = 0
-            if toamount <= 0.0:
+            toamount_satoshi = int(toamount * 10000000) # toamount < 10 satoshi make 0
+            if toamount_satoshi <= 0:
+                dust_threshold_sw = self.getdustthreshold(True, fee_rate)
+                dust_threshold_nsw = self.getdustthreshold(False, fee_rate)
                 toamount = max(dust_threshold_sw, dust_threshold_nsw)
 
             tran = transaction(name)
             tran.appendoutputdata(data)
             #transaction format: place holder
+            #toaddress must be last
             if combine is not None:
-                tran.appendoutput(combine, 0)
+                if toaddress == combine:
+                    if toamount_satoshi <= 0:
+                        toamount = 0.0
+                    tran.appendoutput(toaddress, toamount)
+                else:
+                    tran.appendoutput(combine, 0)
+                    tran.appendoutput(toaddress, toamount)
             else:
-                tran.appendoutput(fromaddress, 0)
-
-            #must be last
-            tran.appendoutput(toaddress, toamount)
+                if toaddress == fromaddress:
+                    if toamount_satoshi <= 0:
+                        toamount = 0.0
+                    tran.appendoutput(toaddress, toamount)
+                else:
+                    tran.appendoutput(fromaddress, 0)
+                    tran.appendoutput(toaddress, toamount)
 
             ret = tran.getoutputamount()
             if ret.state != error.SUCCEED:
@@ -301,9 +312,15 @@ class btcclient(baseobject):
                 #for temp set amount for get signtransaction weight
                 overage = (amount_in - int(toamount * COINS)) / COINS
                 if combine is not None:
-                    tran.updateoutput(combine, overage)
+                    if toaddress == combine:
+                        tran.updateoutput(combine, overage + toamount)
+                    else:
+                        tran.updateoutput(combine, overage)
                 else:
-                    tran.updateoutput(fromaddress, overage)
+                    if toaddress == fromaddress:
+                        tran.updateoutput(toaddress, overage + toamount)
+                    else:
+                        tran.updateoutput(fromaddress, overage)
 
                 self._logger.debug(f"amount_in: {amount_in} toamount={int(toamount * COINS)} COINS:{COINS} output amount :{overage:.8f}")
                 ret = self.createrawtransaction(tran.inputs, tran.outputs)
@@ -336,9 +353,15 @@ class btcclient(baseobject):
 
                 #will send to block chain
                 if combine is not None:
-                    tran.updateoutput(combine, overage)
+                    if toaddress == combine:
+                        tran.updateoutput(combine, overage + toamount)
+                    else:
+                        tran.updateoutput(combine, overage)
                 else:
-                    tran.updateoutput(fromaddress, overage)
+                    if toaddress == fromaddress:
+                        tran.updateoutput(toaddress, overage + toamount)
+                    else:
+                        tran.updateoutput(fromaddress, overage)
 
                 ret = self.createrawtransaction(tran.inputs, tran.outputs)
                 if ret.state != error.SUCCEED:
@@ -770,12 +793,12 @@ def test_sendtoaddress():
         sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
         receiver_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
         combin_addr = "2N9gZbqRiLKAhYCBFu3PquZwmqCBEwu1ien"
-        swap_type = payload.txtype.B2VUSD.name.lower()
+        swap_type = payload.txtype.B2VM.name.lower()
         pl = payload(name)
         toaddress = "5862a9e3e23737459299638e54b2ada3"
         sequence = int(time.time())
-        module = "10dfbe77f8a09e9dfcb77bb3d44a14fc"
-        amount = 0.00022
+        module = "00000000000000000000000000000001"
+        amount = 0.00013
         outamount = int(amount * 7 * 100_0000) 
         times = 0
         ret = pl.create_ex_start(swap_type, toaddress, sequence, module, outamount, times)

@@ -2,24 +2,34 @@ import logging
 import logging.config
 import log.config
 
+import os
+import threading
+
+lock = threading.Lock()
+
+log_path = "./datas/logs"
 
 def __init__():
     print("logger.__init__")
 
 def getLogger(name):
 
-    log.config.config["handlers"]["file"]["filename"]=f"{name}.log"
+    lock.acquire()
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+
+    hfile = dict(log.config.config["handlers"]["file"])
+    hfile["filename"]=f"{log_path}/{name}.log"
+    log.config.config["handlers"].update({name:hfile})
     default = log.config.config.get("loggers").get("bvelog")
     if name not in log.config.config.get("loggers"):
-        log.config.config.get("loggers")[name] = default
-
-    #default = log.config.config.get("loggers").get("bvelog")
-    #file_tmp = dict(log.config.config["handlers"].get("file"))
-    #file_tmp.update("filename", f"{name}.log")
-    #log.config.config.get("loggers").update(name, {"handlers":['console', name], 'level':default.get("level")})
+        new_logger = dict(default)
+        new_logger["handlers"] = ["console", name]
+        log.config.config["loggers"].update({name:new_logger})
 
     logging.config.dictConfig(log.config.config)
     logger = logging.getLogger(name)
+    lock.release()
 
     return logger
 

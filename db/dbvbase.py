@@ -89,7 +89,7 @@ class dbvbase(baseobject, pymongo.MongoClient):
 
     def __connect(self, hosts, db, user = None, password = None, authdb = 'admin', rsname = None, newdb = False):
         try:
-            self._logger.debug(f"connect db(hosts={hosts}, db={db}, user = {user}, password={password}, authdb={authdb}, newdb={newdb})")
+            self._logger.debug(f"connect db(hosts={hosts}, db={db}, user = {user}, password=******, authdb={authdb}, newdb={newdb})")
             uri = self.__get_connect_db_uri(hosts = hosts, user = user, password = password, authdb = authdb, rsname = rsname)
             pymongo.MongoClient.__init__(self, uri, retryWrites=False, appname="violaslayer", readPreference="secondaryPreferred")
             self.use_db(db, newdb)
