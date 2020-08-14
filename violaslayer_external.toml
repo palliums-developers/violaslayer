@@ -20,83 +20,19 @@ traceback_limit = 4
 #       ]
 [[db_list]]
     host=["127.0.0.1:37017"]
-    db="base"
+    db="filter"
     user="violas"
     password="violas@palliums"
     authdb="admin"
-    rsname="rsviolas"
+    rsname="rsv"
         
 [[db_list]]
     host=["127.0.0.1:37017"]
-    db="b2vproof"
+    db="proof"
     user="violas"
     password="violas@palliums"
     authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="b2vusdproof"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="b2veurproof"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="b2vsgdproof"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="b2vgbpproof"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="b2lusdproof"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="b2leurproof"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="b2lsgdproof"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
-
-[[db_list]]
-    host=["127.0.0.1:37017"]
-    db="b2lgbpproof"
-    user="violas"
-    password="violas@palliums"
-    authdb="admin"
-    rsname="rsviolas"
+    rsname="rsv"
 
 [[db_list]]
     host=["127.0.0.1:37017"]
@@ -104,7 +40,7 @@ traceback_limit = 4
     user="violas"
     password="violas@palliums"
     authdb="admin"
-    rsname="rsviolas"
+    rsname="rsv"
 
 [[db_list]]
     host=["127.0.0.1:37017"]
@@ -112,17 +48,12 @@ traceback_limit = 4
     user="violas"
     password="violas@palliums"
     authdb="admin"
-    rsname="rsviolas"
+    rsname="rsv"
     
 
 [looping_sleep]
     bfilter=1
-    b2vproof=1
+    b2v=1
     comm=1
     markproof=1
 
-#looping_sleep={
-#        'bfilter' : 1,
-#        'b2vproof' : 1,
-#        'comm': 80,          #communication thread loop time
-#        }
