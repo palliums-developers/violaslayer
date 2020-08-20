@@ -111,10 +111,13 @@ def parsetranpayload(txid):
     ret = client.getrawtransaction(txid)
     assert ret.state == error.SUCCEED, f"getrawtransaction({txid}) failed"
     tran = ret.datas
+
     blockhash = ret.datas.get("blockhash")
-    ret = client.getblockwithhash(blockhash)
-    assert ret.state == error.SUCCEED, f"getblockwithhash({txid}) failed"
-    block = ret.datas.get("height")
+    block = -1
+    if blockhash:
+        ret = client.getblockwithhash(blockhash)
+        assert ret.state == error.SUCCEED, f"getblockwithhash({txid}) failed"
+        block = ret.datas.get("height")
 
     ret = client.getopreturnfromdata(tran)
     assert ret.state == error.SUCCEED, f"getopreturnfromdata() failed"
