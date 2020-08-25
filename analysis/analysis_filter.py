@@ -34,6 +34,7 @@ class afilter(abase):
         self.__maptolocal = argkeys.get("maptolocal", False)
         self.__storeoptran = argkeys.get("storeoptran", True)
         self._connect_db(name, dbconf)
+        setattr(self, "mempool_trans", set(self._dbclient.get_mempool_buf().datas)) 
 
     def _connect_db(self, name, rconf):
         self._dbclient = None
@@ -44,6 +45,7 @@ class afilter(abase):
         return self._dbclient
 
     def __del__(self):
+        #self._dbclient.set_mempool_buf(self.mempool_trans)
         abase.__del__(self)
 
     @property
@@ -173,11 +175,16 @@ class afilter(abase):
             ret = parse_except(e)
         return ret
 
-    def save_opreturn_txid(self, index, txid, opttype, session=None):
+    def find_opreturn(self, txid):
+        coll = self._dbclient.get_collection(self.collection.OPTRANSACTION.name.lower(), create = True)
+        data = coll.find_one({"txid":txid})
+        return data
+
+    def save_opreturn_txid(self, index, txid, opttype, confirm = 1, session=None):
         try:
             self._logger.debug("save_opreturn_txid(index={index}, txid={txid} session={session})")
             coll = self._dbclient.get_collection(self.collection.OPTRANSACTION.name.lower(), create = True)
-            coll.insert_one({"_id":index, "txid":txid, "opttype":opttype}, session=session)
+            coll.insert_one({"_id":index, "txid":txid, "opttype":opttype, "confirm": confirm}, session=session)
             ret = result(error.SUCCEED)
         except Exception as e:
             ret = parse_except(e)
@@ -198,12 +205,88 @@ class afilter(abase):
             ret = parse_except(e)
         return ret
 
+    def filter_tran(self, txids, blockhash, height, index, confirm = 1):
+        latest_opreturn_index = index
+        payload_parse = payload(name)
+        for txid in txids:
+            if self.work() == False:
+                self._logger.debug(f"will stop work, next height: {height + 1}")
+
+            ret = self._vclient.getrawtransaction(txid = txid)
+            assert ret.state == error.SUCCEED, f"get raw transaction failed.txid = {txid}"
+            tran = ret.datas
+            tran["hex"] = ""
+
+            tran_size = (tran.get("vinsize", 0) + tran.get("voutsize", 0))
+            use_session = True
+            session = None
+            if tran_size >= 500: #transaction size must be < 16M
+                use_session = False
+
+            with self._dbclient.start_session(causal_consistency=True) as sessiondb:
+               with sessiondb.start_transaction():
+                    if use_session:
+                        session = sessiondb
+
+                    if self.map_to_local and blockhash is not None:
+                        ret = self.save_transaction(txid, tran, blockhash, session=session)
+                        assert ret.state == error.SUCCEED, f"save transaction failed.txid = {txid}"
+
+                    if self.map_to_local and blockhash is not None:
+                        ret = self._vclient.gettxoutinfromdata(tran)
+                        assert ret.state == error.SUCCEED, f"get transaction vout and vin failed.{txid}"
+
+                        txoutin = ret.datas
+
+                        ret = self.save_txout(txid, ret.datas.get("vout"), blockhash, session=session)
+                        assert ret.state == error.SUCCEED, f"save txout failed.txid = {txid}"
+
+                        ret = self.update_txout_state(txoutin.get("vin"), blockhash, session=session)
+                        assert ret.state == error.SUCCEED, f"update txout failed.txid = {txid}"
+                    
+                    if self.store_op_tran:
+                        ret = self._vclient.getopreturnfromdata(tran)
+                        if ret.state == error.SUCCEED and ret.datas is not None:
+                            ret = payload_parse.is_valid_violas(ret.datas)
+                            if ret.state == error.SUCCEED and ret.datas:
+
+                                ret = self.save_opreturn_txid(latest_opreturn_index, txid, payload_parse.tx_type.name.lower(), confirm = confirm, session=session)
+                                assert ret.state == error.SUCCEED, f"save address map txout failed.txid = {txid}"
+
+                                ret = self._dbclient.set_latest_opreturn_index(latest_opreturn_index, session = session)
+                                assert ret.state == error.SUCCEED, f"save opreturn index failed. txid = {txid}"
+
+                                self._logger.debug(f"save opreturn txid :{txid}")
+                                latest_opreturn_index = latest_opreturn_index + 1
+
+                    #set latest saved txid
+                    ret = self._dbclient.set_latest_saved_txid(txid, session=session)
+                    assert ret.state == error.SUCCEED, f"update latest saved txid failed.txid = {txid}"
+                    #proof
+                    self._logger.debug(f"transaction parse is succeed. op_index = {index} height:{height} txid:{txid}")
+
+    def save_mempool_trans(self, index):
+        try:
+            ret = self._vclient.getrawmempool(False)
+            assert ret.state == error.SUCCEED
+            txidxs = ret.datas
+            txidxs = [txid for txid in txidxs if not self.find_opreturn(txid) and txid not in self.mempool_trans]
+            self.filter_tran(txidxs, None, -1, index, 0)
+            self.mempool_trans = self.mempool_trans.union(set(txidxs))
+            
+            self._dbclient.set_mempool_buf(self.mempool_trans)
+
+
+        except Exception as e:
+            parse_except(e)
+            pass
+        return result(error.SUCCEED)
+
     def start(self):
         i = 0
         #init
         try:
             self._logger.debug(f"start filter work(map_to_local:{self.map_to_local}, store_op_tran:{self.store_op_tran})")
-            payload_parse = payload(name)
             self.init_collections()
             self._dbclient.use_collection("datainfo", True)
             ret = self._vclient.getblockcount();
@@ -243,17 +326,22 @@ class afilter(abase):
                 start_version = 1
             
             if start_version > chain_latest_ver:
-               return result(error.SUCCEED)
+                print("**"*30)
+                self.save_mempool_trans(latest_opreturn_index)
+                return result(error.SUCCEED)
+            else:
+                self.mempool_trans.clear()
+                self._dbclient.set_mempool_buf(self.mempool_trans)
             
             version = start_version
             self._logger.debug(f"height = {start_version} max height = {chain_latest_ver} ")
             self._logger.debug(f"latest filter state = {latest_filter_state.name}, latest saved txid = {latest_saved_txid}")
 
             step = self.get_step()
-            if step > 0 and chain_latest_ver > version + step:
-                chain_latest_ver = version + step
+            if step > 0 and chain_latest_ver > version + step - 1:
+                chain_latest_ver = version + step - 1
 
-            while version < chain_latest_ver:
+            while version <= chain_latest_ver:
                 if self.work() == False:
                     self._logger.debug(f"recver stop command, next height: {version}")
                     return result(error.WORK_STOP)
@@ -301,65 +389,10 @@ class afilter(abase):
 
                     #some txid is saved, next txid..
 
+                self.filter_tran(txids, blockhash, version, latest_opreturn_index)
 
-                for txid in txids:
-                    if self.work() == False:
-                        self._logger.debug(f"will stop work, next height: {version + 1}")
-
-                    ret = self._vclient.getrawtransaction(txid = txid)
-                    assert ret.state == error.SUCCEED, f"get raw transaction failed.txid = {txid}"
-                    tran = ret.datas
-                    tran["hex"] = ""
-
-                    tran_size = (tran.get("vinsize", 0) + tran.get("voutsize", 0))
-                    use_session = True
-                    session = None
-                    if tran_size >= 500: #transaction size must be < 16M
-                        use_session = False
-
-                    with self._dbclient.start_session(causal_consistency=True) as sessiondb:
-                       with sessiondb.start_transaction():
-                            if use_session:
-                                session = sessiondb
-
-                            if self.map_to_local:
-                                ret = self.save_transaction(txid, tran, blockhash, session=session)
-                                assert ret.state == error.SUCCEED, f"save transaction failed.txid = {txid}"
-
-                            if self.map_to_local:
-                                ret = self._vclient.gettxoutinfromdata(tran)
-                                assert ret.state == error.SUCCEED, f"get transaction vout and vin failed.{txid}"
-
-                                txoutin = ret.datas
-
-                                ret = self.save_txout(txid, ret.datas.get("vout"), blockhash, session=session)
-                                assert ret.state == error.SUCCEED, f"save txout failed.txid = {txid}"
-
-                                ret = self.update_txout_state(txoutin.get("vin"), blockhash, session=session)
-                                assert ret.state == error.SUCCEED, f"update txout failed.txid = {txid}"
-                            
-                            if self.store_op_tran:
-                                ret = self._vclient.getopreturnfromdata(tran)
-                                if ret.state == error.SUCCEED and ret.datas is not None:
-                                    ret = payload_parse.is_valid_violas(ret.datas)
-                                    if ret.state == error.SUCCEED and ret.datas:
-
-                                        ret = self.save_opreturn_txid(latest_opreturn_index, txid, payload_parse.tx_type.name.lower(), session=session)
-                                        assert ret.state == error.SUCCEED, f"save address map txout failed.txid = {txid}"
-
-                                        ret = self._dbclient.set_latest_opreturn_index(latest_opreturn_index, session = session)
-                                        assert ret.state == error.SUCCEED, f"save opreturn index failed. txid = {txid}"
-
-                                        self._logger.debug(f"save opreturn height: {version}, txid :{txid}")
-                                        latest_opreturn_index = latest_opreturn_index + 1
-
-                            #set latest saved txid
-                            ret = self._dbclient.set_latest_saved_txid(txid,session=session)
-                            assert ret.state == error.SUCCEED, f"update latest saved txid failed.txid = {txid}"
-                            #proof
-                            self._logger.debug(f"transaction parse is succeed. height:{version} txid:{txid}")
-                else:
-                    self._dbclient.set_latest_saved_ver(version)
+                
+                self._dbclient.set_latest_saved_ver(version)
 
                 # change 
                 latest_filter_state = self._dbclient.filterstate.COMPLETE 

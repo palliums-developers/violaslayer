@@ -74,6 +74,12 @@ def getblocktxidswithhash(blockhash):
     assert ret.state == error.SUCCEED, f"getblocktxidswithhash({blockhash}) failed"
     json_print(ret.datas)
 
+def getrawmempool(verbose):
+    client = getbtcclient()
+    ret = client.getrawmempool(verbose)
+    assert ret.state == error.SUCCEED, f"getrawmempool({verbose}) failed"
+    json_print(ret.datas)
+
 def getrawtransaction(txid, verbose = True, blockhash = None):
     client = getbtcclient()
     ret = client.getrawtransaction(txid, verbose, blockhash)
@@ -120,8 +126,8 @@ def parsetranpayload(txid):
         block = ret.datas.get("height")
 
     ret = client.getopreturnfromdata(tran)
-    assert ret.state == error.SUCCEED, f"getopreturnfromdata() failed"
-    assert ret.datas is not None, f"getopreturnfromdata() failed"
+    assert ret.state == error.SUCCEED, f"getopreturnfromdata() failed. {ret.message}"
+    assert ret.datas is not None, f"getopreturnfromdata() failed. {ret.message}"
     payload_data = ret.datas
 
     parse_payload = payload(name)
@@ -200,6 +206,7 @@ def init_args(pargs):
     pargs.append("getaddressbalance", "get balance of address", True, ["address"])
     pargs.append("checkaddressunspent", "get unspent txout of address with amount(satoshi)", True, ["address", "amount"])
     pargs.append("importaddress", "import address to btc wallet", True, ["address"])
+    pargs.append("getrawmempool", "get txids form mempool.", True, ["verbose"])
 
 def run(argc, argv):
     try:
@@ -318,7 +325,13 @@ def run(argc, argv):
             if len(arg_list) != 1:
                 pargs.exit_error_opt(opt)
             ret = importaddress(arg_list[0])
-
+        elif pargs.is_matched(opt, ["getrawmempool"]):
+            if len(arg_list) not in (0, 1):
+                pargs.exit_error_opt(opt)
+            verbose = False
+            if len(arg_list) == 1:
+                verbose = arg_list[0].lower() == "true"
+            ret = getrawmempool(verbose)
 
     logger.debug("end manage.main")
 

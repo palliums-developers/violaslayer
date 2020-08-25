@@ -77,32 +77,58 @@ class aproof(aproofbase):
             tran_id = None
             new_proof = False
             new_proofstate = tran_info.get("state", "")
+            txid = tran_info.get("txid")
+            confirm = tran_info.get("confirm")
+            version = tran_info.get("version")
+            index = tran_info.get("index")
             if new_proofstate == payload.txstate.START:
                 new_proof = True
 
             self._dbclient.use_collection_datas()
             self._logger.debug(f"new proof: {new_proof}")
             tran_id = self.create_tran_id(tran_info["address"], tran_info["sequence"])
-            if new_proof == True:
+
+            if new_proof:
+                found = False
                 ret  = self._dbclient.key_is_exists({"_id": tran_id})
                 if ret.state != error.SUCCEED:
                     return ret
 
                 #found key = index info, db has old datas , must be flush db?
                 if ret.datas == True:
-                    return result(error.TRAN_INFO_INVALID, f"key{tran_id} is exists, db datas is old, flushdb ?. violas tran info : {tran_info}")
+                    found = True
+                    new_proof = False
+                    ret = self._dbclient.get_proof(tran_id)
+                    assert ret.state == error.SUCCEED
+                    old_txid = ret.datas.get("txid")
+                    version = ret.datas.get("version")
+                    index = ret.datas.get("index")
+                    #only mempool tran -> chain tran can update
+                    if txid != old_txid:
+                        return result(error.TRAN_INFO_INVALID, f"key{tran_id} is exists, db datas is old, flushdb ?. violas tran info : {tran_info}")
 
                 #create tran id
 
                 tran_info["tran_id"] = tran_id
                 tran_info["type"] = self.prooftype_value_to_name(tran_info["type"])
                 tran_info["state"] = self.proofstate_value_to_name(tran_info["state"])
-                ret = self._dbclient.set_proof(tran_id, tran_info)
+                tran_info["index"] = index
+                tran_info["version"] = version
+                if confirm <= 0:
+                    tran_info["state"] = f"pre{tran_info['state']}"
+
+                if found:
+                    ret = self._dbclient.update_proof(tran_id, tran_info)
+                else:
+                    ret = self._dbclient.set_proof(tran_id, tran_info)
                 if ret.state != error.SUCCEED:
                     return ret
                 self._logger.info(f"saved new proof succeed. index = {tran_info.get('index')} tran_id = {tran_id} state={tran_info['state']}")
 
             else:
+                if confirm <= 0:
+                    return result(error.TRAN_INFO_INVALID, "tran info is invalid, this tran is mempool , but state not start.")
+
                 if tran_id is None or len(tran_id) == 0:
                     return result(error.TRAN_INFO_INVALID, f"new tran data info is invalid, tran info : {tran_info}")
 
@@ -156,18 +182,15 @@ class aproof(aproofbase):
             self._dbclient.use_collection_bak()
             tran_id = self.create_tran_id(tran_info["address"], tran_info["sequence"])
 
-            ret  = self._dbclient.key_is_exists({"_id": tran_id})
-            if ret.state != error.SUCCEED:
-                return ret
-
-            #found key = index info, db has old datas , must be flush db?
-            if ret.datas == True:
-                return result(error.TRAN_INFO_INVALID, f"key{tran_id} is exists, db datas is old, flushdb ?. violas tran info : {tran_info}")
-
             #create tran id
             tran_info["tran_id"] = tran_id
             tran_info["type"] = self.prooftype_value_to_name(tran_info["type"])
             tran_info["state"] = self.proofstate_value_to_name(tran_info["state"])
+            tran_info["version"] = version
+            tran_info["index"] = version
+            if tran_info.get("confirm", 1) <= 0:
+                tran_info["state"] = f"pre{tran_info['state']}"
+            
             ret = self._dbclient.set_proof_with_id(version, tran_info)
             if ret.state != error.SUCCEED:
                 return ret
@@ -175,6 +198,15 @@ class aproof(aproofbase):
 
 
             ret = result(error.SUCCEED)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def get_opreturn_id(self, txid, confirm = 0):
+        try:
+            coll = self._fdbclient.get_collection(self.collection.OPTRANSACTION.name.lower(), create = True)
+            data = coll.find_one({"txid":txid, "confirm": confirm})
+            ret = result(error.SUCCEED, datas = data["_id"] if data is not None else None)
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -212,9 +244,10 @@ class aproof(aproofbase):
                 try:
                     version = data.get("_id")
                     txid = data.get("txid")
-                    latest_filter_ver = version
-                    if self.work() == False:
+                    confirm = data.get("confirm", 1)
+                    if not self.work():
                         break
+                    latest_filter_ver = version
                     #record last version(parse), maybe version is not exists
                     self._logger.debug(f"parse transaction:txid = {txid} index={version}")
 
@@ -236,11 +269,19 @@ class aproof(aproofbase):
 
                     self._logger.debug(f"transaction parse: {tran_filter}")
 
+
+                    #get version from filter.opreturn when confirm == 0(first found from mempool)
+
                     #this is target transaction, todo work here
                     tran_filter["index"] = version
                     tran_filter["version"] = version
-                    #storage tran info for client query all transaction
-                    self.update_proof_bak_info(version, dict(tran_filter))
+                    tran_filter["confirm"] = confirm
+                    #storage tran info for client query all transaction, if confirm <= 0(mempool transaction) only save to bak
+                    ret = self.update_proof_bak_info(version, dict(tran_filter))
+                    if ret.state != error.SUCCEED:
+                        self._logger.error(ret.message)
+                        return ret
+                        
 
                     ret = self.update_proof_info(tran_filter)
                     if ret.state != error.SUCCEED:

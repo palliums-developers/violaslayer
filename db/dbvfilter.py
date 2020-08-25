@@ -3,7 +3,7 @@
 btc exchange vtoken db
 '''
 import operator
-import sys,os
+import sys,os, json
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 import log
 import log.logger
@@ -35,3 +35,22 @@ class dbvfilter(dbvbase):
     def __del__(self):
         dbvbase.__del__(self)
 
+    def set_mempool_buf(self, datas, session = None):
+        try:
+            coll = self.get_collection("mempool", create = True)
+            data_val = json.dumps([data for data in datas])
+            coll.update_many({"_id":"txidxs"}, {"$set":{"txidxs":data_val}}, upsert = True, session=session)
+            ret = result(error.SUCCEED)
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
+    def get_mempool_buf(self):
+        try:
+            coll = self.get_collection("mempool", create = True)
+            ret = coll.find_one({"_id": "txidxs"})
+
+            ret = result(error.SUCCEED, datas = json.loads(ret.get("txidxs", {""})))
+        except Exception as e:
+            ret = parse_except(e)
+        return ret

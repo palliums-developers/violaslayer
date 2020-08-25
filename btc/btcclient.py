@@ -61,6 +61,16 @@ class btcclient(baseobject):
     def stop(self):
         self.work_stop()
 
+    def getrawmempool(self, verbose = False):
+        try:
+            self._logger.debug(f"start getrawmempool({verbose})")
+            datas = self.__rpc_connection.getrawmempool(verbose)
+            ret = result(error.SUCCEED, "", datas)
+            self._logger.debug(f"result :{len(ret.datas)}")
+        except Exception as e:
+            ret = parse_except(e)
+        return ret
+
     def getunspentsamount(self, unspents):
         if unspents is None:
             return 0
