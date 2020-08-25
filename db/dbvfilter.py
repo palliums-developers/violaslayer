@@ -50,7 +50,7 @@ class dbvfilter(dbvbase):
             coll = self.get_collection("mempool", create = True)
             ret = coll.find_one({"_id": "txidxs"})
 
-            ret = result(error.SUCCEED, datas = json.loads(ret.get("txidxs", {""})))
+            ret = result(error.SUCCEED, datas = json.loads(ret.get("txidxs")) if ret is not None else set())
         except Exception as e:
             ret = parse_except(e)
         return ret
