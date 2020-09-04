@@ -186,6 +186,12 @@ def checkaddressunspent(address, amount):
     ret = client.getaddressunspentwithamount(address, amount)
     json_print(ret.to_json())
 
+def sendtoaddress(fromaddress, toaddress, toamount, fromprivkeys): #toamount is BTC
+    client = getbtcclient()
+    ret = client.sendtoaddress(fromaddress, toaddress, toamount, fromprivkeys)
+    json_print(ret.to_json())
+
+
 def init_args(pargs):
     pargs.append("help", "show arg list")
     pargs.append("conf", "config file path name. default:violaslayer.toml, find from . ", True, "toml file")
@@ -207,6 +213,7 @@ def init_args(pargs):
     pargs.append("checkaddressunspent", "get unspent txout of address with amount(satoshi)", True, ["address", "amount"])
     pargs.append("importaddress", "import address to btc wallet", True, ["address"])
     pargs.append("getrawmempool", "get txids form mempool.", True, ["verbose"])
+    pargs.append("sendtoaddress", "send btc to address.", True, ["fromaddress", "toaddress", "toamount", "fromprivkeys"])
 
 def run(argc, argv):
     try:
@@ -332,6 +339,10 @@ def run(argc, argv):
             if len(arg_list) == 1:
                 verbose = arg_list[0].lower() == "true"
             ret = getrawmempool(verbose)
+        elif pargs.is_matched(opt, ["sendtoaddress"]):
+            if len(arg_list) != 4:
+                pargs.exit_error_opt(opt)
+            ret = sendtoaddress(arg_list[0], arg_list[1], arg_list[2], arg_list[3])
 
     logger.debug("end manage.main")
 

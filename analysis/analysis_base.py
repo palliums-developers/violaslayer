@@ -209,7 +209,7 @@ class abase(baseobject):
                     "update_txid": tran.get("txid"),
                     "codetype": payload_parse.tx_codetype.value,
                     "txver": payload_parse.tx_version,
-                    "expiration_time": (time.time())
+                    "expiration_time": int(tran.get("time", time.time()))
                     }
             #merge proof data
             datas.update(payload_parse.proof_data)

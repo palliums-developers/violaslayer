@@ -148,6 +148,9 @@ class transaction(baseobject):
 
     def appendoutputdata(self, data): 
         try:
+            if not data:
+                return result(error.SUCCEED)
+
             if self.outputs is None:
                 self.outputs = self.createrawoutputs().datas
             output = {"data": data}
