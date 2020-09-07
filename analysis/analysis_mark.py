@@ -30,7 +30,7 @@ name="aproof"
 COINS = comm.values.COINS
 class amarkproof(aproofbase):
 
-    def __init__(self, name = "amarkproof", dbconf = None, fdbconf = None, nodes = None, chain = "btc"):
+    def __init__(self, name = "markproof", dbconf = None, fdbconf = None, nodes = None, chain = "btc"):
         super().__init__(name, dbconf, fdbconf, nodes, chain)
 
     def __del__(self):
@@ -48,23 +48,24 @@ class amarkproof(aproofbase):
             proofstate = tran_info.get("state", "")
             self._dbclient.use_collection_datas()
             tran_id = self.create_tran_id(tran_info["address"], tran_info["sequence"])
-            if proofstate in (payload.txtype.EX_MARK, payload.txtype.BTC_MARK):
-                ret  = self._dbclient.key_is_exists({"_id": tran_id})
-                if ret.state != error.SUCCEED:
-                    return ret
 
-                #found key = index info, db has old datas , must be flush db?
-                if ret.datas == True:
-                    return result(error.TRAN_INFO_INVALID, f"key{tran_id} is exists, db datas is old, flushdb ?. violas tran info : {tran_info}")
+            ret  = self._dbclient.key_is_exists({"_id": tran_id})
+            if ret.state != error.SUCCEED:
+                return ret
 
-                #create tran id
+            #found key = index info, db has old datas , must be flush db?
+            if ret.datas == True:
+                return result(error.TRAN_INFO_INVALID, f"key{tran_id} is exists, db datas is old, flushdb ?. violas tran info : {tran_info}")
 
-                tran_info["tran_id"] = tran_id
-                tran_info["state"] = self.proofstate_value_to_name(tran_info["state"])
-                ret = self._dbclient.set_proof(tran_id, tran_info)
-                if ret.state != error.SUCCEED:
-                    return ret
-                self._logger.info(f"saved new proof succeed. index = {tran_info.get('index')} tran_id = {tran_id} state={tran_info['state']}")
+            #create tran id
+
+            tran_info["tran_id"] = tran_id
+            tran_info["state"] = self.proofstate_value_to_name(tran_info["state"])
+            tran_info["type"] = self.prooftype_value_to_name(tran_info["type"])
+            ret = self._dbclient.set_proof(tran_id, tran_info)
+            if ret.state != error.SUCCEED:
+                return ret
+            self._logger.info(f"saved new proof succeed. index = {tran_info.get('index')} tran_id = {tran_id} state={tran_info['state']}")
 
             ret = result(error.SUCCEED, "", {"tran_id":tran_id})
         except Exception as e:
