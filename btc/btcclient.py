@@ -801,11 +801,13 @@ def test_createrawtransaction():
 
 def test_sendtoaddress():
         sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
-        receiver_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
-        combin_addr = "2N9gZbqRiLKAhYCBFu3PquZwmqCBEwu1ien"
-        swap_type = payload.txtype.B2VM.name.lower()
+        #receiver_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
+        receiver_addr = "2NFMbhLACujsHKa45X4P2fZupVrgB268pbo"
+        combin_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh"
+        swap_type = payload.txtype.B2VUSD.name.lower()
         pl = payload(name)
-        toaddress = "5862a9e3e23737459299638e54b2ada3"
+        #toaddress = "5862a9e3e23737459299638e54b2ada3"
+        toaddress = "edf3fec26a60335579d72faeb9701ef0"
         sequence = int(time.time())
         module = "00000000000000000000000000000001"
         amount = 0.00013
