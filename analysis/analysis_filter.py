@@ -326,7 +326,6 @@ class afilter(abase):
                 start_version = 1
             
             if start_version > chain_latest_ver:
-                print("**"*30)
                 self.save_mempool_trans(latest_opreturn_index)
                 return result(error.SUCCEED)
             else:
