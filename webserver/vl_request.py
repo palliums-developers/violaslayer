@@ -65,6 +65,12 @@ def execute_set(args):
     toamount        = float(args.get("toamount"))
     fromprivkeys    = args.get("fromprivkeys")
     combine         = args.get("combine")
+    subtractfee     = args.get("subtractfee", False)
+    if isinstance(subtractfee, str):
+        if subtractfee.lower() == "true":
+            subtractfee = True
+        else:
+            subtractfee = False
 
     #payload 
     vreceiver       = args.get("vreceiver")
@@ -75,22 +81,22 @@ def execute_set(args):
     if state == "start":
         module          = args.get("module")
         return btc_send_exproof_start(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
-                vreceiver, sequence, module)
+                vreceiver, sequence, module, subtractfee)
     elif state == "end":
         version  = int(args.get("version", 0))
         amount   = int(args.get("amount"))
         return btc_send_exproof_end(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
-                vreceiver, sequence, amount, version)
+                vreceiver, sequence, amount, version, subtractfee)
     elif state == "mark":
         version  = int(args.get("version", 0))
         return btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combine, \
-                vreceiver, sequence, toamount, version)
+                vreceiver, sequence, toamount, version, subtractfee)
     elif state == "cancel":
         return btc_send_exproof_cancel(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
-                vreceiver, sequence)
+                vreceiver, sequence, subtractfee)
     elif state == "stop":
         return btc_send_exproof_stop(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
-                vreceiver, sequence)
+                vreceiver, sequence, subtractfee)
     else:
         raise Exception(f"type:{type} not found.")
 
@@ -207,7 +213,7 @@ def btc_list_address_unspent(address, minconf = 0, maxconf = 99999999):
     return request_ret(ret)
 
 def btc_send_exproof_start(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
-        vreceiver, sequence, module):
+        vreceiver, sequence, module, subtractfee = False):
     try:
         bclient = get_btcclient()
         pl = payload(name)
@@ -216,13 +222,13 @@ def btc_send_exproof_start(opttype, fromaddress, toaddress, toamount, fromprivke
         data = ret.datas
 
         ret = bclient.sendtoaddress(fromaddress, toaddress, toamount, fromprivkeys, \
-                data = data, combine = combine)
+                data = data, combine = combine, subtractfeefromamount = subtractfee)
     except Exception as e:
         ret = parse_except(e)
     return request_ret(ret)
     
 def btc_send_exproof_end(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
-        vreceiver, sequence, amount, version):
+        vreceiver, sequence, amount, version, subtractfee = False):
     try:
         bclient = get_btcclient()
         pl = payload(name)
@@ -231,13 +237,13 @@ def btc_send_exproof_end(opttype, fromaddress, toaddress, toamount, fromprivkeys
         data = ret.datas
 
         ret = bclient.sendtoaddress(fromaddress, toaddress, toamount, fromprivkeys, \
-                data = data, combine = combine)
+                data = data, combine = combine, subtractfeefromamount = subtractfee)
     except Exception as e:
         ret = parse_except(e)
     return request_ret(ret)
 
 def btc_send_exproof_cancel(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
-        vreceiver, sequence):
+        vreceiver, sequence, subtractfee = False):
     try:
         bclient = get_btcclient()
         pl = payload(name)
@@ -246,13 +252,13 @@ def btc_send_exproof_cancel(opttype, fromaddress, toaddress, toamount, fromprivk
         data = ret.datas
 
         ret = bclient.sendtoaddress(fromaddress, toaddress, toamount, fromprivkeys, \
-                data = data, combine = combine)
+                data = data, combine = combine, subtractfeefromamount = subtractfee)
     except Exception as e:
         ret = parse_except(e)
     return request_ret(ret)
 
 def btc_send_exproof_stop(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
-        vreceiver, sequence):
+        vreceiver, sequence, subtractfee = False):
     try:
         bclient = get_btcclient()
         pl = payload(name)
@@ -261,13 +267,13 @@ def btc_send_exproof_stop(opttype, fromaddress, toaddress, toamount, fromprivkey
         data = ret.datas
 
         ret = bclient.sendtoaddress(fromaddress, toaddress, toamount, fromprivkeys, \
-                data = data, combine = combine)
+                data = data, combine = combine, subtractfeefromamount = subtractfee)
     except Exception as e:
         ret = parse_except(e)
     return request_ret(ret)
 
 def btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combine, \
-        vreceiver, sequence, amount, version):
+        vreceiver, sequence, amount, version, subtractfee = True):
     try:
         bclient = get_btcclient()
         pl = payload(name)
@@ -276,7 +282,7 @@ def btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combin
         data = ret.datas
 
         ret = bclient.sendtoaddress(fromaddress, toaddress, toamount, fromprivkeys, \
-                data = data, combine = combine)
+                data = data, combine = combine, subtractfeefromamount = subtractfee)
     except Exception as e:
         ret = parse_except(e)
     return request_ret(ret)

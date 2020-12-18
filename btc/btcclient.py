@@ -261,7 +261,6 @@ class btcclient(baseobject):
         try:
             self._logger.debug(f"estimatesmartfee(target={target}, mode={mode})")
             datas = self.__rpc_connection.estimatesmartfee(target, mode)
-            print(f"****{datas}")
             if datas.get("errors") is not None:
                 ret = result(error.FAILED, datas.get("errors"))
             else:
@@ -271,21 +270,39 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
-    def sendtoaddress(self, fromaddress, toaddress, toamount, fromprivkeys, data = None, combine = None): #toamount is BTC
+    def sendtoaddress(self, fromaddress, toaddress, toamount, fromprivkeys, data = None, combine = None, subtractfeefromamount = False): #toamount is BTC
+        '''send btc 
+           fromaddress: payer address
+           toaddress: payee address
+           toamount : payment amount.  0 = used dust threshold, > 0 = use set value
+           fromprivkeys: fromaddress's privekey
+           data : while write to OP_RETURN
+           combine: will send overage amount to combine. case : combine = None  combine = toaddress combine = fromaddress
+           subtractfeefromamount : true : subract fee from toamount, false :  subtract fee from payer
+
+        '''
         try:
             self._logger.debug(f"sendtoaddress(fromaddress={fromaddress}, toaddress={toaddress}, toamount={toamount}, data={data}, combine={combine})")
             fee_rate = self.feerate
             min_fee = 0
+            use_dust_threshold = False
             toamount_satoshi = int(toamount * 10000000) # toamount < 10 satoshi make 0
+            #send min value to update mark
             if toamount_satoshi <= 0:
                 dust_threshold_sw = self.getdustthreshold(True, fee_rate)
                 dust_threshold_nsw = self.getdustthreshold(False, fee_rate)
                 toamount = max(dust_threshold_sw, dust_threshold_nsw)
+                use_dust_threshold = true
 
             tran = transaction(name)
-            tran.appendoutputdata(data)
-            #transaction format: place holder
-            #toaddress must be last
+            if data:
+                tran.appendoutputdata(data)
+            '''
+            transaction format: place holder
+            toaddress must be last
+            if use combine: send overage amount to combine, else send overage amount to fromaddress.
+            if toaddress and commbine is the same one, use any one, the transaction is update state
+            '''
             if combine is not None:
                 if toaddress == combine:
                     if toamount_satoshi <= 0:
@@ -348,6 +365,7 @@ class btcclient(baseobject):
 
                 weight = ret.datas.get("weight")
 
+                print(f"fee_rate: {fee_rate} weight : {weight}")
                 ret = self.getminfeerate(fee_rate, weight)
                 if ret.state != error.SUCCEED:
                     return ret
@@ -362,16 +380,45 @@ class btcclient(baseobject):
                     loop = False
 
                 #will send to block chain
+                #check fee mod
+                subtractfee = 0.0
+                finally_amount = toamount
+
+                #if toamount > dust threshold and subtract fee from to amount, set subtractfee = min fee
+                if subtractfeefromamount and not use_dust_threshold:
+                    subtractfee = 0.0 - min_fee
+                    finally_amount = finally_amount - subtractfee
+
+                
+                '''
+                if use combine and toaddress == combine, \
+                        send all btc to combine, maybe it update state
+                if use combine and toaddress != combine, \
+                        send overage btc to combine and subtract fee from toamount, \
+                        send some amount(subtract fee) to toaddress
+                if not use combine and toaddress == fromaddress, \
+                        send all btc to toaddress, maybe it update state
+                if not use combine and toaddress != fromaddress, \
+                        send overage btc to combine and subtract fee from toamount, send some amount(subtract fee) to toaddress
+                '''
                 if combine is not None:
                     if toaddress == combine:
                         tran.updateoutput(combine, overage + toamount)
                     else:
-                        tran.updateoutput(combine, overage)
+                        tran.updateoutput(combine, overage + subtractfee)
+                        if toamount - subtractfee < 0.0:
+                            return result(error.ARG_INVALID, \
+                                    f"The transaction amount({toamount}) is too small to send after the fee has been deducted")
+                        tran.updateoutput(toaddress, toamount - subtractfee)
                 else:
                     if toaddress == fromaddress:
                         tran.updateoutput(toaddress, overage + toamount)
                     else:
-                        tran.updateoutput(fromaddress, overage)
+                        tran.updateoutput(fromaddress, overage + subtractfee)
+                        if toamount - subtractfee < 0.0:
+                            return result(error.ARG_INVALID, \
+                                    f"The transaction amount({toamount}) is too small to send after the fee has been deducted")
+                        tran.updateoutput(toaddress, toamount - subtractfee)
 
                 ret = self.createrawtransaction(tran.inputs, tran.outputs)
                 if ret.state != error.SUCCEED:
@@ -819,7 +866,7 @@ def test_sendtoaddress():
 
         client = btcclient(name, stmanage.get_btc_conn())
         privkeys = ["cUrpMtcfh4s9CRdPEA2tx3hYQGb5yy7pkWQNzaMBZc8Sj42g8YA8"]
-        ret = client.sendtoaddress(sender_addr, receiver_addr, amount, privkeys, data)
+        ret = client.sendtoaddress(sender_addr, receiver_addr, amount, privkeys, data, subtractfeefromamount = True)
         assert ret.state == error.SUCCEED, f"sendtoaddress failed.{ret.message}"
         logger.info(json_dumps(ret.to_json()))
 

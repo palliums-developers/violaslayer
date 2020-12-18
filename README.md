@@ -27,5 +27,11 @@ git clone [https://github.com/palliums-developers/violaslayer]
 cd violaslayer
 python3 manage.py --mod "filter"
 
+
 #webserver
 bitcoin transaction query; transaction create and send(use wallet).
+
+you want to use sendtoaddress function must be import account address
+
+ex:
+  ./bitcoin-cli --testnet importaddress 2MyMHV6e4wA2ucV8fFKzXSEFCwrUGr2HEmY
