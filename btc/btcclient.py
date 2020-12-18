@@ -382,12 +382,10 @@ class btcclient(baseobject):
                 #will send to block chain
                 #check fee mod
                 subtractfee = 0.0
-                finally_amount = toamount
 
                 #if toamount > dust threshold and subtract fee from to amount, set subtractfee = min fee
                 if subtractfeefromamount and not use_dust_threshold:
-                    subtractfee = 0.0 - min_fee
-                    finally_amount = finally_amount - subtractfee
+                    subtractfee = min_fee
 
                 
                 '''
