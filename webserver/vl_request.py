@@ -52,6 +52,8 @@ def main():
         return check_record(args)
     elif opt == "set":
         return execute_set(args)
+    elif opt == "original":
+        return execute_original(args)
     else:
         raise Exception(f"opt:{opt} not found.")
 
@@ -99,6 +101,20 @@ def execute_set(args):
                 vreceiver, sequence, subtractfee)
     else:
         raise Exception(f"type:{type} not found.")
+
+def execute_original(args):
+    def get_api_args(func_args):
+        args = json.loads(func_args)
+        return args
+
+    bclient = get_btcclient()
+    try:
+        api_name = args.get("api")
+        api_args = get_api_args(args.get("api_args"))
+        ret = bclient.callback(api_name)(*api_args)
+    except Exception as e:
+        ret = parse_except(e)
+    return request_ret(ret)
 
 def get_b2vswap_type():
     return [item.name.lower() for item in payload.txtype \
@@ -357,6 +373,7 @@ def list_opreturn_txids(client, cursor = 0, limit = 10):
     except Exception as e:
         ret = parse_except(e)
     return request_ret(ret)
+
 
 '''
 with app.test_request_context():

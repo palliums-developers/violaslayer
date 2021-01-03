@@ -781,6 +781,9 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
+    def callback(self, name):
+        return locals[name]
+
 def test_createrawtransaction():
         receiver_addr = "2N9gZbqRiLKAhYCBFu3PquZwmqCBEwu1ien"
         combin_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
