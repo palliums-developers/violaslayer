@@ -54,6 +54,7 @@ class btcclient(baseobject):
         self._logger.debug("connect btc server(rpcuser={}, rpcpassword={}, rpcip={}, rpcport={})".format(btc_conn["rpcuser"], btc_conn["rpcpassword"], btc_conn["rpcip"], btc_conn["rpcport"]))
         self.__rpc_connection = AuthServiceProxy(self.__btc_url%(self.__rpcuser, self.__rpcpassword, self.__rpcip, self.__rpcport))
         self._logger.debug(f"connection succeed.")
+        self.__init_routing__()
 
     def disconn_node(self):
         pass
@@ -781,8 +782,30 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
+    def __init_routing__(self):
+        self.__bitcoin_rpc = {
+                "getrawtransaction" : self.__rpc_connection.getrawtransaction
+                }
+        pass
+
     def callback(self, name):
-        return locals[name]
+        '''
+            @dev call function with name.
+                 priority:  bitcoind-rpc -> btcclient 
+            
+
+        '''
+        func = self.__bitcoin_rpc.get(name)
+        std_result = False
+        print(f"func : {func}")
+        if func:
+            std_result = True
+            func =  getattr(self, name)
+
+        assert func is not None, f"not support {name}"
+        return (std_result, func)
+
+        
 
 def test_createrawtransaction():
         receiver_addr = "2N9gZbqRiLKAhYCBFu3PquZwmqCBEwu1ien"

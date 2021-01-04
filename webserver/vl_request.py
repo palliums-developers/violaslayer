@@ -109,9 +109,16 @@ def execute_original(args):
 
     bclient = get_btcclient()
     try:
+        print(f"http args: {args}")
+        opttype = args.get("type")
         api_name = args.get("api")
         api_args = get_api_args(args.get("api_args"))
-        ret = bclient.callback(api_name)(*api_args)
+        std_result, func = bclient.callback(api_name)
+        datas = func(*api_args)
+        if not std_result:
+            ret = result(error.SUCCEED, datas = datas)
+        else:
+            ret = datas
     except Exception as e:
         ret = parse_except(e)
     return request_ret(ret)
