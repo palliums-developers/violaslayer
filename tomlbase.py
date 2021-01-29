@@ -46,7 +46,7 @@ class tomlbase():
 
         path = Path(toml_file)
         if not path.is_file() or not path.exists():
-            raise Exception(f"not found toml file: {toml_file} in ({os.path.dirname(__file__)}  {release_path})")
+            raise Exception(f"not found toml file: {toml_file}")
         print(f"use config file: {toml_file}")
         return toml_file
 
@@ -100,7 +100,7 @@ class tomlbase():
     def set_conf_env_default(self):
         splits = os.path.split(os.path.dirname(os.path.abspath(__file__)))
         basename = splits[-1]
-        os.environ.setdefault("VIOLASLAYER_CONFIG", os.path.join(os.path.dirname(os.path.abspath(__file__)), f"{basename}.toml"))
+        os.environ.setdefault("VIOLASLAYER_CONFIG", os.path.join("/etc/violaslayer/", f"violaslayer.toml"))
 
 def main():
     tomlbase.set_conf_env_default()

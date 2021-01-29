@@ -16,13 +16,15 @@ logger = log.logger.getLogger(name)
 def init_args(pargs):
     pargs.append("help", "show args info")
     pargs.append("conf", "config file path name. default:violaslayer.toml", True, "toml file")
-    pargs.append("mod", "run mod", True, violaslayer.list_valid_mods())
+    pargs.append("mod", "run mod", True, violaslayer.list_valid_mods() if stmanage.get_conf_env() is not None else "args from conf file")
     #pargs.append("info", "show info", True, show_workenv.list_valid_mods())
 
 def main(argc, argv):
     pargs = parseargs()
     try:
         logger.debug("start manage.main")
+        if stmanage.get_conf_env() is None:
+            stmanage.set_conf_env_default() 
         init_args(pargs)
         pargs.show_help(argv)
         opts, err_args = pargs.getopt(argv)
@@ -44,8 +46,6 @@ def main(argc, argv):
         if pargs.is_matched(opt, ["conf"]):
             stmanage.set_conf_env(arg)
             break
-    if stmanage.get_conf_env() is None:
-        stmanage.set_conf_env_default() 
 
     for opt, arg in opts:
         count, arg_list = pargs.split_arg(arg)

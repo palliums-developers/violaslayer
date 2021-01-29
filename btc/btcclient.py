@@ -873,7 +873,7 @@ def test_createrawtransaction():
 def test_sendtoaddress():
         sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
         #receiver_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
-        receiver_addr = "2NFMbhLACujsHKa45X4P2fZupVrgB268pbo"
+        receiver_addr = "2MyMHV6e4wA2ucV8fFKzXSEFCwrUGr2HEmY"
         combin_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh"
         swap_type = payload.txtype.B2VUSD.name.lower()
         pl = payload(name)
@@ -881,7 +881,7 @@ def test_sendtoaddress():
         toaddress = "edf3fec26a60335579d72faeb9701ef0"
         sequence = int(time.time())
         module = "00000000000000000000000000000001"
-        amount = 0.00013
+        amount = 0.001
         outamount = int(amount * 7 * 100_0000) 
         times = 0
         ret = pl.create_ex_start(swap_type, toaddress, sequence, module, outamount, times)
