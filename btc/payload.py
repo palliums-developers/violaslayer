@@ -28,6 +28,7 @@ import btc.parse_exchange as parse_exchange
 import btc.create_exchange as create_exchange
 from enum import Enum
 from ctypes import create_string_buffer
+from comm.parseargs import parseargs
 
 #module name
 name="payload"
@@ -940,6 +941,5 @@ def test_payload():
 
 
 if __name__ == "__main__":
-    test_np()
-    test_exchange()
-    test_payload()
+    pa = parseargs(globals())
+    pa.test(sys.argv)

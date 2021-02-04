@@ -14,14 +14,15 @@ import log
 import log.logger
 import threading
 import stmanage
+import subprocess
 from time import sleep, ctime
 import comm.functions as fn
 from comm.error import error
 from comm.result import parse_except
 from btc.btcclient import btcclient
-import subprocess
 from enum import Enum
 from comm.functions import json_print
+from comm.parseargs import parseargs
 
 name="testbtcclient"
 
@@ -83,4 +84,5 @@ def test_btc():
     json_print(teststate.info())
 
 if __name__ == "__main__":
-    test_btc()
+    pa = parseargs(globals())
+    pa.test(sys.argv)

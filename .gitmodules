@@ -1,3 +1,6 @@
 [submodule "tomlkit"]
 	path = tomlkit
 	url = https://github.com/sdispater/tomlkit
+[submodule "lbparseargs"]
+	path = lbparseargs
+	url = https://github.com/palliums-developers/parseargs

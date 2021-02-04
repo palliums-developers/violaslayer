@@ -36,6 +36,7 @@ class managedb(dbvbase):
         dbvbase.__init__(self, name, rconf.get("host", "127.0.0.1:37017"), rconf.get("db"), rconf.get("user", None), rconf.get("password", None), rconf.get("authdb", "admin"), rsname=rconf.get("rsname","rsviolas"))
 
 def get_db(db):
+    print(f"db list: {stmanage.list_db_name()}")
     if db not in stmanage.list_db_name():
         raise f"db({db}) not found."
 
@@ -79,8 +80,8 @@ def showdbinfo(db):
     json_print(ret.datas)
 
 def cleandb(dbs):
+    print(f"cleandb({dbs})")
     for name in dbs:
-        print(name)
         dbclient = get_db(name)
         dbclient.drop_db(name)
 
@@ -97,14 +98,14 @@ def cleanaddresses():
 
 def init_args(pargs):
     pargs.append("help", "show arg list")
-    pargs.append("showaddressesinfo", "show btc addresses txout db info.")
-    pargs.append("cleanaddresses", "clean btc addresses db.")
-    pargs.append("showdbinfo", f"show db({stmanage.list_db_name()}) info.", True, ["db name"])
-    pargs.append("cleandb", f"clean db({stmanage.list_db_name()}).", True, ["db name"])
+    pargs.append(showaddressesinfo, "show btc addresses txout db info.")
+    pargs.append(cleanaddresses, "clean btc addresses db.")
+    pargs.append(showdbinfo, f"show db({stmanage.list_db_name()}) info.")
+    pargs.append(cleandb, f"clean db({stmanage.list_db_name()}).")
 
 def run(argc, argv):
     try:
-        logger.debug("start managedb.main")
+        logger.debug("start managedb.main argv: {argv}")
         pargs = parseargs()
         init_args(pargs)
         pargs.show_help(argv)
@@ -124,30 +125,16 @@ def run(argc, argv):
     pargs.check_unique(names)
 
     for opt, arg in opts:
-        if len(arg) > 0:
-            count, arg_list = pargs.split_arg(arg)
-
-            print("opt = {}, arg = {}".format(opt, arg_list))
-        if pargs.is_matched(opt, ["showbaseinfo"]):
-            ret = showbaseinfo()
-        elif pargs.is_matched(opt, ["cleanbase"]):
-            ret = cleanbase()
-        elif pargs.is_matched(opt, ["showb2vproofinfo"]):
-            ret = showb2vproofinfo()
-        elif pargs.is_matched(opt, ["cleanb2vproof"]):
-            ret = cleanb2vproof()
-        elif pargs.is_matched(opt, ["showaddressesinfo"]):
-            ret = showaddressesinfo()
-        elif pargs.is_matched(opt, ["cleanaddresses"]):
-            ret = cleanaddresses()
-        elif pargs.is_matched(opt, ["showdbinfo"]):
-            if len(arg_list) != 1:
-                pargs.exit_error_opt(opt)
-            ret = showdbinfo(arg_list[0])
-        elif pargs.is_matched(opt, ["cleandb"]):
+        count, arg_list = pargs.split_arg(opt, arg)
+        print("opt = {}, arg = {}".format(opt, arg_list))
+        if pargs.is_matched(opt, ["cleandb"]):
             if len(arg_list) < 1:
                 pargs.exit_error_opt(opt)
-            ret = cleandb(arg_list)
+            cleandb(arg_list)
+        elif pargs.has_callback(opt):
+            pargs.callback(opt, *arg_list)
+        else:
+            raise Exception(f"not found matched opt: {opt}")
 
     logger.debug("end managedb.main")
 

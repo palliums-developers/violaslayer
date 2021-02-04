@@ -48,7 +48,7 @@ def main(argc, argv):
             break
 
     for opt, arg in opts:
-        count, arg_list = pargs.split_arg(arg)
+        count, arg_list = pargs.split_arg(opt, arg)
         if pargs.is_matched(opt, ["mod"]) :
             if count < 1:
                 pargs.exit_error_opt(opt)
