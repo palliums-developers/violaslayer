@@ -6,7 +6,6 @@ sys.path.append("..")
 import traceback
 import log
 import log.logger
-from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 name="result"
 error = error.error
