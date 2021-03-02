@@ -27,7 +27,7 @@ address_len = 16
 
 def parse_ex_start(data):
     try:
-        if len(data) != 50:
+        if len(data) < 50:
             return result(error.ARG_INVALID, f"start swap data len {len(data)} ({data.hex()}) is too small.")
         data_offer = 0
 
@@ -37,13 +37,16 @@ def parse_ex_start(data):
         [sequence]= struct.unpack_from(">Q", data, data_offer)
         data_offer = data_offer + 8 + address_len
         [out_amount, times]= struct.unpack_from(">QH", data, data_offer)
+        data_offer = data_offer + 8 + 2
+        [chain_id]= struct.unpack_from(">B", data, data_offer)
 
         datas = {
                 "address": data[:address_len].hex(),
                 "sequence" : sequence,
                 "vtoken" : data[address_len + 8 : address_len + 8 + address_len].hex(),
                 "out_amount" : out_amount,
-                "times": times
+                "times": times,
+                "chain_id": chain_id
                 }
 
         ret = result(error.SUCCEED, datas = datas)

@@ -24,19 +24,21 @@ from ctypes import create_string_buffer
 
 #module name
 name="createex"
-def create_ex_start(toaddress, sequence, module, outamount, times):
+def create_ex_start(toaddress, sequence, module, outamount, times, chainid):
     try:
         btoaddress = bytes.fromhex(toaddress)
         bmodule = bytes.fromhex(module)
-        datas = create_string_buffer(len(btoaddress) + 8 + len(bmodule) + 8 + 2)
+        datas = create_string_buffer(len(btoaddress) + 8 + len(bmodule) + 8 + 2 + 1)
 
         data_offer = 0
-        struct.pack_into(f">{len(btoaddress)}sQ{len(bmodule)}sQH", datas, data_offer, 
+        struct.pack_into(f">{len(btoaddress)}sQ{len(bmodule)}sQHB", datas, data_offer, 
                 btoaddress, 
                 sequence, 
                 bmodule, 
                 outamount, 
-                times)
+                times,
+                chainid
+                )
 
         ret = result(error.SUCCEED, datas = datas)
     except Exception as e:

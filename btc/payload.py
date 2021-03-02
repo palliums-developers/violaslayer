@@ -39,6 +39,7 @@ class payload(baseobject):
         VERSION_1 = 1
         VERSION_2 = 2
         VERSION_3 = 3
+        VERSION_4 = 4
 
     class optcodetype(Enum):
         # push value
@@ -257,12 +258,16 @@ class payload(baseobject):
 
     def __init_type_with_version(self):
         self._type_version = {}
+        #start support version_4, other support version_3 version_4
         for tv in self.txcodetype:
-            self.type_version.update({tv:{"version" : [self.version], "block": 0}})
+            if tv.name.endswith("_START"):
+                self.type_version.update({tv:{"version" : [self.version], "block": 0}})
+            else:
+                self.type_version.update({tv:{"version" : [self.version_3, self.version_4], "block": 0}})
 
-        #reset 
+        #reset btc mark support all version
         self.type_version[self.txcodetype.BTCMARK_BTCMARK]["version"].extend( \
-                [self.version_0, self.version_1, self.version_2])
+                [self.version_0, self.version_1, self.version_2, self.version_3, self.version_4])
 
     def __init__type_datas_parse(self):
         self._type_funcs = {}
@@ -466,7 +471,6 @@ class payload(baseobject):
         self.tx_version = None
         self.tx_type = None
         self.tx_state = None
-
 
     def get_state_from_txcodetype(self, txcodetype):
         if txcodetype == self.txcodetype.UNKNOWN:
@@ -711,9 +715,9 @@ class payload(baseobject):
             ret = parse_except(e)
         return ret
 
-    def create_ex_start(self, swap_type, toaddress, sequence, module, outamount, times):
+    def create_ex_start(self, swap_type, toaddress, sequence, module, outamount, times, chainid):
         try:
-            ret = create_exchange.create_ex_start(toaddress, sequence, module, outamount, times)
+            ret = create_exchange.create_ex_start(toaddress, sequence, module, outamount, times, chainid)
             if ret.state != error.SUCCEED:
                 return ret
             
@@ -786,159 +790,3 @@ class payload(baseobject):
     #b2v
     #open_return + violas 
     
-#start
-opstr = "6a3c76696f6c617300033000c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6524689a4f870c46d6a5d901b5ac1fdb200000000000000000000"
-
-    ###txid: f30a9f9497b97aa5f95a46f1bd6fceeb26241686526068c309dee8d8fafc0a97
-    ###to_address:f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c6 
-    ###sequence: 20200110006
-    ###token:cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2
-   
-#end (manual create, can't found txid)
-opstr_end = "6a2276696f6c617300033003c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6"
-
-#btc_mark (manual create, can't found txid)
-opstr_btc_mark = "6a3176696f6c617300031030c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6000000000000271076696f6c617300"
-def check(src, dest):
-    return src == dest
-
-def test_np():
-    global opstr
-
-    pdata = payload(name)
-
-    print(f"check op_return is valid: {pdata.is_valid_violas(opstr).datas}")
-    ret = pdata.parse(opstr)
-    assert ret.state == error.SUCCEED, f"parse OP_RETURN failed.{ret.message}"
-    
-    ret = pdata.parse(opstr_end)
-    assert ret.state == error.SUCCEED, f"parse OP_RETURN failed.{ret.message}"
-
-    opstr_b2v_stop = "6a2276696f6c617300033003c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6"
-    ret = pdata.parse(opstr_b2v_stop)
-    assert ret.state == error.SUCCEED, f"parse OP_RETURN failed.{ret.message}"
-
-    ret = pdata.parse(opstr_btc_mark)
-    assert ret.state == error.SUCCEED, f"parse OP_RETURN failed.{ret.message}"
-
-    opstr_b2veur_start = "6a3c76696f6c617300034010c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6524689a4f870c46d6a5d901b5ac1fdb200000000000027100000"
-    ret = pdata.parse(opstr_b2veur_start)
-    assert ret.state == error.SUCCEED, f"parse OP_RETURN failed.{ret.message}"
-
-
-def test_exchange():
-    toaddress = "c91806cabcd5b2b5fa25ae1c50bed3c6"
-    sequence = 20200511
-    module = "e1be1ab8360a35a0259f1c93e3eac736"
-    outamount = 100000
-    times = 123
-    print(f'''************************************************************************create ex start
-    toaddress:{toaddress}
-    sequence: {sequence}
-    module:{module}
-    outammount:{outamount}
-    times:{times}
-**********************************************************************************''')
-    ret = create_exchange.create_ex_start(toaddress, sequence, module, outamount, times)
-    ret = parse_exchange.parse_ex_start(ret.datas)
-    json_print(ret.datas)
-    
-    amount = 100010
-    version = 123456
-    print(f'''************************************************************************create ex end
-    toaddress:{toaddress}
-    sequence: {sequence}
-    amount: {amount}
-    version: {version}
-**********************************************************************************''')
-    ret = create_exchange.create_ex_end(toaddress, sequence, amount, version)
-    ret = parse_exchange.parse_ex_end(ret.datas)
-    json_print(ret.datas)
-    
-    print(f'''************************************************************************create ex cancel
-    toaddress:{toaddress}
-    sequence: {sequence}
-**********************************************************************************''')
-    ret = create_exchange.create_ex_cancel(toaddress, sequence)
-    ret = parse_exchange.parse_ex_cancel(ret.datas)
-    json_print(ret.datas)
-
-    print(f'''************************************************************************create ex stop
-    toaddress:{toaddress}
-    sequence: {sequence}
-**********************************************************************************''')
-
-    ret = create_exchange.create_ex_stop(toaddress, sequence)
-    ret = parse_exchange.parse_ex_stop(ret.datas)
-    json_print(ret.datas)
-
-    proofname = "btcmark"
-    print(f'''************************************************************************create btc mark
-    toaddress:{toaddress}
-    sequence: {sequence}
-    amount:{amount}
-    name: {proofname}
-**********************************************************************************''')
-    ret = create_exchange.create_btc_mark(toaddress, sequence, amount, proofname)
-    ret = parse_exchange.parse_btc_mark(ret.datas)
-    json_print(ret.datas)
-
-def test_payload():
-    pl = payload(name)
-    toaddress = "cae5f8464c564aabb684ecbcc19153e9"
-    sequence = 20200511
-    module = "e1be1ab8360a35a0259f1c93e3eac736"
-    outamount = 100000
-    times = 123
-    print(f'''************************************************************************create ex start
-    toaddress:{toaddress}
-    sequence: {sequence}
-    module:{module}
-    outammount:{outamount}
-    times:{times}
-**********************************************************************************''')
-    ret = pl.create_ex_start(payload.txtype.B2VUSD.name.lower(), toaddress, sequence, module, outamount, times)
-    assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
-    ret = pl.parse_opt_datahex(ret.datas)
-    assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
-    
-
-    amount = 100010
-    version = 123456
-    print(f'''************************************************************************create ex end
-    toaddress:{toaddress}
-    sequence: {sequence}
-    amount: {amount}
-    version: {version}
-**********************************************************************************''')
-    ret = pl.create_ex_end(payload.txtype.B2VUSD.name.lower(), toaddress, sequence, amount, version)
-    assert ret.state == error.SUCCEED, f"payload create_ex_end."
-    ret = pl.parse_opt_datahex(ret.datas)
-    assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
-    
-    
-    print(f'''************************************************************************create ex cancel
-    toaddress:{toaddress}
-    sequence: {sequence}
-**********************************************************************************''')
-    ret = pl.create_ex_cancel(payload.txtype.B2VUSD.name.lower(), toaddress, sequence)
-    assert ret.state == error.SUCCEED, f"payload create_ex_cancel."
-    ret = pl.parse_opt_datahex(ret.datas)
-    assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
-
-    proofname = "btcmark"
-    print(f'''************************************************************************create btc mark
-    toaddress:{toaddress}
-    sequence: {sequence}
-    amount:{amount}
-    name: {proofname}
-**********************************************************************************''')
-    ret = pl.create_btc_mark(payload.txtype.B2VUSD.name.lower(), toaddress, sequence, amount, proofname)
-    assert ret.state == error.SUCCEED, f"payload create_btc_mark."
-    ret = pl.parse_opt_datahex(ret.datas)
-    assert ret.state == error.SUCCEED, "parse OP_RETURN failed."
-
-
-if __name__ == "__main__":
-    pa = parseargs(globals())
-    pa.test(sys.argv)
