@@ -256,18 +256,86 @@ class payload(baseobject):
         self.__init__type_datas_parse()
         self._reset(None)
 
+    class typeversions:
+        def __init__(self):
+            self.__datas= {}
+
+        class blockrange:
+            min_block = 0
+            max_block = 0
+            def __init__(self, min_block, max_block):
+                self.min_block = min_block
+                self.max_block = max_block
+
+            def __repr__(self):
+                return f"min_block = {self.min_block} max_block = {self.max_block}"
+
+        @property
+        def datas(self):
+            return self.__datas
+
+        def copy(self, datas):
+            self.__datas = datas.datas
+
+        def update(self, tv, version, min_block = 0, max_block = 0):
+            self.datas.get(tv, {}).update(self.create_version_info(version, min_block, max_block))
+
+        def set(self, tv, datas):
+            self.clear(tv)
+            self.datas.update({tv: {}})
+            if isinstance(datas, dict):
+                self.datas.update({tv:datas})
+            elif isinstance(datas, list):
+                for item in datas: self.datas[tv].update(item);
+
+        def get(self, tv):
+            return self.datas.get(tv, {})
+
+        def clear(self, tv = None):
+            if tv:
+                if tv in self.datas: del self.datas[tv];
+            else:
+                self.datas.clear()
+
+        def get_block_range(self, tv, version):
+            return self.get(tv).get(version)
+
+        def is_valid(self, tv, version, block = 0):
+
+            block_range = self.get_block_range(tv, version)
+            print(f"tv = {tv} version = {version}, block_range = {block_range}")
+            if block is None: block = 0;
+
+            if block_range:
+                return block >= block_range.min_block and (block <= block_range.max_block or block_range.max_block == 0)
+            return False
+
+        @classmethod
+        def create_version_info(self, version, min_block = 0, max_block = 0):
+            return {version:self.blockrange(min_block, max_block)}
+
+
     def __init_type_with_version(self):
-        self._type_version = {}
+        self._type_version = self.typeversions()
         #start support version_4, other support version_3 version_4
+        start_versions  = [self.typeversions.create_version_info(self.version_4)]
+        end_versions    = [
+                self.typeversions.create_version_info(self.version_3, 0, 0),
+                self.typeversions.create_version_info(self.version_4, 0, 0),
+                ]
+        stop_versions   = list(end_versions)
+        cancel_versions = list(end_versions)
+        mark_versions = [self.typeversions.create_version_info(version.value, 0, 0) for version in self.versions]
+
         for tv in self.txcodetype:
             if tv.name.endswith("_START"):
-                self.type_version.update({tv:{"version" : [self.version], "block": 0}})
-            else:
-                self.type_version.update({tv:{"version" : [self.version_3, self.version_4], "block": 0}})
-
-        #reset btc mark support all version
-        self.type_version[self.txcodetype.BTCMARK_BTCMARK]["version"].extend( \
-                [self.version_0, self.version_1, self.version_2, self.version_3, self.version_4])
+                self.type_version.set(tv, start_versions)
+            elif tv.name.endswith("_END"):
+                self.type_version.set(tv, end_versions)
+            elif tv.name.endswith("_STOP"):
+                self.type_version.set(tv, stop_versions)
+            elif tv.name.endswith("MARK"):
+                self.type_version.set(tv, mark_versions)
 
     def __init__type_datas_parse(self):
         self._type_funcs = {}
@@ -502,17 +570,11 @@ class payload(baseobject):
         return txcodetype.value in self.txcodetype._value2member_map_ and txcodetype != self.txcodetype.UNKNOWN
 
     def is_allow_opreturn(self, txcodetype, version, block = None):
-        type_version = self.type_version.get(txcodetype)
         if not self.is_allow_txcodetype(txcodetype):
             return False
-        if type_version is None:
-            return False
-        if version not in type_version.get("version"):
-            return False
-        if block is not None and block < type_version.get("block"):
-            return False
 
-        return True
+        return self.type_version.is_valid(txcodetype, version, block)
+
 
     def parse_data(self):
         try:
