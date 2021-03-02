@@ -17,8 +17,12 @@ import comm.values
 from comm.result import result, parse_except
 from comm.error import error
 from comm.functions import json_reset, json_print, json_dumps
-from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+#from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 #from .models import BtcRpc
+from bitcoinrpc.bitcoin_rpc import (
+        BitcoinRPC
+        )
+
 from baseobject import baseobject
 from enum import Enum
 from btc.payload import payload
@@ -52,7 +56,8 @@ class btcclient(baseobject):
             if btc_conn["rpcport"]:
                 self.__rpcport = btc_conn["rpcport"]
         self._logger.debug("connect btc server(rpcuser={}, rpcpassword={}, rpcip={}, rpcport={})".format(btc_conn["rpcuser"], btc_conn["rpcpassword"], btc_conn["rpcip"], btc_conn["rpcport"]))
-        self.__rpc_connection = AuthServiceProxy(self.__btc_url%(self.__rpcuser, self.__rpcpassword, self.__rpcip, self.__rpcport))
+        #self.__rpc_connection = AuthServiceProxy(self.__btc_url%(self.__rpcuser, self.__rpcpassword, self.__rpcip, self.__rpcport))
+        self.__rpc_connection = BitcoinRPC(self.__rpcip, self.__rpcport, self.__rpcuser, self.__rpcpassword)
         self._logger.debug(f"connection succeed.")
         self.__init_routing__()
 

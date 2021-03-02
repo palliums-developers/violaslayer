@@ -18,7 +18,6 @@ from comm.result import result, parse_except
 from comm.error import error
 from comm.functions import json_reset
 from comm.functions import json_print
-from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 #from .models import BtcRpc
 from baseobject import baseobject
 from enum import Enum

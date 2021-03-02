@@ -21,7 +21,6 @@ import comm.values
 from comm.result import result, parse_except
 from comm.error import error
 from comm.functions import json_print, json_dumps, json_reset
-from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 #from .models import BtcRpc
 from baseobject import baseobject
 import btc.parse_exchange as parse_exchange
