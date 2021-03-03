@@ -631,7 +631,7 @@ class payload(baseobject):
             ret = parse_except(e)
         return ret
 
-    def parse(self, payload):
+    def parse(self, payload, block = None):
         try:
             self._logger.debug(f"payload:{payload}")
             self._reset(payload)
@@ -657,7 +657,7 @@ class payload(baseobject):
             opcode_value = struct.unpack_from('B', bdata, 0)[0]
             self.op_code = self.optcodetype(opcode_value)
 
-            ret = self.parse_opt_data(bdata[data_offer:])
+            ret = self.parse_opt_data(bdata[data_offer:], block)
         except Exception as e:
             ret = parse_except(e)
         return ret

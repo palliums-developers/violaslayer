@@ -40,24 +40,20 @@ class btcclient(baseobject):
     class BitcoinRPCProxy:
         def __init__(self, btc_rpc):
             self.__btc_rpc = btc_rpc
-            self.__loop = asyncio.get_event_loop()
+            self.__loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self.__loop)
 
         def __del__(self):
             self.__loop.run_until_complete(self.__btc_rpc.client.aclose())
             pass
 
         def __getattr__(self, name):
-            #if name in dir(self.__btc_rpc):
-            #    func = getattr(self, name)
-            #    return func
-
+            if name.startswith("_") : return;
             self.__name = name
+            print(name)
             return self
 
         def __call__(self, *args, **kwargs):
-            #if self.__name in dir(self.__btc_rpc):
-            #    func = getattr(self, name)
-            #    return func
             return self.__loop.run_until_complete(self.__btc_rpc.acall(self.__name, list(args), **kwargs))
 
     def __init__(self, name, btc_conn):
@@ -88,10 +84,6 @@ class btcclient(baseobject):
 
     def disconn_node(self):
         pass
-
-    def acall(self, func):
-        print(dir(self.__rpc_connection))
-        self.__loop.run_until_complete(func)
 
     def stop(self):
         self.work_stop()
@@ -498,7 +490,6 @@ class btcclient(baseobject):
         try:
             self._logger.debug(f"start getblockcount()")
             
-            #datas = self.__loop.run_until_complete(self.__rpc_connection.getblockcount())
             datas = self.__rpc_connection.getblockcount()
 
             ret = result(error.SUCCEED, "", datas)
@@ -818,7 +809,7 @@ class btcclient(baseobject):
         return ret
 
     def __rpc_getrawtransaction(self, txid, verbose = True, block_hash = None):
-        self.__rpc_connection.getrawtransaction(txid, verbose, block_hash)
+        return self.__rpc_connection.getrawtransaction(txid, verbose, block_hash)
 
     def __init_routing__(self):
         self.__bitcoin_rpc = {
