@@ -21,7 +21,6 @@ from comm.functions import json_print
 #from .models import BtcRpc
 from baseobject import baseobject
 from enum import Enum
-from btc.payload import payload
 
 #module name
 name="transaction"

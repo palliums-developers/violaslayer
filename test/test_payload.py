@@ -37,15 +37,18 @@ opstr_btc_mark = "6a3176696f6c617300031030c91806cabcd5b2b5fa25ae1c50bed3c6000000
 def check(src, dest):
     return src == dest
 
+def get_payload_cli(chain_id):
+    return payload(name, chain_id)
+
 def test_parse_start():
     opstr = "6a3c76696f6c617300043000c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6524689a4f870c46d6a5d901b5ac1fdb20000000000000000000004"
-    pdata = payload(name)
+    pdata = get_payload_cli(4)
     ret = pdata.parse(opstr)
     check_result_is_valid(ret)
 
 def test_parse_start_version_is_invalid():
     opstr = "6a3c76696f6c617300033000c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6524689a4f870c46d6a5d901b5ac1fdb20000000000000000000004"
-    pdata = payload(name)
+    pdata = get_payload_cli(4)
     ret = pdata.parse(opstr)
     check_result_is_invalid(ret)
 
@@ -57,7 +60,7 @@ def test_create_start():
     outamount = 100000
     chain_id = 4
     times = 123
-    pl = payload(name)
+    pl = get_payload_cli(4)
     ret = pl.create_ex_start(payload.txtype.B2VUSD.name.lower(), toaddress, sequence, module, outamount, times, chain_id)
     assert ret.state == error.SUCCEED, "payload create_ex_start.{ret.message}"
 
@@ -76,7 +79,7 @@ def check_result_is_invalid(ret, versions = None):
     assert not ret.datas.get("valid"), "valid not false, datas = {}".format(ret.datas) 
 
 def test_np():
-    pdata = payload(name)
+    pdata = get_payload_cli(4)
 
     opstr_start = "6a3c76696f6c617300043000c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6524689a4f870c46d6a5d901b5ac1fdb20000000000000000000004"
     ret = pdata.parse(opstr_start)
@@ -152,7 +155,7 @@ def test_exchange():
     json_print(ret.datas)
 
 def test_payload():
-    pl = payload(name)
+    pl = get_payload_cli(4)
     toaddress = "cae5f8464c564aabb684ecbcc19153e9"
     sequence = 20200511
     module = "e1be1ab8360a35a0259f1c93e3eac736"

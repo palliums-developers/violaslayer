@@ -248,13 +248,15 @@ class payload(baseobject):
         B2LGBP_STOP     = 0x5033
         UNKNOWN     = 0xFFFF
 
-    def __init__(self, name):
+    def __init__(self, name, chain_id):
         baseobject.__init__(self, name)
         self.bigendian_flag = self.is_bigendian()
         self.__init_version()
         self.__init_type_with_version()
         self.__init__type_datas_parse()
         self._reset(None)
+        self.__chain_id = chain_id
+        
 
     class typeversions:
         def __init__(self):
@@ -573,8 +575,13 @@ class payload(baseobject):
         if not self.is_allow_txcodetype(txcodetype):
             return False
 
-        return self.type_version.is_valid(txcodetype, version, block)
+        return self.type_version.is_valid(txcodetype, version, block) 
 
+
+    def is_allow_chain_id(self, txcodetype, version, chain_id):
+        if version >= self.version_4 and txcodetype.endswith("_START"):
+            return chain_id is not None and self.chain_id == chain_id
+        return True
 
     def parse_data(self):
         try:
@@ -586,10 +593,10 @@ class payload(baseobject):
             ret = parse_except(e)
         return ret
 
-    def is_valid_violas(self, payload):
+    def is_valid_violas(self, payload, block=None):
         try:
             self.reset()
-            ret = self.parse(payload)
+            ret = self.parse(payload, block)
             if ret.state != error.SUCCEED:
                 return ret
 
@@ -655,17 +662,17 @@ class payload(baseobject):
             ret = parse_except(e)
         return ret
 
-    def parse_opt_datahex(self, data):
+    def parse_opt_datahex(self, data, block = None):
         try:
-            self._reset(payload)
+            self._reset(data)
             self.payload_hex = data
             bdata = bytes.fromhex(data)
-            ret = self.parse_opt_data(bdata)
+            ret = self.parse_opt_data(bdata, block)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
-    def parse_opt_data(self, bdata):
+    def parse_opt_data(self, bdata, block):
         try:
             #violas mark
             #makesure data is valid
@@ -707,7 +714,9 @@ class payload(baseobject):
                 return ret
 
             self.proof_data = ret.datas
-            self.is_valid = self.is_allow_opreturn(self.tx_codetype, self.tx_version) and self.is_allow_mark(self.op_mark)
+            self.is_valid = self.is_allow_opreturn(self.tx_codetype, self.tx_version, block) \
+                    and self.is_allow_mark(self.op_mark) \
+                    and self.is_allow_chain_id(self.tx_codetype, self.tx_version, self.proof_data.get("chain_id"))
             datas = {
                     "opcode" : self.op_code.name,
                     "datasize": self.op_size,

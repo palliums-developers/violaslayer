@@ -31,6 +31,9 @@ logger = log.logger.getLogger(name)
 def getbtcclient():
     return btcclient(name, stmanage.get_btc_conn())
 
+def getpayloadcli():
+    return payload(name, stmanage.get_chain_id())
+
 def btchelp():
     client = getbtcclient()
     ret = client.help()
@@ -40,12 +43,13 @@ def btchelp():
 def getblockcount():
     client = getbtcclient()
     ret = client.getblockcount()
+    ret = client.getblockcount()
     assert ret.state == error.SUCCEED, f"getblockcount() failed"
     print(f"block count:{ret.datas}")
 
 def getblockhash(index):
     client = getbtcclient()
-    ret = client.getblockhash(index)
+    ret = client.getblockhash(int(index))
     assert ret.state == error.SUCCEED, f"getblockhash({index}) failed"
     print(f"blockhash({index}):{ret.datas}")
 
@@ -57,13 +61,13 @@ def getblockwithhash(blockhash):
 
 def getblockwithindex(index):
     client = getbtcclient()
-    ret = client.getblockwithindex(index)
+    ret = client.getblockwithindex(int(index))
     assert ret.state == error.SUCCEED, f"getblockwithindex({index}) failed"
     json_print(ret.datas)
 
 def getblocktxidswithindex(index):
     client = getbtcclient()
-    ret = client.getblocktxidswithindex(index)
+    ret = client.getblocktxidswithindex(int(index))
     assert ret.state == error.SUCCEED, f"getblocktxidswithindex({index}) failed"
     json_print(ret.datas)
 
@@ -129,7 +133,7 @@ def parsetranpayload(txid):
     assert ret.datas is not None, f"getopreturnfromdata() failed. {ret.message}"
     payload_data = ret.datas
 
-    parse_payload = payload(name)
+    parse_payload = getpayloadcli()
     ret = parse_payload.parse(payload_data)
 
     info = {"is allow opreturn": parse_payload.is_allow_opreturn(parse_payload.tx_codetype, parse_payload.tx_version, block),
@@ -154,7 +158,7 @@ def parserawtranpayload(data):
     assert ret.datas is not None, f"getopreturnfromdata() failed"
     payload_data = ret.datas
 
-    parse_payload = payload(name)
+    parse_payload = getpayloadcli()
     ret = parse_payload.parse(payload_data)
     info = {"is allow opreturn": parse_payload.is_allow_opreturn(parse_payload.tx_codetype, parse_payload.tx_version, block),
             "block" : "",
@@ -165,7 +169,7 @@ def parserawtranpayload(data):
     json_print(info)
     
 def parsepayload(data):
-    parse_payload = payload(name)
+    parse_payload = getpayloadcli()
     ret = parse_payload.parse(data)
 
     json_print(ret.to_json())
@@ -192,6 +196,7 @@ def sendtoaddress(fromaddress, toaddress, toamount, fromprivkeys): #toamount is 
 
 
 def init_args(pargs):
+    pargs.clear()
     pargs.append("help", "show arg list")
     pargs.append("conf", "config file path name. default:violaslayer.toml, find from . and /etc/violaslayer/", True, "toml file", priority = 10)
     pargs.append(getblockcount, "get block count.")

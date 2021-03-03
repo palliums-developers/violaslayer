@@ -29,7 +29,7 @@ def test_createrawtransaction():
         receiver_addr = "2N9gZbqRiLKAhYCBFu3PquZwmqCBEwu1ien"
         combin_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
         sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
-        pl = payload(name)
+        pl = payload(name, stmanage.get_chain_id())
         toaddress = "cae5f8464c564aabb684ecbcc19153e9"
         sequence = 20200512001
         module = "e1be1ab8360a35a0259f1c93e3eac736"
@@ -94,7 +94,7 @@ def test_sendtoaddress():
         receiver_addr = "2MyMHV6e4wA2ucV8fFKzXSEFCwrUGr2HEmY"
         combin_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh"
         swap_type = payload.txtype.B2VUSD.name.lower()
-        pl = payload(name)
+        pl = payload(name, stmanage.get_chain_id())
         #toaddress = "5862a9e3e23737459299638e54b2ada3"
         toaddress = "edf3fec26a60335579d72faeb9701ef0"
         sequence = int(time.time())

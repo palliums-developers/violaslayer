@@ -14,6 +14,7 @@ import comm
 import comm.error
 import comm.result
 import comm.values
+import asyncio
 from comm.result import result, parse_except
 from comm.error import error
 from comm.functions import json_reset, json_print, json_dumps
@@ -36,6 +37,29 @@ logger = log.logger.getLogger(name)
 COINS = comm.values.COINS
 class btcclient(baseobject):
 
+    class BitcoinRPCProxy:
+        def __init__(self, btc_rpc):
+            self.__btc_rpc = btc_rpc
+            self.__loop = asyncio.get_event_loop()
+
+        def __del__(self):
+            self.__loop.run_until_complete(self.__btc_rpc.client.aclose())
+            pass
+
+        def __getattr__(self, name):
+            #if name in dir(self.__btc_rpc):
+            #    func = getattr(self, name)
+            #    return func
+
+            self.__name = name
+            return self
+
+        def __call__(self, *args, **kwargs):
+            #if self.__name in dir(self.__btc_rpc):
+            #    func = getattr(self, name)
+            #    return func
+            return self.__loop.run_until_complete(self.__btc_rpc.acall(self.__name, list(args), **kwargs))
+
     def __init__(self, name, btc_conn):
         self.__btc_url               = "http://%s:%s@%s:%i"
         self.__rpcuser               = "btc"
@@ -57,12 +81,17 @@ class btcclient(baseobject):
                 self.__rpcport = btc_conn["rpcport"]
         self._logger.debug("connect btc server(rpcuser={}, rpcpassword={}, rpcip={}, rpcport={})".format(btc_conn["rpcuser"], btc_conn["rpcpassword"], btc_conn["rpcip"], btc_conn["rpcport"]))
         #self.__rpc_connection = AuthServiceProxy(self.__btc_url%(self.__rpcuser, self.__rpcpassword, self.__rpcip, self.__rpcport))
-        self.__rpc_connection = BitcoinRPC(self.__rpcip, self.__rpcport, self.__rpcuser, self.__rpcpassword)
+        self.__rpc_connection = self.BitcoinRPCProxy(BitcoinRPC(self.__rpcip, self.__rpcport, self.__rpcuser, self.__rpcpassword))
         self._logger.debug(f"connection succeed.")
         self.__init_routing__()
 
+
     def disconn_node(self):
         pass
+
+    def acall(self, func):
+        print(dir(self.__rpc_connection))
+        self.__loop.run_until_complete(func)
 
     def stop(self):
         self.work_stop()
@@ -469,6 +498,7 @@ class btcclient(baseobject):
         try:
             self._logger.debug(f"start getblockcount()")
             
+            #datas = self.__loop.run_until_complete(self.__rpc_connection.getblockcount())
             datas = self.__rpc_connection.getblockcount()
 
             ret = result(error.SUCCEED, "", datas)
@@ -787,9 +817,13 @@ class btcclient(baseobject):
             ret = parse_except(e)
         return ret
 
+    def __rpc_getrawtransaction(self, txid, verbose = True, block_hash = None):
+        self.__rpc_connection.getrawtransaction(txid, verbose, block_hash)
+
     def __init_routing__(self):
         self.__bitcoin_rpc = {
-                "getrawtransaction" : self.__rpc_connection.getrawtransaction
+                #"getrawtransaction" : self.__rpc_connection.getrawtransaction
+                "getrawtransaction" : self.__rpc_getrawtransaction
                 }
         pass
 

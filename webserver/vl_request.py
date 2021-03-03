@@ -216,6 +216,9 @@ def check_record(args):
 def get_btcclient():
     return btcclient(name, stmanage.get_btc_conn())
 
+def get_payloadclient():
+    return payload(name, stmanage.get_chain_id())
+
 def request_ret(datas):
     json_print(datas.to_json())
     return json_reset(datas.to_json())
@@ -242,7 +245,7 @@ def btc_send_exproof_start(opttype, fromaddress, toaddress, toamount, fromprivke
         vreceiver, sequence, module, outamount, times, chainid, subtractfee = False):
     try:
         bclient = get_btcclient()
-        pl = payload(name)
+        pl = get_payloadclient()
         ret = pl.create_ex_start(opttype, vreceiver, sequence, module, outamount, times, chainid)
         assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
         data = ret.datas
@@ -257,7 +260,7 @@ def btc_send_exproof_end(opttype, fromaddress, toaddress, toamount, fromprivkeys
         vreceiver, sequence, amount, version, subtractfee = False):
     try:
         bclient = get_btcclient()
-        pl = payload(name)
+        pl = get_payloadclient()
         ret = pl.create_ex_end(opttype, vreceiver, sequence, amount, version)
         assert ret.state == error.SUCCEED, f"payload create_ex_end.{ret.message}"
         data = ret.datas
@@ -272,7 +275,7 @@ def btc_send_exproof_cancel(opttype, fromaddress, toaddress, toamount, fromprivk
         vreceiver, sequence, subtractfee = False):
     try:
         bclient = get_btcclient()
-        pl = payload(name)
+        pl = get_payloadclient()
         ret = pl.create_ex_cancel(opttype, vreceiver, sequence)
         assert ret.state == error.SUCCEED, f"payload create_ex_cancel.{ret.message}"
         data = ret.datas
@@ -287,7 +290,7 @@ def btc_send_exproof_stop(opttype, fromaddress, toaddress, toamount, fromprivkey
         vreceiver, sequence, subtractfee = False):
     try:
         bclient = get_btcclient()
-        pl = payload(name)
+        pl = get_payloadclient()
         ret = pl.create_ex_stop(opttype, vreceiver, sequence)
         assert ret.state == error.SUCCEED, f"payload create_ex_stop.{ret.message}"
         data = ret.datas
@@ -302,7 +305,7 @@ def btc_send_exproof_mark(fromaddress, toaddress, toamount, fromprivkeys, combin
         vreceiver, sequence, amount, version, subtractfee = True):
     try:
         bclient = get_btcclient()
-        pl = payload(name)
+        pl = get_payloadclient()
         ret = pl.create_ex_mark(vreceiver, sequence, version, int(COINS * amount))
         assert ret.state == error.SUCCEED, f"payload create_ex_mark.{ret.message}"
         data = ret.datas

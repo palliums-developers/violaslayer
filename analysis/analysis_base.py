@@ -20,6 +20,7 @@ from enum import Enum
 from db.dbvfilter import dbvfilter
 from baseobject import baseobject
 from btc.payload import payload
+from dataproof import dataproof
 
 #module name
 name="abase"
@@ -190,7 +191,7 @@ class abase(baseobject):
                 return result(error.TRAN_INFO_INVALID, "transaction format is invalid.")
 
             self._logger.debug(f"parse transaction payload:txid = {tran.get('txid')} issuer:{issuer}  receiver:{receiver}")
-            payload_parse = payload(self.name())
+            payload_parse = payload(self.name(), dataproof.configs("chain_id"))
             ret = payload_parse.parse(payload_hex)
             if ret.state != error.SUCCEED:
                 return ret

@@ -22,6 +22,7 @@ from enum import Enum
 from analysis.analysis_base import abase
 from btc.payload import payload
 from db.dbvfilter import dbvfilter
+from dataproof import dataproof
 #module name
 name="bfilter"
 
@@ -207,7 +208,7 @@ class afilter(abase):
 
     def filter_tran(self, txids, blockhash, height, index, confirm = 1):
         latest_opreturn_index = index
-        payload_parse = payload(name)
+        payload_parse = payload(name, dataproof.configs("chain_id"))
         for txid in txids:
             if self.work() == False:
                 self._logger.debug(f"will stop work, next height: {height + 1}")

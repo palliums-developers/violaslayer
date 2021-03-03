@@ -11,14 +11,17 @@ install mongodb:[https://docs.mongodb.com/v4.0/tutorial/install-mongodb-on-ubunt
 pymongo:[https://api.mongodb.com/python/current/installation.html]
 python3 -m easy_install pymongo
 
-##numpy
+## numpy
 python3 -m pip install numpy
 
-##struct
+## struct
 python3 -m pip install struct
 
+## bitcoinrpc(v0.3.1)
 
-##bitcoind(version >= 0.18)
+python3 -m pip install [bitcoinrpc](https://pypi.org/project/bitcoinrpc/)
+
+## bitcoind(version >= 0.18)
 full-nodes bitcoin
 ## python3.6.9 or up
 
