@@ -28,6 +28,7 @@ from baseobject import baseobject
 from enum import Enum
 from btc.payload import payload
 from btc.transaction import transaction
+from dataproof import dataproof
 
 #module name
 name="bclient"
@@ -40,7 +41,7 @@ class btcclient(baseobject):
     class BitcoinRPCProxy:
         def __init__(self, btc_rpc):
             self.__btc_rpc = btc_rpc
-            self.__loop = asyncio.new_event_loop()
+            self.__loop = dataproof.configs("btc_client_loop")
             asyncio.set_event_loop(self.__loop)
 
         def __del__(self):
@@ -48,9 +49,7 @@ class btcclient(baseobject):
             pass
 
         def __getattr__(self, name):
-            if name.startswith("_") : return;
             self.__name = name
-            print(name)
             return self
 
         def __call__(self, *args, **kwargs):

@@ -31,7 +31,8 @@ def create_ex_start(toaddress, sequence, module, outamount, times, chainid):
         datas = create_string_buffer(len(btoaddress) + 8 + len(bmodule) + 8 + 2 + 1)
 
         data_offer = 0
-        struct.pack_into(f">{len(btoaddress)}sQ{len(bmodule)}sQHB", datas, data_offer, 
+        struct.pack_into(f">{len(btoaddress)}sQ{len(bmodule)}sQHB", 
+                datas, data_offer, 
                 btoaddress, 
                 sequence, 
                 bmodule, 
@@ -45,52 +46,72 @@ def create_ex_start(toaddress, sequence, module, outamount, times, chainid):
         ret = parse_except(e)
     return ret
 
-def create_ex_end(toaddress, sequence, amount, version):
+def create_ex_end(toaddress, sequence, amount, version, chainid):
     try:
         btoaddress = bytes.fromhex(toaddress)
-        datas = create_string_buffer(len(btoaddress) + 8 + 8 + 8)
+        datas = create_string_buffer(len(btoaddress) + 8 + 8 + 8 + 1)
 
         data_offer = 0
-        struct.pack_into(f">{len(btoaddress)}sQQQ", datas, data_offer, btoaddress, sequence, amount, version)
+        struct.pack_into(f">{len(btoaddress)}sQQQB", 
+                datas, data_offer, 
+                btoaddress, 
+                sequence, 
+                amount, 
+                version,
+                chainid)
 
         ret = result(error.SUCCEED, datas = datas)
     except Exception as e:
         ret = parse_except(e)
     return ret
 
-def create_ex_cancel(toaddress, sequence):
+def create_ex_cancel(toaddress, sequence, chainid):
     try:
         btoaddress = bytes.fromhex(toaddress)
-        datas = create_string_buffer(len(btoaddress) + 8)
+        datas = create_string_buffer(len(btoaddress) + 8 + 1)
 
         data_offer = 0
-        struct.pack_into(f">{len(btoaddress)}sQ", datas, data_offer, btoaddress, sequence)
+        struct.pack_into(f">{len(btoaddress)}sQB", 
+                datas, data_offer, 
+                btoaddress, 
+                sequence,
+                chainid)
 
         ret = result(error.SUCCEED, datas = datas)
     except Exception as e:
         ret = parse_except(e)
     return ret
 
-def create_ex_stop(toaddress, sequence):
+def create_ex_stop(toaddress, sequence, chainid):
     try:
         btoaddress = bytes.fromhex(toaddress)
-        datas = create_string_buffer(len(btoaddress) + 8)
+        datas = create_string_buffer(len(btoaddress) + 8 + 1)
 
         data_offer = 0
-        struct.pack_into(f">{len(btoaddress)}sQ", datas, data_offer, btoaddress, sequence)
+        struct.pack_into(f">{len(btoaddress)}sQB", 
+                datas, data_offer, 
+                btoaddress, 
+                sequence,
+                chainid)
 
         ret = result(error.SUCCEED, datas = datas)
     except Exception as e:
         ret = parse_except(e)
     return ret
 
-def create_ex_mark(toaddress, sequence, version, amount):
+def create_ex_mark(toaddress, sequence, version, amount, chainid):
     try:
         btoaddress = bytes.fromhex(toaddress)
-        datas = create_string_buffer(len(btoaddress) + 8 + 8 + 8)
+        datas = create_string_buffer(len(btoaddress) + 8 + 8 + 8 + 1)
 
         data_offer = 0
-        struct.pack_into(f">{len(btoaddress)}sQQQ", datas, data_offer, btoaddress, sequence, version, amount)
+        struct.pack_into(f">{len(btoaddress)}sQQQB", 
+                datas, data_offer, 
+                btoaddress, 
+                sequence, 
+                version, 
+                amount,
+                chainid)
 
         ret = result(error.SUCCEED, datas = datas)
     except Exception as e:
@@ -105,7 +126,12 @@ def create_btc_mark(toaddress, sequence, amount, name):
 
         data_offer = 0
         print(bname)
-        struct.pack_into(f">{len(btoaddress)}sQQ{len(bname)}s", datas, data_offer, btoaddress, sequence, amount, bname)
+        struct.pack_into(f">{len(btoaddress)}sQQ{len(bname)}s", 
+                datas, data_offer, 
+                btoaddress, 
+                sequence, 
+                amount, 
+                bname)
 
         ret = result(error.SUCCEED, datas = datas)
     except Exception as e:

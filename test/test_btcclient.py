@@ -27,7 +27,7 @@ from comm.parseargs import parseargs
 name="testbtcclient"
 
 logger = log.logger.getLogger(name)
-class TestState:
+class CheckState:
     def __init__(self):
         self.__state = {"succeed":0, "failed":0, "count": 0}
     def update(self, state):
@@ -38,6 +38,9 @@ class TestState:
     def info(self):
         self.__state["count"] = self.__state.get("succeed", 0) + self.__state.get("failed", 0)
         return self.__state
+
+def setup():
+    stmanage.set_conf_env("../violaslayer.toml")
 
 def getbtcclient():
     return btcclient(name, stmanage.get_btc_conn())
@@ -52,7 +55,7 @@ def check_result(ret, getvalue, fixvalue):
 
 def test_btc():
 
-    teststate = TestState()
+    teststate = CheckState()
     client = getbtcclient()
     ret = client.getblockcount()
     ok = check_result(ret, ret.datas, None)

@@ -84,9 +84,8 @@ def execute_set(args):
         module          = args.get("module")
         outamount       = int(args.get("outamount", toamount))
         times           = int(args.get("times", 0))
-        chainid         = int(args.get("chainid", 4))
         return btc_send_exproof_start(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
-                vreceiver, sequence, module, outamount, times, chainid, subtractfee)
+                vreceiver, sequence, module, outamount, times, subtractfee)
     elif state == "end":
         version  = int(args.get("version", 0))
         amount   = int(args.get("amount"))
@@ -242,11 +241,11 @@ def btc_list_address_unspent(address, minconf = 0, maxconf = 99999999):
     return request_ret(ret)
 
 def btc_send_exproof_start(opttype, fromaddress, toaddress, toamount, fromprivkeys, combine, \
-        vreceiver, sequence, module, outamount, times, chainid, subtractfee = False):
+        vreceiver, sequence, module, outamount, times, subtractfee = False):
     try:
         bclient = get_btcclient()
         pl = get_payloadclient()
-        ret = pl.create_ex_start(opttype, vreceiver, sequence, module, outamount, times, chainid)
+        ret = pl.create_ex_start(opttype, vreceiver, sequence, module, outamount, times)
         assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
         data = ret.datas
 

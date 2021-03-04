@@ -136,7 +136,7 @@ def parsetranpayload(txid):
     parse_payload = getpayloadcli()
     ret = parse_payload.parse(payload_data)
 
-    info = {"is allow opreturn": parse_payload.is_allow_opreturn(parse_payload.tx_codetype, parse_payload.tx_version, block),
+    info = {"is allow opreturn": parse_payload.is_valid,
             "block" : block,
             "txid": tran.get("txid"),
             "blockhash": blockhash,

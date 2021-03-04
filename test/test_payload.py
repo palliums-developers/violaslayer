@@ -22,15 +22,12 @@ from btc.payload import payload
 #module name
 name="payloadtest"
 #start
-opstr = "6a3c76696f6c617300033000c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6524689a4f870c46d6a5d901b5ac1fdb200000000000000000000"
-
     ###txid: f30a9f9497b97aa5f95a46f1bd6fceeb26241686526068c309dee8d8fafc0a97
     ###to_address:f086b6a2348ac502c708ac41d06fe824c91806cabcd5b2b5fa25ae1c50bed3c6 
     ###sequence: 20200110006
     ###token:cd0476e85ecc5fa71b61d84b9cf2f7fd524689a4f870c46d6a5d901b5ac1fdb2
    
 #end (manual create, can't found txid)
-opstr_end = "6a2276696f6c617300033003c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6"
 
 #btc_mark (manual create, can't found txid)
 opstr_btc_mark = "6a3176696f6c617300031030c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6000000000000271076696f6c617300"
@@ -61,7 +58,7 @@ def test_create_start():
     chain_id = 4
     times = 123
     pl = get_payload_cli(4)
-    ret = pl.create_ex_start(payload.txtype.B2VUSD.name.lower(), toaddress, sequence, module, outamount, times, chain_id)
+    ret = pl.create_ex_start(payload.txtype.B2VUSD.name.lower(), toaddress, sequence, module, outamount, times)
     assert ret.state == error.SUCCEED, "payload create_ex_start.{ret.message}"
 
     assert ret.datas == target, "create result datas != target datas"
@@ -70,38 +67,38 @@ def test_create_start():
 
 #data valid value is true
 def check_result_is_valid(ret, versions = None):
-    assert ret.state == error.SUCCEED, "parse OP_RETURN failed.{}".format(ret.message)
+    assert ret.state == error.SUCCEED, "parse OP_RETURN failed.{} data = {}".format(ret.message, ret.datas)
     assert ret.datas.get("valid", False), "valid not true,, version is {} data = {}".format(ret.datas.get('version'), ret.datas) 
 
 #data valid value is false
 def check_result_is_invalid(ret, versions = None):
-    assert ret.state == error.SUCCEED, "parse OP_RETURN failed.{}".format(ret.message)
+    assert ret.state == error.SUCCEED, "parse OP_RETURN failed.{} data = {}".format(ret.message, ret.datas)
     assert not ret.datas.get("valid"), "valid not false, datas = {}".format(ret.datas) 
 
 def test_np():
     pdata = get_payload_cli(4)
 
-    opstr_start = "6a3c76696f6c617300043000c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6524689a4f870c46d6a5d901b5ac1fdb20000000000000000000004"
+    opstr_start = "6a3d76696f6c617300043000c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6524689a4f870c46d6a5d901b5ac1fdb20000000000000000000004"
     ret = pdata.parse(opstr_start)
     check_result_is_valid(ret)
     
-    opstr_start = "6a3c76696f6c617300033000c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6524689a4f870c46d6a5d901b5ac1fdb20000000000000000000004"
+    opstr_start = "6a3d76696f6c617300033000c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6524689a4f870c46d6a5d901b5ac1fdb20000000000000000000004"
     ret = pdata.parse(opstr_start)
     check_result_is_invalid(ret)
 
-    opstr_end = "6a2276696f6c617300033003c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6"
+    opstr_end = "6a2376696f6c617300043003c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b604"
     ret = pdata.parse(opstr_end)
     check_result_is_valid(ret)
 
-    opstr_end = "6a2276696f6c617300043003c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6"
+    opstr_end = "6a2376696f6c617300033003c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b604"
     ret = pdata.parse(opstr_end)
-    check_result_is_valid(ret)
+    check_result_is_invalid(ret)
 
-    opstr_b2v_stop = "6a2276696f6c617300033003c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6"
+    opstr_b2v_stop = "6a2376696f6c617300043003c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b604"
     ret = pdata.parse(opstr_b2v_stop)
     check_result_is_valid(ret)
 
-    opstr_btc_mark = "6a3176696f6c617300031030c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6000000000000271076696f6c617300"
+    opstr_btc_mark = "6a3176696f6c617300041030c91806cabcd5b2b5fa25ae1c50bed3c600000004b40537b6000000000000271076696f6c61730004"
     ret = pdata.parse(opstr_btc_mark)
     check_result_is_valid(ret)
 
@@ -131,19 +128,19 @@ def test_exchange():
     version = 123456
     show_info("create ex end", toaddress=toaddress, sequence=sequence, amount=amount, version=version)
 
-    ret = create_exchange.create_ex_end(toaddress, sequence, amount, version)
+    ret = create_exchange.create_ex_end(toaddress, sequence, amount, version, chain_id)
     ret = parse_exchange.parse_ex_end(ret.datas)
     json_print(ret.datas)
     
     show_info('create ex cancel', toaddress=toaddress, sequence=sequence)
 
-    ret = create_exchange.create_ex_cancel(toaddress, sequence)
+    ret = create_exchange.create_ex_cancel(toaddress, sequence, chain_id)
     ret = parse_exchange.parse_ex_cancel(ret.datas)
     json_print(ret.datas)
 
     show_info('create ex stop', toaddress=toaddress, sequence=sequence)
 
-    ret = create_exchange.create_ex_stop(toaddress, sequence)
+    ret = create_exchange.create_ex_stop(toaddress, sequence, chain_id)
     ret = parse_exchange.parse_ex_stop(ret.datas)
     json_print(ret.datas)
 
@@ -164,7 +161,7 @@ def test_payload():
     chain_id = 4
     show_info('create ex start', toaddress=toaddress, sequence=sequence, module=module, outammount=outamount, times=times)
 
-    ret = pl.create_ex_start(payload.txtype.B2VUSD.name.lower(), toaddress, sequence, module, outamount, times, chain_id)
+    ret = pl.create_ex_start(payload.txtype.B2VUSD.name.lower(), toaddress, sequence, module, outamount, times)
     assert ret.state == error.SUCCEED, "payload create_ex_start.{ret.message}"
     ret = pl.parse_opt_datahex(ret.datas)
     assert ret.state == error.SUCCEED, "parse OP_RETURN failed."

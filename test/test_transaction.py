@@ -10,11 +10,10 @@ import sys, os
 sys.path.append(os.getcwd())
 sys.path.append("..")
 import traceback
-import log
-import log.logger
 import threading
 import stmanage
 import subprocess
+import comm.values
 from time import sleep, ctime
 import comm.functions as fn
 from comm.error import error
@@ -23,6 +22,10 @@ from btc.btcclient import btcclient
 from enum import Enum
 from comm.functions import json_print
 from comm.parseargs import parseargs
+from btc.payload import payload
+from btc.transaction import transaction
+
+COINS = comm.values.COINS
 
 name="testtransaction"
 def test_createrawtransaction():
@@ -108,9 +111,9 @@ def test_sendtoaddress():
 
         client = btcclient(name, stmanage.get_btc_conn())
         privkeys = ["cUrpMtcfh4s9CRdPEA2tx3hYQGb5yy7pkWQNzaMBZc8Sj42g8YA8"]
-        ret = client.sendtoaddress(sender_addr, receiver_addr, amount, privkeys, data, subtractfeefromamount = True)
-        assert ret.state == error.SUCCEED, f"sendtoaddress failed.{ret.message}"
-        logger.info(json_dumps(ret.to_json()))
+        #ret = client.sendtoaddress(sender_addr, receiver_addr, amount, privkeys, data, subtractfeefromamount = True)
+        #assert ret.state == error.SUCCEED, f"sendtoaddress failed.{ret.message}"
+        print(json_dumps(ret.to_json()))
 
 def main():
     try:
@@ -124,9 +127,11 @@ def main():
     finally:
         print("end main")
 
-if __name__ == "__main__":
+def setup():
     stmanage.set_conf_env("../violaslayer.toml")
-    #main()
-    #test_createrawtransaction()
-    test_sendtoaddress()
+
+if __name__ == "__main__":
+    setup()
+    pa = parseargs(globals())
+    pa.test(sys.argv)
 

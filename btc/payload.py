@@ -321,13 +321,11 @@ class payload(baseobject):
         self._type_version = self.typeversions()
         #start support version_4, other support version_3 version_4
         start_versions  = [self.typeversions.create_version_info(self.version_4)]
-        end_versions    = [
-                self.typeversions.create_version_info(self.version_3, 0, 0),
-                self.typeversions.create_version_info(self.version_4, 0, 0),
-                ]
+        end_versions    = list(start_versions)
         stop_versions   = list(end_versions)
-        cancel_versions = list(end_versions)
-        mark_versions = [self.typeversions.create_version_info(version.value, 0, 0) for version in self.versions]
+        #cancel_versions = list(end_versions) #no-support cancel
+        mark_versions   = list(end_versions)
+        btcmark_versions = [self.typeversions.create_version_info(version.value, 0, 0) for version in self.versions]
 
         for tv in self.txcodetype:
             if tv.name.endswith("_START"):
@@ -336,8 +334,10 @@ class payload(baseobject):
                 self.type_version.set(tv, end_versions)
             elif tv.name.endswith("_STOP"):
                 self.type_version.set(tv, stop_versions)
-            elif tv.name.endswith("MARK"):
+            elif tv.name.endswith("_MARK"):
                 self.type_version.set(tv, mark_versions)
+            elif tv.name.endswith("_BTCMARK"):
+                self.type_version.set(tv, btcmark_versions)
 
     def __init__type_datas_parse(self):
         self._type_funcs = {}
@@ -377,6 +377,10 @@ class payload(baseobject):
         self.op_mark = None
         self.proof_data = None
         self.is_valid = False
+
+    @property
+    def chain_id(self):
+        return self.__chain_id
 
     @property
     def type_funcs(self):
@@ -434,7 +438,7 @@ class payload(baseobject):
     @classmethod
     def is_bigendian(self):
         #0x0001
-        val = array.array('H',[1]).tostring()
+        val = array.array('H',[1]).tobytes()
         if val[0] == 1:
             return False
         return True
@@ -571,15 +575,17 @@ class payload(baseobject):
         #EnumUtils.isValidEnum(self.txcodetype.class, txcodetype)
         return txcodetype.value in self.txcodetype._value2member_map_ and txcodetype != self.txcodetype.UNKNOWN
 
-    def is_allow_opreturn(self, txcodetype, version, block = None):
-        if not self.is_allow_txcodetype(txcodetype):
-            return False
+    def is_allow_opreturn(self, mark, txcodetype, version, chain_id, block = None):
 
-        return self.type_version.is_valid(txcodetype, version, block) 
-
+        return self.is_allow_mark(mark) and \
+                self.is_allow_txcodetype(txcodetype) and \
+                self.is_allow_chain_id(txcodetype, version, chain_id) and \
+                self.type_version.is_valid(txcodetype, version, block) 
 
     def is_allow_chain_id(self, txcodetype, version, chain_id):
-        if version >= self.version_4 and txcodetype.endswith("_START"):
+        state = self.get_state_from_txcodetype(txcodetype)
+        if version >= self.version_4 and \
+                state in [self.txstate.START, self.txstate.END, self.txstate.STOP, self.txstate.CANCEL]:
             return chain_id is not None and self.chain_id == chain_id
         return True
 
@@ -714,9 +720,10 @@ class payload(baseobject):
                 return ret
 
             self.proof_data = ret.datas
-            self.is_valid = self.is_allow_opreturn(self.tx_codetype, self.tx_version, block) \
-                    and self.is_allow_mark(self.op_mark) \
-                    and self.is_allow_chain_id(self.tx_codetype, self.tx_version, self.proof_data.get("chain_id"))
+            self.is_valid = self.is_allow_opreturn(self.op_mark, \
+                    self.tx_codetype, \
+                    self.tx_version, 
+                    self.proof_data.get("chain_id"), block) 
             datas = {
                     "opcode" : self.op_code.name,
                     "datasize": self.op_size,
@@ -786,9 +793,9 @@ class payload(baseobject):
             ret = parse_except(e)
         return ret
 
-    def create_ex_start(self, swap_type, toaddress, sequence, module, outamount, times, chainid):
+    def create_ex_start(self, swap_type, toaddress, sequence, module, outamount, times):
         try:
-            ret = create_exchange.create_ex_start(toaddress, sequence, module, outamount, times, chainid)
+            ret = create_exchange.create_ex_start(toaddress, sequence, module, outamount, times, self.chain_id)
             if ret.state != error.SUCCEED:
                 return ret
             
@@ -800,7 +807,7 @@ class payload(baseobject):
     
     def create_ex_cancel(self, swap_type, toaddress, sequence):
         try:
-            ret = create_exchange.create_ex_cancel(toaddress, sequence)
+            ret = create_exchange.create_ex_cancel(toaddress, sequence, self.chain_id)
             if ret.state != error.SUCCEED:
                 return ret
             
@@ -812,7 +819,7 @@ class payload(baseobject):
     
     def create_ex_end(self, swap_type, toaddress, sequence, amount, version):
         try:
-            ret = create_exchange.create_ex_end(toaddress, sequence, amount, version)
+            ret = create_exchange.create_ex_end(toaddress, sequence, amount, version, self.chain_id)
             if ret.state != error.SUCCEED:
                 return ret
             
@@ -824,7 +831,7 @@ class payload(baseobject):
     
     def create_ex_stop(self, swap_type, toaddress, sequence):
         try:
-            ret = create_exchange.create_ex_stop(toaddress, sequence)
+            ret = create_exchange.create_ex_stop(toaddress, sequence, self.chain_id)
             if ret.state != error.SUCCEED:
                 return ret
             
@@ -836,7 +843,7 @@ class payload(baseobject):
     
     def create_ex_mark(self, toaddress, sequence, version, amount):
         try:
-            ret = create_exchange.create_ex_mark(toaddress, sequence, version, amount)
+            ret = create_exchange.create_ex_mark(toaddress, sequence, version, amount,self.chain_id)
             if ret.state != error.SUCCEED:
                 return ret
             
