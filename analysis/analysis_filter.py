@@ -245,26 +245,28 @@ class afilter(abase):
                         ret = self.update_txout_state(txoutin.get("vin"), blockhash, session=session)
                         assert ret.state == error.SUCCEED, f"update txout failed.txid = {txid}"
                     
+                    op_is_valid = False
                     if self.store_op_tran:
                         ret = self._vclient.getopreturnfromdata(tran)
                         if ret.state == error.SUCCEED and ret.datas is not None:
                             ret = payload_parse.is_valid_violas(ret.datas)
                             if ret.state == error.SUCCEED and ret.datas:
-
+                                self._logger.info(f"save op_return: index = {latest_opreturn_index} tx = {txid} tx_type = payload_parse.tx_type.name.lower() confirm = {confirm}")
                                 ret = self.save_opreturn_txid(latest_opreturn_index, txid, payload_parse.tx_type.name.lower(), confirm = confirm, session=session)
                                 assert ret.state == error.SUCCEED, f"save address map txout failed.txid = {txid}"
 
                                 ret = self._dbclient.set_latest_opreturn_index(latest_opreturn_index, session = session)
                                 assert ret.state == error.SUCCEED, f"save opreturn index failed. txid = {txid}"
 
-                                self._logger.debug(f"save opreturn txid :{txid}")
                                 latest_opreturn_index = latest_opreturn_index + 1
+
+                                op_is_valid = True
 
                     #set latest saved txid
                     ret = self._dbclient.set_latest_saved_txid(txid, session=session)
                     assert ret.state == error.SUCCEED, f"update latest saved txid failed.txid = {txid}"
                     #proof
-                    self._logger.debug(f"transaction parse is succeed. op_index = {index} height:{height} txid:{txid}")
+                    self._logger.debug(f"transaction parse is succeed. op_is_valid = {op_is_valid} op_index = {index} height:{height} txid:{txid}")
 
     def save_mempool_trans(self, index):
         try:
@@ -346,7 +348,6 @@ class afilter(abase):
                     self._logger.debug(f"recver stop command, next height: {version}")
                     return result(error.WORK_STOP)
 
-                self._logger.debug(f"get block with height = {version}")
                 ret = self._vclient.getblockwithindex(version)
                 if ret.state != error.SUCCEED:
                     return ret

@@ -639,12 +639,10 @@ class payload(baseobject):
 
     def parse(self, payload, block = None):
         try:
-            self._logger.debug(f"payload:{payload}")
             self._reset(payload)
             bdata = bytes.fromhex(self.payload_hex)
             data_len = len(bdata)
             if bdata[0] != self.optcodetype.OP_RETURN.value:
-                self._logger.debug(f"{bdata[0]} not OP_RETURN({self.optcodetype.OP_RETURN.value}) ")
                 return result(error.ARG_INVALID, f"{bdata[0]} not OP_RETURN({self.optcodetype.OP_RETURN.value})")
 
             size = bdata[1]
