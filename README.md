@@ -23,7 +23,10 @@ python3 -m pip install [bitcoinrpc](https://pypi.org/project/bitcoinrpc/)
 
 ## bitcoind(version >= 0.18)
 full-nodes bitcoin
-## python3.6.9 or up
+## python3.8.5 or up
+
+#sqlite3
+sudo install libsqlite3-dev
 
 # install
 git clone [https://github.com/palliums-developers/violaslayer]
