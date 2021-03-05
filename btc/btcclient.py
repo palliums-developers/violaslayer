@@ -293,7 +293,7 @@ class btcclient(baseobject):
                 dust_threshold_sw = self.getdustthreshold(True, fee_rate)
                 dust_threshold_nsw = self.getdustthreshold(False, fee_rate)
                 toamount = max(dust_threshold_sw, dust_threshold_nsw)
-                use_dust_threshold = true
+                use_dust_threshold = True
 
             tran = transaction(name)
             if data:
