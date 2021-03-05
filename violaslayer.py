@@ -55,6 +55,11 @@ class works:
 
         self.__work_obj[obj.name()] = obj
 
+    def work_looping(self, obj, mod, nsec = 8):
+        while (self.__work_looping.get(mod, False)):
+            obj.start()
+            sleep(nsec)
+
     def work_bfilter(self, **kwargs):
         try:
             nsec = kwargs.get("nsec", 0)
@@ -71,6 +76,7 @@ class works:
                     obj.set_min_valid_version(self.__btc_min_valid_version - 1)
                     self.set_work_obj(obj)
                     obj.start()
+                    self.work_looping(obj, mod, nsec)
                 except Exception as e:
                     parse_except(e)
                 sleep(nsec)
@@ -102,6 +108,7 @@ class works:
                     obj.set_step(stmanage.get_db(dtype).get("step", 100))
                     self.set_work_obj(obj)
                     obj.start()
+                    self.work_looping(obj, mod, nsec)
                 except Exception as e:
                     parse_except(e)
                 sleep(nsec)
@@ -131,6 +138,7 @@ class works:
                     obj.set_step(stmanage.get_db(dtype).get("step", 100))
                     self.set_work_obj(obj)
                     obj.start()
+                    self.work_looping(obj, mod, nsec)
                 except Exception as e:
                     parse_except(e)
                 sleep(nsec)
@@ -166,6 +174,7 @@ class works:
                     obj.set_step(stmanage.get_db(dtype).get("step", 100))
                     self.set_work_obj(obj)
                     obj.start()
+                    self.work_looping(obj, mod, nsec)
                 except Exception as e:
                     parse_except(e)
                 sleep(nsec)
@@ -196,6 +205,7 @@ class works:
                     obj.set_step(stmanage.get_db(dtype).get("step", 100))
                     self.set_work_obj(obj)
                     obj.start()
+                    self.work_looping(obj, mod, nsec)
                 except Exception as e:
                     parse_except(e)
                 sleep(nsec)

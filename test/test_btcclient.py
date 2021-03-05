@@ -14,19 +14,20 @@ import log
 import log.logger
 import threading
 import stmanage
+import subprocess
 from time import sleep, ctime
 import comm.functions as fn
 from comm.error import error
 from comm.result import parse_except
 from btc.btcclient import btcclient
-import subprocess
 from enum import Enum
 from comm.functions import json_print
+from comm.parseargs import parseargs
 
 name="testbtcclient"
 
 logger = log.logger.getLogger(name)
-class TestState:
+class CheckState:
     def __init__(self):
         self.__state = {"succeed":0, "failed":0, "count": 0}
     def update(self, state):
@@ -37,6 +38,9 @@ class TestState:
     def info(self):
         self.__state["count"] = self.__state.get("succeed", 0) + self.__state.get("failed", 0)
         return self.__state
+
+def setup():
+    stmanage.set_conf_env("../violaslayer.toml")
 
 def getbtcclient():
     return btcclient(name, stmanage.get_btc_conn())
@@ -51,7 +55,7 @@ def check_result(ret, getvalue, fixvalue):
 
 def test_btc():
 
-    teststate = TestState()
+    teststate = CheckState()
     client = getbtcclient()
     ret = client.getblockcount()
     ok = check_result(ret, ret.datas, None)
@@ -83,4 +87,5 @@ def test_btc():
     json_print(teststate.info())
 
 if __name__ == "__main__":
-    test_btc()
+    pa = parseargs(globals())
+    pa.test(sys.argv)

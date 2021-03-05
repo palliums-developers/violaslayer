@@ -10,6 +10,7 @@ MIN_EST_GAS = 1000   #estimate min gas value(satoshi), check wallet address's ba
 EX_TYPE_B2V = "b2v"
 EX_TYPE_V2B = "v2b"
 
+PROJECT_NAME        = "violaslayer"
 
 class work_mod(Enum):
     COMM        = 0

@@ -18,7 +18,6 @@ from comm.result import result
 from comm.error import error
 from comm.parseargs import parseargs
 from comm.functions import json_print
-from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 from btc.btcclient import btcclient
 from enum import Enum
 from btc.payload import payload
@@ -32,6 +31,9 @@ logger = log.logger.getLogger(name)
 def getbtcclient():
     return btcclient(name, stmanage.get_btc_conn())
 
+def getpayloadcli():
+    return payload(name, stmanage.get_chain_id())
+
 def btchelp():
     client = getbtcclient()
     ret = client.help()
@@ -41,12 +43,13 @@ def btchelp():
 def getblockcount():
     client = getbtcclient()
     ret = client.getblockcount()
+    ret = client.getblockcount()
     assert ret.state == error.SUCCEED, f"getblockcount() failed"
     print(f"block count:{ret.datas}")
 
 def getblockhash(index):
     client = getbtcclient()
-    ret = client.getblockhash(index)
+    ret = client.getblockhash(int(index))
     assert ret.state == error.SUCCEED, f"getblockhash({index}) failed"
     print(f"blockhash({index}):{ret.datas}")
 
@@ -58,13 +61,13 @@ def getblockwithhash(blockhash):
 
 def getblockwithindex(index):
     client = getbtcclient()
-    ret = client.getblockwithindex(index)
+    ret = client.getblockwithindex(int(index))
     assert ret.state == error.SUCCEED, f"getblockwithindex({index}) failed"
     json_print(ret.datas)
 
 def getblocktxidswithindex(index):
     client = getbtcclient()
-    ret = client.getblocktxidswithindex(index)
+    ret = client.getblocktxidswithindex(int(index))
     assert ret.state == error.SUCCEED, f"getblocktxidswithindex({index}) failed"
     json_print(ret.datas)
 
@@ -130,10 +133,10 @@ def parsetranpayload(txid):
     assert ret.datas is not None, f"getopreturnfromdata() failed. {ret.message}"
     payload_data = ret.datas
 
-    parse_payload = payload(name)
+    parse_payload = getpayloadcli()
     ret = parse_payload.parse(payload_data)
 
-    info = {"is allow opreturn": parse_payload.is_allow_opreturn(parse_payload.tx_codetype, parse_payload.tx_version, block),
+    info = {"is allow opreturn": parse_payload.is_valid,
             "block" : block,
             "txid": tran.get("txid"),
             "blockhash": blockhash,
@@ -155,9 +158,9 @@ def parserawtranpayload(data):
     assert ret.datas is not None, f"getopreturnfromdata() failed"
     payload_data = ret.datas
 
-    parse_payload = payload(name)
+    parse_payload = getpayloadcli()
     ret = parse_payload.parse(payload_data)
-    info = {"is allow opreturn": parse_payload.is_allow_opreturn(parse_payload.tx_codetype, parse_payload.tx_version, block),
+    info = {"is allow opreturn": parse_payload.is_valid,
             "block" : "",
             "txid": tran.get("txid"),
             "blockhash": blockhash,
@@ -166,7 +169,7 @@ def parserawtranpayload(data):
     json_print(info)
     
 def parsepayload(data):
-    parse_payload = payload(name)
+    parse_payload = getpayloadcli()
     ret = parse_payload.parse(data)
 
     json_print(ret.to_json())
@@ -193,32 +196,33 @@ def sendtoaddress(fromaddress, toaddress, toamount, fromprivkeys): #toamount is 
 
 
 def init_args(pargs):
+    pargs.clear()
     pargs.append("help", "show arg list")
-    pargs.append("conf", "config file path name. default:violaslayer.toml, find from . ", True, "toml file")
-    pargs.append("getblockcount", "get block count.")
-    pargs.append("getblockhash", "get block hash.", True, ["index"])
-    pargs.append("getblockwithhash", "get block info with blockhash.", True, ["blockhash"])
-    pargs.append("getblockwithindex", "get block info with index.", True, ["index"])
-    pargs.append("getblocktxidswithhash", "get block txid list with blockhash.", True, ["blockhash"])
-    pargs.append("getblocktxidswithindex", "get block txid list with index.", True, ["index"])
-    pargs.append("getrawtransaction", "get raw transaction", True, ["txid", "verbose", "blockhash"])
-    pargs.append("gettxoutin", "get transaction vin and vout", True, ["txid"])
-    pargs.append("gettxoutwithn", "get transaction vout[n]", True, ["txid", "n"])
-    pargs.append("parsetranpayload", "parse transaction payload", True, ["txid"])
-    pargs.append("decoderawtransaction", "decode raw transaction payload", True, ["data-hex", "isswitness"])
-    pargs.append("parserawtranpayload", "parse raw transaction payload", True, ["data-hex"])
-    pargs.append("parsepayload", "parse raw payload", True, ["data-hex"])
-    pargs.append("getaddressunspent", "get unspent txout of address", True, ["address"])
-    pargs.append("getaddressbalance", "get balance of address", True, ["address"])
-    pargs.append("checkaddressunspent", "get unspent txout of address with amount(satoshi)", True, ["address", "amount"])
-    pargs.append("importaddress", "import address to btc wallet", True, ["address"])
-    pargs.append("getrawmempool", "get txids form mempool.", True, ["verbose"])
-    pargs.append("sendtoaddress", "send btc to address.", True, ["fromaddress", "toaddress", "toamount", "fromprivkeys"])
+    pargs.append("conf", "config file path name. default:violaslayer.toml, find from . and /etc/violaslayer/", True, "toml file", priority = 10)
+    pargs.append(getblockcount, "get block count.")
+    pargs.append(getblockhash, "get block hash.")
+    pargs.append(getblockwithhash, "get block info with blockhash.")
+    pargs.append(getblockwithindex, "get block info with index.")
+    pargs.append(getblocktxidswithhash, "get block txid list with blockhash.")
+    pargs.append(getblocktxidswithindex, "get block txid list with index.")
+    pargs.append(getrawtransaction, "get raw transaction")
+    pargs.append(gettxoutin, "get transaction vin and vout")
+    pargs.append(gettxoutwithn, "get transaction vout[n]")
+    pargs.append(parsetranpayload, "parse transaction payload")
+    pargs.append(decoderawtransaction, "decode raw transaction payload")
+    pargs.append(parserawtranpayload, "parse raw transaction payload")
+    pargs.append(parsepayload, "parse raw payload")
+    pargs.append(getaddressunspent, "get unspent txout of address")
+    pargs.append(getaddressbalance, "get balance of address")
+    pargs.append(checkaddressunspent, "get unspent txout of address with amount(satoshi)")
+    pargs.append(importaddress, "import address to btc wallet")
+    pargs.append(getrawmempool, "get txids form mempool.")
+    pargs.append(sendtoaddress, "send btc to address.")
 
 def run(argc, argv):
+    pargs = parseargs()
     try:
         logger.debug("start btc.main")
-        pargs = parseargs()
         init_args(pargs)
         pargs.show_help(argv)
         opts, err_args = pargs.getopt(argv)
@@ -236,113 +240,24 @@ def run(argc, argv):
     names = [opt for opt, arg in opts]
     pargs.check_unique(names)
 
-    #--conf must be first
     for opt, arg in opts:
+        count, arg_list = pargs.split_arg(opt, arg)
+        print("opt = {}, arg = {}".format(opt, arg_list))
         if pargs.is_matched(opt, ["conf"]):
-            stmanage.set_conf_env(arg)
-            break
-    if stmanage.get_conf_env() is None:
-        stmanage.set_conf_env_default() 
-
-    for opt, arg in opts:
-        if len(arg) > 0:
-            count, arg_list = pargs.split_arg(arg)
-
-            print("opt = {}, arg = {}".format(opt, arg_list))
-        if pargs.is_matched(opt, ["btchelp"]):
-            ret = btchelp()
-        elif pargs.is_matched(opt, ["getblockcount"]):
-            ret = getblockcount()
-        elif pargs.is_matched(opt, ["getblockhash"]):
             if len(arg_list) != 1:
                 pargs.exit_error_opt(opt)
-            ret = getblockhash(int(arg_list[0]))
-        elif pargs.is_matched(opt, ["getblockwithhash"]):
-            if len(arg_list) != 1:
-                pargs.exit_error_opt(opt)
-            ret = getblockwithhash(arg_list[0])
-        elif pargs.is_matched(opt, ["getblockwithindex"]):
-            if len(arg_list) != 1:
-                pargs.exit_error_opt(opt)
-            ret = getblockwithindex(int(arg_list[0]))
-        elif pargs.is_matched(opt, ["getblocktxidswithhash"]):
-            if len(arg_list) != 1:
-                pargs.exit_error_opt(opt)
-            ret = getblocktxidswithhash(arg_list[0])
-        elif pargs.is_matched(opt, ["getblocktxidswithindex"]):
-            if len(arg_list) != 1:
-                pargs.exit_error_opt(opt)
-            ret = getblocktxidswithindex(int(arg_list[0]))
-        elif pargs.is_matched(opt, ["getrawtransaction"]):
-            if len(arg_list) not in (1, 2, 3):
-                pargs.exit_error_opt(opt)
-            txid = None
-            verbose = True
-            blockhash= None
-            if len(arg_list) >= 1:
-                txid = arg_list[0]
-            if len(arg_list) >= 2:
-                verbose = arg_list[1] == "True"
-            if len(arg_list) >= 2:
-                blockhash = arg_list[2]
-            ret = getrawtransaction(txid, verbose, blockhash)
-        elif pargs.is_matched(opt, ["gettxoutin"]):
-            if len(arg_list) != 1:
-                pargs.exit_error_opt(opt)
-            ret = gettxoutin(arg_list[0])
-        elif pargs.is_matched(opt, ["gettxoutwithn"]):
-            if len(arg_list) != 2:
-                pargs.exit_error_opt(opt)
-            ret = gettxoutwithn(arg_list[0], int(arg_list[1]))
-        elif pargs.is_matched(opt, ["parsetranpayload"]):
-            if len(arg_list) != 1:
-                pargs.exit_error_opt(opt)
-            ret = parsetranpayload(arg_list[0])
-        elif pargs.is_matched(opt, ["parserawtranpayload"]):
-            if len(arg_list) != 1:
-                pargs.exit_error_opt(opt)
-            ret = parserawtranpayload(arg_list[0])
-        elif pargs.is_matched(opt, ["parsepayload"]):
-            if len(arg_list) != 1:
-                pargs.exit_error_opt(opt)
-            ret = parsepayload(arg_list[0])
-        elif pargs.is_matched(opt, ["decoderawtransaction"]):
-            if len(arg_list) not in (1, 2):
-                pargs.exit_error_opt(opt)
-            data = None
-            isswitness = True
-            if len(arg_list) >= 1:
-                data = arg_list[0]
-            if len(arg_list) >= 2:
-                isswitness = arg_list[1] == "True"
-            ret = decoderawtransaction(data, isswitness)
-        elif pargs.is_matched(opt, ["getaddressunspent"]):
-            if len(arg_list) != 1:
-                pargs.exit_error_opt(opt)
-            ret = getaddressunspent(arg_list[0])
-        elif pargs.is_matched(opt, ["getaddressbalance"]):
-            if len(arg_list) != 1:
-                pargs.exit_error_opt(opt)
-            ret = getaddressbalance(arg_list[0])
-        elif pargs.is_matched(opt, ["checkaddressunspent"]):
-            if len(arg_list) != 2:
-                pargs.exit_error_opt(opt)
-            ret = checkaddressunspent(arg_list[0], int(arg_list[1]))
-        elif pargs.is_matched(opt, ["importaddress"]):
-            if len(arg_list) != 1:
-                pargs.exit_error_opt(opt)
-            ret = importaddress(arg_list[0])
-        elif pargs.is_matched(opt, ["getrawmempool"]):
-            if len(arg_list) not in (0, 1):
-                pargs.exit_error_opt(opt)
-            verbose = False
-            if len(arg_list) == 1:
-                verbose = arg_list[0].lower() == "true"
-            ret = getrawmempool(verbose)
-        elif pargs.is_matched(opt, ["sendtoaddress"]):
-            if len(arg_list) != 4:
-                pargs.exit_error_opt(opt)
-            ret = sendtoaddress(arg_list[0], arg_list[1], arg_list[2], arg_list[3])
+            stmanage.set_conf_env(arg_list[0])
+        elif pargs.is_matched(opt, ["help"]):
+            init_args(pargs)
+            if arg:
+                pargs.show_help(argv)
+            else:
+                pargs.show_args()
+            return
+        elif pargs.has_callback(opt):
+            pargs.callback(opt, *arg_list)
+        else:
+            raise Exception(f"not found matched opt{opt}")
 
     logger.debug("end manage.main")
 

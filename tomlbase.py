@@ -3,7 +3,6 @@ import os, sys
 #import setting
 from comm import result
 from comm.result import parse_except
-from comm.functions import json_print
 from comm.parseargs import parseargs
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "tomlkit"))
@@ -11,6 +10,9 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "tomlki
 from tomlkit.toml_document import TOMLDocument
 from tomlkit.toml_file import TOMLFile
 from pathlib import Path
+from comm.values import (
+        PROJECT_NAME
+        )
 
 
 class tomlbase():
@@ -19,35 +21,36 @@ class tomlbase():
         self.__content = None
         self._toml_file = ""
         self.__load_conf()
+        self.__dataproof = {}
 
     def __load_conf(self):
 
+        self.__dataproof = {}
         filename = self.__get_conf_file()
-        if filename is None:
+        if filename is None or not self.get_conf_env():
             self.is_loaded = False
             return 
 
         self._toml_file = filename 
         self.__toml = TOMLFile(filename)
         self.__content = self.toml.read()
+        self.__dataproof.update({"conf_file":filename})
 
         assert isinstance(self.__content, TOMLDocument)
         self.is_loaded = True
         for key, value in self.__content.items():
             setattr(self, key, value)
+            self.__dataproof.update({key:value})
 
     def __get_conf_file(self):
         release_path = ""
-        conffile = self.get_conf_env()
-        #default toml. local or /etc/bvexchange
-        if conffile is None:
-            return None
-        toml_file = conffile
+        toml_file = self.get_conf_env()
+        if toml_file is None or not os.path.exists(toml_file):
+            return toml_file
 
         path = Path(toml_file)
         if not path.is_file() or not path.exists():
-            raise Exception(f"not found toml file: {toml_file} in ({os.path.dirname(__file__)}  {release_path})")
-        print(f"use config file: {toml_file}")
+            raise Exception(f"not found toml file: {toml_file}")
         return toml_file
 
     
@@ -61,13 +64,18 @@ class tomlbase():
 
     def __check_load_conf(self):
         if not self.is_loaded:
+            print("**" * 30)
             self.__load_conf()
 
     def reset(self):
-        self.__check_load_conf()
+        self.__load_conf()
         if not self.is_loaded:
-            print("not found configure file(toml).")
-            sys.exit(-1)
+            toml_file = self.get_conf_env()
+            raise Exception(f"not found toml file: {toml_file}")
+
+    @property
+    def datas(self):
+        return self.__dataproof
 
     @property
     def toml_file(self):
@@ -79,28 +87,43 @@ class tomlbase():
 
     @property
     def content(self):
-        return self.__content
-
-    def get(self, key):
         self.__check_load_conf()
         if not self.is_loaded:
             print("not found configure file(toml). use --conf ")
             sys.exit(-1)
-        return self.content[key]
+        return self.__content
+
+    def keys(self):
+        return self.__dataproof.keys()
+
+    def set(self, key, value):
+        return self.__dataproof.update({key:value})
+
+    def get(self, key, default = None):
+        self.__check_load_conf()
+        if not self.is_loaded:
+            print("not found configure file(toml). use --conf ")
+            sys.exit(-1)
+        return self.__dataproof.get(key, default)
+
+    @classmethod
+    def env_cfg_name(self):
+        return "{}_CONFIG".format(str(PROJECT_NAME).upper())
 
     @classmethod
     def set_conf_env(self, conffile):
-        os.environ.setdefault("VIOLASLAYER_CONFIG", conffile)
+        os.environ[self.env_cfg_name()] = conffile
 
     @classmethod
     def get_conf_env(self):
-        return os.environ.get("VIOLASLAYER_CONFIG", None)
+        return os.environ.get(self.env_cfg_name(), None)
 
     @classmethod
     def set_conf_env_default(self):
-        splits = os.path.split(os.path.dirname(os.path.abspath(__file__)))
-        basename = splits[-1]
-        os.environ.setdefault("VIOLASLAYER_CONFIG", os.path.join(os.path.dirname(os.path.abspath(__file__)), f"{basename}.toml"))
+        print("()"*30)
+        basename = PROJECT_NAME
+        print(basename)
+        os.environ[self.env_cfg_name()] = os.path.join(f"/etc/{basename}/", f"{basename}.toml")
 
 def main():
     tomlbase.set_conf_env_default()

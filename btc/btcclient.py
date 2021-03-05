@@ -14,15 +14,21 @@ import comm
 import comm.error
 import comm.result
 import comm.values
+import asyncio
 from comm.result import result, parse_except
 from comm.error import error
 from comm.functions import json_reset, json_print, json_dumps
-from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
+#from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 #from .models import BtcRpc
+from bitcoinrpc.bitcoin_rpc import (
+        BitcoinRPC
+        )
+
 from baseobject import baseobject
 from enum import Enum
 from btc.payload import payload
 from btc.transaction import transaction
+from dataproof import dataproof
 
 #module name
 name="bclient"
@@ -31,6 +37,23 @@ logger = log.logger.getLogger(name)
 
 COINS = comm.values.COINS
 class btcclient(baseobject):
+
+    class BitcoinRPCProxy:
+        def __init__(self, btc_rpc):
+            self.__btc_rpc = btc_rpc
+            self.__loop = dataproof.configs("btc_client_loop")
+            asyncio.set_event_loop(self.__loop)
+
+        def __del__(self):
+            self.__loop.run_until_complete(self.__btc_rpc.client.aclose())
+            pass
+
+        def __getattr__(self, name):
+            self.__name = name
+            return self
+
+        def __call__(self, *args, **kwargs):
+            return self.__loop.run_until_complete(self.__btc_rpc.acall(self.__name, list(args), **kwargs))
 
     def __init__(self, name, btc_conn):
         self.__btc_url               = "http://%s:%s@%s:%i"
@@ -52,9 +75,11 @@ class btcclient(baseobject):
             if btc_conn["rpcport"]:
                 self.__rpcport = btc_conn["rpcport"]
         self._logger.debug("connect btc server(rpcuser={}, rpcpassword={}, rpcip={}, rpcport={})".format(btc_conn["rpcuser"], btc_conn["rpcpassword"], btc_conn["rpcip"], btc_conn["rpcport"]))
-        self.__rpc_connection = AuthServiceProxy(self.__btc_url%(self.__rpcuser, self.__rpcpassword, self.__rpcip, self.__rpcport))
+        #self.__rpc_connection = AuthServiceProxy(self.__btc_url%(self.__rpcuser, self.__rpcpassword, self.__rpcip, self.__rpcport))
+        self.__rpc_connection = self.BitcoinRPCProxy(BitcoinRPC(self.__rpcip, self.__rpcport, self.__rpcuser, self.__rpcpassword))
         self._logger.debug(f"connection succeed.")
         self.__init_routing__()
+
 
     def disconn_node(self):
         pass
@@ -64,10 +89,10 @@ class btcclient(baseobject):
 
     def getrawmempool(self, verbose = False):
         try:
-            self._logger.debug(f"start getrawmempool({verbose})")
+            #self._logger.debug(f"start getrawmempool({verbose})")
             datas = self.__rpc_connection.getrawmempool(verbose)
             ret = result(error.SUCCEED, "", datas)
-            self._logger.debug(f"result :{len(ret.datas)}")
+            #self._logger.debug(f"result :{len(ret.datas)}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -104,7 +129,7 @@ class btcclient(baseobject):
 
     def getaddressunspent(self, address, minconf = 0, maxconf = 99999999, dust_threshold_sw = 0, dust_threshold_nsw = 0):
         try:
-            self._logger.debug(f"start getaddressunspent(address={address}, minconf = {minconf}, maxconf={maxconf})")
+            #self._logger.debug(f"start getaddressunspent(address={address}, minconf = {minconf}, maxconf={maxconf})")
             datas = self.__rpc_connection.listunspent(minconf, maxconf, [address])
             unspent = {}
             filter = []
@@ -128,7 +153,7 @@ class btcclient(baseobject):
 
     def importaddress(self, address):
         try:
-            self._logger.debug(f"start importaddress(address={address}")
+            #self._logger.debug(f"start importaddress(address={address}")
             datas = self.__rpc_connection.importaddress(address)
             ret = result(error.SUCCEED, "", datas)
             self._logger.debug(f"{ret.datas}")
@@ -137,7 +162,7 @@ class btcclient(baseobject):
         return ret
     def getaddressbalance(self, address, minconf = 0, maxconf = 99999999):
         try:
-            self._logger.debug(f"start getaddressbalance(address={address}, minconf = {minconf}, maxconf={maxconf})")
+            #self._logger.debug(f"start getaddressbalance(address={address}, minconf = {minconf}, maxconf={maxconf})")
             datas = self.__rpc_connection.listunspent(minconf, maxconf, [address])
             amount_sum = 0.0
             for data in datas:
@@ -150,7 +175,7 @@ class btcclient(baseobject):
         return ret
     def listaddressunspent(self, address, minconf = 0, maxconf = 99999999):
         try:
-            self._logger.debug(f"start listaddressunspent(address={address}, minconf = {minconf}, maxconf={maxconf})")
+            #self._logger.debug(f"start listaddressunspent(address={address}, minconf = {minconf}, maxconf={maxconf})")
             datas = self.__rpc_connection.listunspent(minconf, maxconf, address)
             ret = result(error.SUCCEED, "", datas)
         except Exception as e:
@@ -211,7 +236,7 @@ class btcclient(baseobject):
 
     def getaddressunspentwithamount(self, address, amount, minconf = 0, maxconf = 99999999, dust_threshold_sw = 0, dust_threshold_nsw = 0): #amount is satoshi
         try:
-            self._logger.debug(f"start getaddressunspentwithamount(address={address}, amount={amount}, minconf = {minconf}, maxconf={maxconf})")
+            #self._logger.debug(f"start getaddressunspentwithamount(address={address}, amount={amount}, minconf = {minconf}, maxconf={maxconf})")
             ret = self.getaddressunspent(address, minconf, maxconf, dust_threshold_sw, dust_threshold_nsw)
             if ret.state != error.SUCCEED:
                 return ret
@@ -237,7 +262,7 @@ class btcclient(baseobject):
 
     def createrawtransaction(self, inputs, outputs, locktime = 0, replaceable = False):
         try:
-            self._logger.debug(f"start createrawtransaction(inputs={inputs}, outputs = {outputs}, locktime={locktime}, replaceable={replaceable})")
+            #self._logger.debug(f"start createrawtransaction(inputs={inputs}, outputs = {outputs}, locktime={locktime}, replaceable={replaceable})")
             datas = self.__rpc_connection.createrawtransaction(inputs, outputs, locktime, replaceable)
             ret = result(error.SUCCEED, "", datas)
             self._logger.debug(f"result :{ret.datas}")
@@ -247,7 +272,7 @@ class btcclient(baseobject):
 
     def signrawtransactionwithkey(self, hexstring, privkeys, prevtxs=None, sighashtype="ALL"):
         try:
-            self._logger.debug(f"start signrawtransactionwithkey(hexstring={hexstring[:20]}, privkeys= {[pk[:6]  for pk in privkeys]}, sighashtype={sighashtype})")
+            #self._logger.debug(f"start signrawtransactionwithkey(hexstring={hexstring[:20]}, privkeys= {[pk[:6]  for pk in privkeys]}, sighashtype={sighashtype})")
             datas = self.__rpc_connection.signrawtransactionwithkey(hexstring, privkeys)
             if not datas.get("complete"):
                 ret = result(error.ARG_INVALID, datas.get("errors"))
@@ -260,7 +285,7 @@ class btcclient(baseobject):
 
     def estimatesmartfee(self, target, mode="CONSERVATIVE"):
         try:
-            self._logger.debug(f"estimatesmartfee(target={target}, mode={mode})")
+            #self._logger.debug(f"estimatesmartfee(target={target}, mode={mode})")
             datas = self.__rpc_connection.estimatesmartfee(target, mode)
             if datas.get("errors") is not None:
                 ret = result(error.FAILED, datas.get("errors"))
@@ -283,7 +308,7 @@ class btcclient(baseobject):
 
         '''
         try:
-            self._logger.debug(f"sendtoaddress(fromaddress={fromaddress}, toaddress={toaddress}, toamount={toamount}, data={data}, combine={combine})")
+            #self._logger.debug(f"sendtoaddress(fromaddress={fromaddress}, toaddress={toaddress}, toamount={toamount}, data={data}, combine={combine})")
             fee_rate = self.feerate
             min_fee = 0
             use_dust_threshold = False
@@ -350,7 +375,7 @@ class btcclient(baseobject):
                     else:
                         tran.updateoutput(fromaddress, overage)
 
-                self._logger.debug(f"amount_in: {amount_in} toamount={int(toamount * COINS)} COINS:{COINS} output amount :{overage:.8f}")
+                #self._logger.debug(f"amount_in: {amount_in} toamount={int(toamount * COINS)} COINS:{COINS} output amount :{overage:.8f}")
                 ret = self.createrawtransaction(tran.inputs, tran.outputs)
                 if ret.state != error.SUCCEED:
                     return ret
@@ -373,7 +398,7 @@ class btcclient(baseobject):
                 min_fee = ret.datas
 
                 overage = (amount_in - int(toamount * COINS) - int(min_fee * COINS)) / COINS
-                self._logger.debug(f"amount_in: {amount_in} toamount={int(toamount * COINS)} COINS:{COINS} min fee: {int(min_fee * COINS)} . output amount : {overage:.8f}")
+                #self._logger.debug(f"amount_in: {amount_in} toamount={int(toamount * COINS)} COINS:{COINS} min fee: {int(min_fee * COINS)} . output amount : {overage:.8f}")
                 if overage < 0:
                     tran.cleaninputs()
                     continue
@@ -431,7 +456,7 @@ class btcclient(baseobject):
 
                 ret = self.sendrawtransaction(signtran.get("hex"))
                 break
-            self._logger.debug(f"{ret.datas}")
+            #self._logger.debug(f"{ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -442,32 +467,32 @@ class btcclient(baseobject):
 
     def getminfeerate(self, satoshiperk, size):
         try:
-            self._logger.debug(f"start getminfeerate(satoshiperk={satoshiperk:.8f}, size={size})")
+            #self._logger.debug(f"start getminfeerate(satoshiperk={satoshiperk:.8f}, size={size})")
             datas = satoshiperk * size / 1000.0
             ret = result(error.SUCCEED, "", datas)
-            self._logger.debug(f"{ret.datas}")
+            #self._logger.debug(f"{ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def sendrawtransaction(self, hexstring, maxfeerate=0.010):
         try:
-            self._logger.debug(f"start sendrawtransaction(hexstring={hexstring[:20]}, maxfeerate={maxfeerate})")
+            #self._logger.debug(f"start sendrawtransaction(hexstring={hexstring[:20]}, maxfeerate={maxfeerate})")
             datas = self.__rpc_connection.sendrawtransaction(hexstring, maxfeerate)
             ret = result(error.SUCCEED, "", datas)
-            self._logger.debug(f"result : {ret.datas}")
+            #self._logger.debug(f"result : {ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
         
     def getblockcount(self):
         try:
-            self._logger.debug(f"start getblockcount()")
+            #self._logger.debug(f"start getblockcount()")
             
             datas = self.__rpc_connection.getblockcount()
 
             ret = result(error.SUCCEED, "", datas)
-            self._logger.info(f"result: {ret.datas}")
+            #self._logger.info(f"result: {ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
@@ -477,7 +502,7 @@ class btcclient(baseobject):
     #txid: 9c3fdd8a5f9dff6fbd2c825650559d6180ee8eaf1938632e370d36f789984a35
     def getblockhash(self, index):
         try:
-            self._logger.debug(f"start getblockhash({index})")
+            #self._logger.debug(f"start getblockhash({index})")
             if index < 0:
                 ret = result(error.ARG_INVALID, f"index must be greater than or equal to 0, not {index}")
                 self._logger.error(ret.message)
@@ -486,14 +511,14 @@ class btcclient(baseobject):
             datas = self.__rpc_connection.getblockhash(index)
 
             ret = result(error.SUCCEED, "", datas)
-            self._logger.info(f"result: {ret.datas}")
+            #self._logger.info(f"result: {ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def getblockwithhash(self, blockhash):
         try:
-            self._logger.debug(f"start getblockwithhash({blockhash})")
+            #self._logger.debug(f"start getblockwithhash({blockhash})")
             if len(blockhash) != 64:
                 ret = result(error.ARG_INVALID, f"blockhash must be of length 64 (not {len(blockhash)}, for '{blockhash}')")
                 self._logger.error(ret.message)
@@ -502,28 +527,28 @@ class btcclient(baseobject):
             datas = self.__rpc_connection.getblock(blockhash)
 
             ret = result(error.SUCCEED, "", json_reset(datas))
-            self._logger.info(f"result: {len(ret.datas.get('tx'))}")
+            #self._logger.info(f"result: {len(ret.datas.get('tx'))}")
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def getblockwithindex(self, index):
         try:
-            self._logger.debug(f"start getblockwithindex({index})")
+            #self._logger.debug(f"start getblockwithindex({index})")
             
             ret = self.getblockhash(index)
             if ret.state != error.SUCCEED:
                 return ret
 
             ret = self.getblockwithhash(ret.datas)
-            self._logger.info(f"result: {ret.datas}")
+            #self._logger.info(f"result: {ret.datas}")
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def getblocktxidswithhash(self, blockhash):
         try:
-            self._logger.debug(f"start getblocktxidswithhash({blockhash})")
+            #self._logger.debug(f"start getblocktxidswithhash({blockhash})")
             
             ret = self.getblockwithhash(blockhash)
             if ret.state != error.SUCCEED:
@@ -539,7 +564,7 @@ class btcclient(baseobject):
 
     def getblocktxidswithindex(self, index):
         try:
-            self._logger.debug(f"start getblocktxidswithindex({index})")
+            #self._logger.debug(f"start getblocktxidswithindex({index})")
             
             ret = self.getblockwithindex(index)
             if ret.state != error.SUCCEED:
@@ -555,7 +580,7 @@ class btcclient(baseobject):
 
     def getrawtransaction(self, txid, verbose = True, blockhash = None):
         try:
-            self._logger.debug(f"start getrawtransaction({txid}, {verbose}, {blockhash})")
+            #self._logger.debug(f"start getrawtransaction({txid}, {verbose}, {blockhash})")
             
             if blockhash is None:
                 datas = self.__rpc_connection.getrawtransaction(txid, verbose)
@@ -578,7 +603,7 @@ class btcclient(baseobject):
     
     def decoderawtransaction(self, data, isswitness = True):
         try:
-            self._logger.debug(f"start decoderawtransaction(data={data[:20]}, {isswitness})")
+            #self._logger.debug(f"start decoderawtransaction(data={data[:20]}, {isswitness})")
             
             datas = self.__rpc_connection.decoderawtransaction(data, isswitness)
             datas["vinsize"] = len(datas.get("vin"))
@@ -597,7 +622,7 @@ class btcclient(baseobject):
     # get vout vin
     def gettxoutin(self, txid):
         try:
-            self._logger.debug(f"start gettxoutin({txid})")
+            #self._logger.debug(f"start gettxoutin({txid})")
             ret = self.getrawtransaction(txid)
             if ret.state != error.SUCCEED:
                 return ret
@@ -608,14 +633,14 @@ class btcclient(baseobject):
                 return ret
 
             ret = result(error.SUCCEED, "", datas)
-            self._logger.info(f"result: vin count: {len(ret.datas.get('vin'))} , vout count: {len(ret.datas.get('vout'))}")
+            #self._logger.info(f"result: vin count: {len(ret.datas.get('vin'))} , vout count: {len(ret.datas.get('vout'))}")
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def gettxoutinfromdata(self, tran):
         try:
-            self._logger.debug(f"start gettxoutinfromdata({tran.get('txid')})")
+            #self._logger.debug(f"start gettxoutinfromdata({tran.get('txid')})")
             datas = {
                     "txid" : tran.get("txid"),
                     "vin" : [{"txid": vin.get("txid"), \
@@ -627,28 +652,28 @@ class btcclient(baseobject):
                     }
 
             ret = result(error.SUCCEED, "", datas)
-            self._logger.info(f"result: vin count: {len(ret.datas.get('vin'))} , vout count: {len(ret.datas.get('vout'))}")
+            #self._logger.info(f"result: vin count: {len(ret.datas.get('vin'))} , vout count: {len(ret.datas.get('vout'))}")
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def gettxin(self, txid):
         try:
-            self._logger.debug(f"start gettxoutin({txid})")
+            #self._logger.debug(f"start gettxoutin({txid})")
             ret = self.getrawtransaction(txid)
             if ret.state != error.SUCCEED:
                 return ret
             tran = ret.datas
 
             datas = self.gettxinfromdata(tran)
-            self._logger.info(f"result: vin count: {len(ret.datas.get('vin'))}")
+            #self._logger.info(f"result: vin count: {len(ret.datas.get('vin'))}")
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def gettxinfromdata(self, tran):
         try:
-            self._logger.debug(f"start gettxoutinfromdata({tran.get('txid')})")
+            #self._logger.debug(f"start gettxoutinfromdata({tran.get('txid')})")
             datas = {
                     "txid" : tran.get("txid"),
                     "vin" : [{"txid": vin.get("txid"), \
@@ -659,14 +684,14 @@ class btcclient(baseobject):
                     }
 
             ret = result(error.SUCCEED, "", datas)
-            self._logger.info(f"result: vin count: {len(ret.datas.get('vin'))}")
+            #self._logger.info(f"result: vin count: {len(ret.datas.get('vin'))}")
         except Exception as e:
             ret = parse_except(e)
         return ret
 
     def gettxinwithnfromdata(self, tran, n):
         try:
-            self._logger.debug(f"start gettxinwithnfromdata(tran, {n})")
+            #self._logger.debug(f"start gettxinwithnfromdata(tran, {n})")
             ret = self.gettxinfromdata(tran)
             if ret.state != error.SUCCEED:
                 return ret
@@ -684,7 +709,7 @@ class btcclient(baseobject):
         return ret
     def gettxoutwithn(self, txid, n):
         try:
-            self._logger.debug(f"start gettxoutwithn({txid}, {n})")
+            #self._logger.debug(f"start gettxoutwithn({txid}, {n})")
             ret = self.gettxoutin(txid)
             if ret.state != error.SUCCEED:
                 return ret
@@ -712,7 +737,7 @@ class btcclient(baseobject):
         return ret
     def gettxoutwithnfromdata(self, tran, n):
         try:
-            self._logger.debug(f"start gettxoutwithnfromdata(tran, {n})")
+            #self._logger.debug(f"start gettxoutwithnfromdata(tran, {n})")
             vouts = tran.get("vout")
             datas = None
             for vout in vouts:
@@ -728,7 +753,7 @@ class btcclient(baseobject):
 
     def getopreturnfromdata(self, tran):
         try:
-            self._logger.debug(f"start getopreturnfromdata(tran)")
+            #self._logger.debug(f"start getopreturnfromdata(tran)")
             vouts = tran.get("vout")
             datas = None
             for vout in vouts:
@@ -775,16 +800,20 @@ class btcclient(baseobject):
         return ret
     def help(self):
         try:
-            self._logger.debug("start help")
+            #self._logger.debug("start help")
             datas = self.__rpc_connection.help()
             ret = result(error.SUCCEED, "", datas)
         except Exception as e:
             ret = parse_except(e)
         return ret
 
+    def __rpc_getrawtransaction(self, txid, verbose = True, block_hash = None):
+        return self.__rpc_connection.getrawtransaction(txid, verbose, block_hash)
+
     def __init_routing__(self):
         self.__bitcoin_rpc = {
-                "getrawtransaction" : self.__rpc_connection.getrawtransaction
+                #"getrawtransaction" : self.__rpc_connection.getrawtransaction
+                "getrawtransaction" : self.__rpc_getrawtransaction
                 }
         pass
 
@@ -806,109 +835,4 @@ class btcclient(baseobject):
         return (std_result, func)
 
         
-
-def test_createrawtransaction():
-        receiver_addr = "2N9gZbqRiLKAhYCBFu3PquZwmqCBEwu1ien"
-        combin_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
-        sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
-        pl = payload(name)
-        toaddress = "cae5f8464c564aabb684ecbcc19153e9"
-        sequence = 20200512001
-        module = "e1be1ab8360a35a0259f1c93e3eac736"
-        swap_type = "b2vusd"
-        amount = 0.000002
-        outamount = int(amount * 100000000) 
-        times = 0
-
-        print(f'''************************************************************************create ex start
-        toaddress:{toaddress}
-        sequence: {sequence}
-        module:{module}
-**********************************************************************************''')
-        ret = pl.create_ex_start(swap_type, toaddress, sequence, module, outamount, times)
-        assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
-        data = ret.datas
-
-        client = btcclient(name, stmanage.get_btc_conn())
-        tran = transaction(name)
-        tran.appendoutput(receiver_addr, 0.000001)
-        tran.appendoutput(combin_addr, amount)
-        tran.appendoutputdata(data)
-        
-        ret = tran.getoutputamount()
-        assert ret.state == error.SUCCEED, ret.message
-        print("output amount sum: {ret.datas * COINS}")
-
-        ret = client.getaddressunspentwithamount(sender_addr, ret.datas * COINS)
-        assert ret.state == error.SUCCEED, ret.message
-
-        unspents = ret.datas
-        for unspent in unspents:
-            tran.appendinput(unspent.get("txid"), unspent.get("vout"))
-
-        print(f"inputs: {tran.inputs}")
-        print(f"outputs: {tran.outputs}")
-        ret = client.createrawtransaction(tran.inputs, tran.outputs)
-        assert ret.state == error.SUCCEED, ret.message
-
-        privkeys = ["cUrpMtcfh4s9CRdPEA2tx3hYQGb5yy7pkWQNzaMBZc8Sj42g8YA8"]
-        ret = client.signrawtransactionwithkey(ret.datas, privkeys)
-        assert ret.state == error.SUCCEED, ret.message
-        tran = ret.datas
-        json_print(tran)
-        print("*"*30)
-
-        ret = client.estimatesmartfee(1)
-        assert ret.state == error.SUCCEED, ret.message
-        estimatefee = ret.datas
-
-        print(f"estimatefee:{estimatefee}")
-
-        ret = client.decoderawtransaction(tran.get("hex"))
-        assert ret.state == error.SUCCEED, ret.message
-        weight = ret.datas.get("weight")
-        ret = client.getminfeerate(estimatefee, weight)
-        print(f"transaction minfeerate:{ret.datas:.8f}")
-
-def test_sendtoaddress():
-        sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
-        #receiver_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
-        receiver_addr = "2NFMbhLACujsHKa45X4P2fZupVrgB268pbo"
-        combin_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh"
-        swap_type = payload.txtype.B2VUSD.name.lower()
-        pl = payload(name)
-        #toaddress = "5862a9e3e23737459299638e54b2ada3"
-        toaddress = "edf3fec26a60335579d72faeb9701ef0"
-        sequence = int(time.time())
-        module = "00000000000000000000000000000001"
-        amount = 0.00013
-        outamount = int(amount * 7 * 100_0000) 
-        times = 0
-        ret = pl.create_ex_start(swap_type, toaddress, sequence, module, outamount, times)
-        assert ret.state == error.SUCCEED, f"payload create_ex_start.{ret.message}"
-        data = ret.datas
-
-        client = btcclient(name, stmanage.get_btc_conn())
-        privkeys = ["cUrpMtcfh4s9CRdPEA2tx3hYQGb5yy7pkWQNzaMBZc8Sj42g8YA8"]
-        ret = client.sendtoaddress(sender_addr, receiver_addr, amount, privkeys, data, subtractfeefromamount = True)
-        assert ret.state == error.SUCCEED, f"sendtoaddress failed.{ret.message}"
-        logger.info(json_dumps(ret.to_json()))
-
-def main():
-    try:
-        amounts = [1, 2, 3, 5, 8, 13, 21, 34, 36, 40, 50, 52, 100, 200]
-        ret = btcclient.getamountlist(int(sys.argv[1]), list(amounts))
-        print(f"list:{amounts}")
-        print(f"use amount: {ret}")
-
-    except Exception as e:
-        parse_except(e)
-    finally:
-        print("end main")
-
-if __name__ == "__main__":
-    stmanage.set_conf_env("../violaslayer.toml")
-    #main()
-    #test_createrawtransaction()
-    test_sendtoaddress()
 

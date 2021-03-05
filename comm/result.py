@@ -6,7 +6,6 @@ sys.path.append("..")
 import traceback
 import log
 import log.logger
-from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 name="result"
 error = error.error
@@ -41,8 +40,6 @@ def parse_except(e, msg = None, datas = None):
         #ret = result(e_type, msg, datas)
         #return ret
         raise e
-    except JSONRPCException as e:
-        ret = result(error.EXCEPT, e.message)
     except Exception as e: #at last
         ret = result(error.EXCEPT, "parse_excep exception", e)
     return ret
