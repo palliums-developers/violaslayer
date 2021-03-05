@@ -108,6 +108,7 @@ class works:
                     obj.set_step(stmanage.get_db(dtype).get("step", 100))
                     self.set_work_obj(obj)
                     obj.start()
+                    self.work_looping(obj, mod, nsec)
                 except Exception as e:
                     parse_except(e)
                 sleep(nsec)
@@ -137,6 +138,7 @@ class works:
                     obj.set_step(stmanage.get_db(dtype).get("step", 100))
                     self.set_work_obj(obj)
                     obj.start()
+                    self.work_looping(obj, mod, nsec)
                 except Exception as e:
                     parse_except(e)
                 sleep(nsec)
@@ -172,6 +174,7 @@ class works:
                     obj.set_step(stmanage.get_db(dtype).get("step", 100))
                     self.set_work_obj(obj)
                     obj.start()
+                    self.work_looping(obj, mod, nsec)
                 except Exception as e:
                     parse_except(e)
                 sleep(nsec)
@@ -202,6 +205,7 @@ class works:
                     obj.set_step(stmanage.get_db(dtype).get("step", 100))
                     self.set_work_obj(obj)
                     obj.start()
+                    self.work_looping(obj, mod, nsec)
                 except Exception as e:
                     parse_except(e)
                 sleep(nsec)

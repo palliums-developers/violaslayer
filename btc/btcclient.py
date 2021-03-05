@@ -89,10 +89,10 @@ class btcclient(baseobject):
 
     def getrawmempool(self, verbose = False):
         try:
-            self._logger.debug(f"start getrawmempool({verbose})")
+            #self._logger.debug(f"start getrawmempool({verbose})")
             datas = self.__rpc_connection.getrawmempool(verbose)
             ret = result(error.SUCCEED, "", datas)
-            self._logger.debug(f"result :{len(ret.datas)}")
+            #self._logger.debug(f"result :{len(ret.datas)}")
         except Exception as e:
             ret = parse_except(e)
         return ret

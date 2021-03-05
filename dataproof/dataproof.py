@@ -48,7 +48,7 @@ class configdatas(dataproof):
     def __init_default(self):
         self.set_default_value("chain_id", 4)
         self.set_default_value("exchange_async", True)
-        self.set_default_value("btc_client_loop", asyncio.get_event_loop())
+        self.set_default_value("btc_client_loop", asyncio.new_event_loop())
 
     def __getattr__(self, name):
         print(f"{name}----")

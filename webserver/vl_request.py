@@ -31,7 +31,7 @@ from btc.payload import payload
 name="webserver"
 logger = log.logger.getLogger(name)
 COINS = comm.values.COINS
-stmanage.set_conf_env_default()
+stmanage.set_conf_env("../violaslayer.toml")
 @app.route('/')
 def main():
     args    = request.args

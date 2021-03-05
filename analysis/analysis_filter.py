@@ -266,7 +266,7 @@ class afilter(abase):
                     ret = self._dbclient.set_latest_saved_txid(txid, session=session)
                     assert ret.state == error.SUCCEED, f"update latest saved txid failed.txid = {txid}"
                     #proof
-                    self._logger.debug(f"transaction parse is succeed. op_is_valid = {op_is_valid} op_index = {index} height:{height} txid:{txid}")
+                    self._logger.debug(f"transaction parse is succeed. op_is_valid = {op_is_valid} op_index = {index} height(-1=memprool transaction):{height} txid:{txid}")
 
     def save_mempool_trans(self, index):
         try:
@@ -328,6 +328,9 @@ class afilter(abase):
             if start_version == 0:
                 start_version = 1
             
+            self._logger.debug(f"get block height = {start_version} max height = {chain_latest_ver} ")
+            self._logger.debug(f"latest filter state = {latest_filter_state.name}, latest saved txid = {latest_saved_txid} next_op_index = {latest_opreturn_index}")
+
             if start_version > chain_latest_ver:
                 self.save_mempool_trans(latest_opreturn_index)
                 return result(error.SUCCEED)
@@ -336,8 +339,6 @@ class afilter(abase):
                 self._dbclient.set_mempool_buf(self.mempool_trans)
             
             version = start_version
-            self._logger.debug(f"height = {start_version} max height = {chain_latest_ver} ")
-            self._logger.debug(f"latest filter state = {latest_filter_state.name}, latest saved txid = {latest_saved_txid}")
 
             step = self.get_step()
             if step > 0 and chain_latest_ver > version + step - 1:

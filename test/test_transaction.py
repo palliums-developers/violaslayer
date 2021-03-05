@@ -6,7 +6,7 @@ btc transactions and proof main
 '''
 import operator
 import signal
-import sys, os
+import sys, os, time
 sys.path.append(os.getcwd())
 sys.path.append("..")
 import traceback
@@ -20,10 +20,14 @@ from comm.error import error
 from comm.result import parse_except
 from btc.btcclient import btcclient
 from enum import Enum
-from comm.functions import json_print
 from comm.parseargs import parseargs
 from btc.payload import payload
 from btc.transaction import transaction
+from comm.functions import (
+        json_reset, 
+        json_print, 
+        json_dumps
+        )
 
 COINS = comm.values.COINS
 
@@ -93,13 +97,13 @@ def test_createrawtransaction():
 
 def test_sendtoaddress():
         sender_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh" 
-        #receiver_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
-        receiver_addr = "2MyMHV6e4wA2ucV8fFKzXSEFCwrUGr2HEmY"
+        receiver_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
+        #receiver_addr = "2MyMHV6e4wA2ucV8fFKzXSEFCwrUGr2HEmY"
         combin_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh"
-        swap_type = payload.txtype.B2VUSD.name.lower()
+        swap_type = payload.txtype.B2VM.name.lower()
         pl = payload(name, stmanage.get_chain_id())
         #toaddress = "5862a9e3e23737459299638e54b2ada3"
-        toaddress = "edf3fec26a60335579d72faeb9701ef0"
+        toaddress = "0000000000000000004252472d425443"
         sequence = int(time.time())
         module = "00000000000000000000000000000001"
         amount = 0.001
@@ -111,8 +115,8 @@ def test_sendtoaddress():
 
         client = btcclient(name, stmanage.get_btc_conn())
         privkeys = ["cUrpMtcfh4s9CRdPEA2tx3hYQGb5yy7pkWQNzaMBZc8Sj42g8YA8"]
-        #ret = client.sendtoaddress(sender_addr, receiver_addr, amount, privkeys, data, subtractfeefromamount = True)
-        #assert ret.state == error.SUCCEED, f"sendtoaddress failed.{ret.message}"
+        ret = client.sendtoaddress(sender_addr, receiver_addr, amount, privkeys, data, subtractfeefromamount = True)
+        assert ret.state == error.SUCCEED, f"sendtoaddress failed.{ret.message}"
         print(json_dumps(ret.to_json()))
 
 def main():
