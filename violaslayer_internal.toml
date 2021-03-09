@@ -1,7 +1,7 @@
 
 #violaslayer config
 
-chain_id = 4
+chain_id = 5
 
 traceback_limit = 4
 #btc connect 
@@ -25,7 +25,7 @@ traceback_limit = 4
     user="violas"
     password="violas@palliums"
     authdb="admin"
-    rsname="rsv"
+    rsname="rsviolas"
         
 [[db_list]]
     host=["127.0.0.1:37017"]
@@ -33,7 +33,7 @@ traceback_limit = 4
     user="violas"
     password="violas@palliums"
     authdb="admin"
-    rsname="rsv"
+    rsname="rsviolas"
 
 [[db_list]]
     host=["127.0.0.1:37017"]
@@ -41,7 +41,7 @@ traceback_limit = 4
     user="violas"
     password="violas@palliums"
     authdb="admin"
-    rsname="rsv"
+    rsname="rsviolas"
 
 [[db_list]]
     host=["127.0.0.1:37017"]
@@ -49,7 +49,7 @@ traceback_limit = 4
     user="violas"
     password="violas@palliums"
     authdb="admin"
-    rsname="rsv"
+    rsname="rsviolas"
     
 
 [looping_sleep]
