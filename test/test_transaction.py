@@ -119,6 +119,32 @@ def test_sendtoaddress():
         assert ret.state == error.SUCCEED, f"sendtoaddress failed.{ret.message}"
         print(json_dumps(ret.to_json()))
 
+
+payer_addr = None
+to_address = None
+payee_addr = None
+chain_id   = None
+privkeys   = None
+def test_map_vbtc():
+        global payer_addr, to_address, payee_addr, chain_id, privkeys
+        print(to_address)
+        combin_addr = payer_addr
+        swap_type = payload.txtype.B2VM.name.lower()
+        pl = payload(name, chain_id)
+        sequence = int(time.time())
+        module = "00000000000000000000000000000001"
+        amount = 0.001
+        outamount = int(amount * 7 * 100_0000) 
+        times = 0
+        ret = pl.create_ex_start(swap_type, to_address, sequence, module, outamount, times)
+        assert ret.state == error.SUCCEED, "payload create_ex_start.{}".format(ret.message)
+        data = ret.datas
+
+        client = btcclient(name, stmanage.get_btc_conn())
+        ret = client.sendtoaddress(payer_addr, payee_addr, amount, privkeys, data, subtractfeefromamount = True)
+        assert ret.state == error.SUCCEED, f"sendtoaddress failed.{ret.message}"
+        print(json_dumps(ret.to_json()))
+
 def main():
     try:
         amounts = [1, 2, 3, 5, 8, 13, 21, 34, 36, 40, 50, 52, 100, 200]
@@ -131,8 +157,22 @@ def main():
     finally:
         print("end main")
 
+
 def setup():
+    global payer_addr, to_address, payee_addr, chain_id, privkeys
     stmanage.set_conf_env("../violaslayer.toml")
+    chain_id = stmanage.get_chain_id()
+    chain_id = 5
+    payer_addr = "2MyMHV6e4wA2ucV8fFKzXSEFCwrUGr2HEmY"
+    privkeys = ["cMdCSaP3uBumD6GYTjymKbGLBBLXfDoBC9XLV3U7oj9kRQpzu9FJ"]
+    to_address = "0000000000000000004252472d425443"
+    
+    if chain_id == 4: #internal
+        payee_addr = "2N2YasTUdLbXsafHHmyoKUYcRRicRPgUyNB"
+    elif chain_id == 5:  #external
+        payee_addr = "2MxBZG7295wfsXaUj69quf8vucFzwG35UWh"
+    else:
+        assert False, "not support chain_id={}".format(chain_id)
 
 if __name__ == "__main__":
     setup()
