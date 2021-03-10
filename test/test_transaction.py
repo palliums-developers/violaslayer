@@ -141,7 +141,7 @@ def test_map_vbtc():
         data = ret.datas
 
         client = btcclient(name, stmanage.get_btc_conn())
-        ret = client.sendtoaddress(payer_addr, payee_addr, amount, privkeys, data, subtractfeefromamount = True)
+        ret = client.sendtoaddress(payer_addr, payee_addr, amount, privkeys, data, subtractfeefromamount = False)
         assert ret.state == error.SUCCEED, f"sendtoaddress failed.{ret.message}"
         print(json_dumps(ret.to_json()))
 

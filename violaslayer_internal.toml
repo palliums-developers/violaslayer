@@ -1,7 +1,7 @@
 
 #violaslayer config
 
-chain_id = 5
+chain_id = 4
 
 traceback_limit = 4
 #btc connect 

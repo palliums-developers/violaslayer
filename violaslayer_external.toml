@@ -1,7 +1,7 @@
 
 #violaslayer config
 
-traceback_limit = 4
+traceback_limit = 5
 
 chain_id = 5
 
