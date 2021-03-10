@@ -162,7 +162,7 @@ def setup():
     global payer_addr, to_address, payee_addr, chain_id, privkeys
     stmanage.set_conf_env("../violaslayer.toml")
     chain_id = stmanage.get_chain_id()
-    chain_id = 5
+    print("chain_id={}".format(chain_id))
     payer_addr = "2MyMHV6e4wA2ucV8fFKzXSEFCwrUGr2HEmY"
     privkeys = ["cMdCSaP3uBumD6GYTjymKbGLBBLXfDoBC9XLV3U7oj9kRQpzu9FJ"]
     to_address = "0000000000000000004252472d425443"
