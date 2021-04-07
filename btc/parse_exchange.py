@@ -25,6 +25,9 @@ from enum import Enum
 name="parseex"
 address_len = 16
 
+def __convert_to_str(value):
+    return f"{value}"
+
 def parse_ex_start(data):
     try:
         if len(data) != 51:
@@ -42,7 +45,7 @@ def parse_ex_start(data):
 
         datas = {
                 "address": data[:address_len].hex(),
-                "sequence" : sequence,
+                "sequence" : __convert_to_str(sequence),
                 "vtoken" : data[address_len + 8 : address_len + 8 + address_len].hex(),
                 "out_amount" : out_amount,
                 "times": times,
@@ -69,7 +72,7 @@ def parse_ex_end(data):
 
         datas = {
                 "address": data[:address_len].hex(),
-                "sequence" : sequence,
+                "sequence" : __convert_to_str(sequence),
                 "out_amount_real" : amount,
                 "vheight" : version,
                 "chain_id" : chain_id
@@ -95,7 +98,7 @@ def parse_ex_cancel(data):
 
         datas = {
                 "address": data[:address_len].hex(),
-                "sequence" : sequence,
+                "sequence" : __convert_to_str(sequence),
                 "chain_id" : chain_id
                 }
 
@@ -119,7 +122,7 @@ def parse_ex_stop(data):
 
         datas = {
                 "address": data[:address_len].hex(),
-                "sequence" : sequence,
+                "sequence" : __convert_to_str(sequence),
                 "chain_id" : chain_id
                 }
 
@@ -143,7 +146,7 @@ def parse_ex_mark(data):
 
         datas = {
                 "address": data[:address_len].hex(),
-                "sequence" : sequence,
+                "sequence" : __convert_to_str(sequence),
                 "vheight" : version,
                 "amount_real" : amount,
                 "chain_id" : chain_id
@@ -169,7 +172,7 @@ def parse_btc_mark(data):
         name = "".join([v.decode() for v in bname])
         datas = {
                 "address": data[:address_len].hex(),
-                "sequence" : sequence,
+                "sequence" : __convert_to_str(sequence),
                 "amount_real": amount,
                 "name": name
                 }
